@@ -1,0 +1,223 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 220 15% 25%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 25%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 25%;
+
+    --primary: 238 76% 48%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 139 44% 56%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 30 95% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 238 76% 48%;
+
+    --radius: 0.75rem;
+
+    /* Mozambique inspired colors */
+    --mozambique-red: 0 84% 60%;
+    --mozambique-green: 139 44% 56%;
+    --mozambique-yellow: 50 100% 60%;
+    --mozambique-black: 220 15% 25%;
+
+    /* Solidarity theme colors */
+    --solidarity-blue: 238 76% 48%;
+    --solidarity-orange: 30 95% 60%;
+    --solidarity-warm: 35 91% 65%;
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(var(--solidarity-blue)), hsl(var(--mozambique-green)));
+    --gradient-warm: linear-gradient(135deg, hsl(var(--solidarity-orange)), hsl(var(--solidarity-warm)));
+    
+    /* Shadows */
+    --shadow-solidarity: 0 10px 30px -10px hsl(var(--solidarity-blue) / 0.3);
+    --shadow-warm: 0 8px 25px -8px hsl(var(--solidarity-orange) / 0.4);
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 220 15% 10%;
+    --foreground: 210 40% 98%;
+
+    --card: 220 15% 15%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 220 15% 15%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 238 76% 58%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 139 44% 46%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 30 95% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62.8% 50.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 238 76% 58%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Animações customizadas para melhorar a interatividade */
+@layer utilities {
+  /* Animação de pulso para botão doar */
+  .pulse-animation {
+    animation: pulse-glow 2s infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 5px hsl(var(--mozambique-red) / 0.5);
+    }
+    50% {
+      box-shadow: 0 0 20px hsl(var(--mozambique-red) / 0.8), 0 0 30px hsl(var(--solidarity-orange) / 0.6);
+    }
+  }
+
+  /* Animação de entrada suave */
+  .fade-in-up {
+    animation: fadeInUp 0.8s ease-out forwards;
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  @keyframes fadeInUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Animação de contador */
+  .counter-animation {
+    animation: countUp 2s ease-out forwards;
+  }
+
+  @keyframes countUp {
+    from {
+      transform: scale(0.8);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  /* Hover effects melhorados */
+  .card-hover {
+    transition: all 0.3s ease;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Animação de loading para imagens */
+  .image-loading {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+  }
+
+  @keyframes loading {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  /* Efeito parallax suave */
+  .parallax-element {
+    transition: transform 0.3s ease-out;
+  }
+
+  /* Melhorar visibilidade de textos em botões */
+  .button-text-visible {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    font-weight: 600;
+    letter-spacing: 0.025em;
+  }
+
+  /* Botões outline com melhor contraste */
+  button[data-variant="outline"] {
+    border-width: 2px !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Garantir que o texto seja sempre visível */
+  button span, button svg {
+    position: relative;
+    z-index: 10;
+  }
+}
