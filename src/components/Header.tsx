@@ -47,6 +47,14 @@ const Header = () => {
                 {item.label}
               </Link>
             ))}
+            <Link to="/dashboard">
+              <Button 
+                variant="outline" 
+                size="sm"
+              >
+                Dashboard
+              </Button>
+            </Link>
             <Link to="/doacao">
               <Button 
                 variant="default" 
@@ -87,6 +95,17 @@ const Header = () => {
                   {item.label}
                 </Link>
               ))}
+              <div className="px-3 py-2">
+                <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="w-full mb-2"
+                  >
+                    Dashboard
+                  </Button>
+                </Link>
+              </div>
               <div className="px-3 py-2">
                 <Link to="/doacao" onClick={() => setIsMenuOpen(false)}>
                   <Button 
