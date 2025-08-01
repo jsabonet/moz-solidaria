@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.text import slugify
-from django.urls import reverse
+from django.core.exceptions import ValidationError
 from PIL import Image
 import os
 
@@ -24,6 +24,14 @@ class Category(models.Model):
         if not self.slug:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
+    
+    def delete(self, *args, **kwargs):
+        """Override delete to prevent deletion if category has posts"""
+        if self.blogpost_set.exists():
+            raise ValidationError(
+                f'Não é possível excluir a categoria "{self.name}" pois ela possui posts associados.'
+            )
+        super().delete(*args, **kwargs)
 
 
 class Tag(models.Model):
@@ -120,7 +128,7 @@ class BlogPost(models.Model):
                 img.save(self.featured_image.path, quality=85, optimize=True)
     
     def get_absolute_url(self):
-        return reverse('blog:post_detail', kwargs={'slug': self.slug})
+        return f'/blog/{self.slug}/'
     
     @property
     def is_published(self):

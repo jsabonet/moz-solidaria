@@ -1,90 +1,108 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Calendar, User, ArrowRight, Search } from "lucide-react";
+import { Calendar, User, ArrowRight, Search, Copy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import { fetchPosts, fetchCategories, duplicatePost } from "@/lib/api";
+import { useAuth } from "@/hooks/use-auth";
+import { toast } from "sonner";
+
 
 const Blog = () => {
-  const blogPosts = [
-    {
-      id: 1,
-      title: "Transformando Vidas através da Educação em Cabo Delgado",
-      excerpt: "Descubra como nossos programas de alfabetização estão criando oportunidades reais para crianças e adultos em comunidades rurais.",
-      author: "Maria Santos",
-      date: "15 de Janeiro, 2024",
-      category: "Educação",
-      readTime: "5 min",
-      featured: true,
-      image: ""
-    },
-    {
-      id: 2,
-      title: "Projeto de Agricultura Sustentável: Resultados do Primeiro Semestre",
-      excerpt: "Conheça os impactos positivos das nossas iniciativas de desenvolvimento rural e agricultura sustentável nas comunidades locais.",
-      author: "João Mabunda",
-      date: "8 de Janeiro, 2024",
-      category: "Desenvolvimento Rural",
-      readTime: "7 min",
-      featured: false,
-      image: "https://images.unsplash.com/photo-1486328228599-85db4443971f?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-    },
-    {
-      id: 3,
-      title: "Empoderamento Feminino: Histórias de Sucesso",
-      excerpt: "Mulheres de Cabo Delgado compartilham suas experiências de transformação através dos nossos programas de capacitação.",
-      author: "Ana Mussa",
-      date: "2 de Janeiro, 2024",
-      category: "Empoderamento",
-      readTime: "6 min",
-      featured: false,
-      image: "https://images.unsplash.com/photo-1696483150935-2f719f1dfa6a?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-    },
-    {
-      id: 4,
-      title: "Campanha de Saúde Preventiva: 1000 Famílias Atendidas",
-      excerpt: "Relatório completo da nossa campanha de vacinação e educação em saúde que beneficiou mais de 1000 famílias.",
-      author: "Dr. Carlos Nhamirre",
-      date: "28 de Dezembro, 2023",
-      category: "Saúde",
-      readTime: "4 min",
-      featured: false,
-      image: "https://images.unsplash.com/photo-1666887360933-ad2ade9ae994?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-    },
-    {
-      id: 5,
-      title: "Construção de Poços: Água Limpa para Comunidades Rurais",
-      excerpt: "Como a construção de poços artesianos está transformando o acesso à água potável em cinco comunidades de Cabo Delgado.",
-      author: "Eng. Pedro Macamo",
-      date: "20 de Dezembro, 2023",
-      category: "Infraestrutura",
-      readTime: "8 min",
-      featured: false,
-      image: "https://images.unsplash.com/photo-1601662583487-20630f298aed?q=80&w=1169&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-    },
-    {
-      id: 6,
-      title: "Voluntariado: Como Fazer a Diferença na Sua Comunidade",
-      excerpt: "Guia completo para se tornar voluntário da MOZ SOLIDÁRIA e contribuir para o desenvolvimento de Cabo Delgado.",
-      author: "Sandra Chissano",
-      date: "15 de Dezembro, 2023",
-      category: "Voluntariado",
-      readTime: "3 min",
-      featured: false,
-      image: "https://images.unsplash.com/photo-1584789873535-e79c6a8a2483?q=80&w=1172&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-    }
-  ];
+  const [blogPosts, setBlogPosts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<string[]>(["Todos"]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
-  const categories = ["Todos", "Educação", "Saúde", "Desenvolvimento Rural", "Empoderamento", "Infraestrutura", "Voluntariado"];
-  const featuredPost = blogPosts.find(post => post.featured);
-  const regularPosts = blogPosts.filter(post => !post.featured);
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const [postsData, categoriesData] = await Promise.all([
+          fetchPosts(),
+          fetchCategories()
+        ]);
+        
+        // Garantir que postsData é um array
+        const posts = Array.isArray(postsData) ? postsData : postsData.results || [];
+        
+        // Filtrar apenas posts publicados
+        const publishedPosts = posts.filter(post => 
+          post.status === 'published' || post.is_published === true
+        );
+        
+        setBlogPosts(publishedPosts);
+        
+        // Garantir que categoriesData é um array
+        const categories = Array.isArray(categoriesData) ? categoriesData : categoriesData.results || [];
+        setCategories(["Todos", ...categories.map((c: any) => c.name)]);
+        
+      } catch (err: any) {
+        console.error('Blog: Erro ao carregar dados:', err);
+        setError(`Erro ao carregar dados do blog: ${err.message || 'Erro desconhecido'}`);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  const handleQuickDuplicate = async (post: any) => {
+    if (!user) return;
+    
+    try {
+      await duplicatePost(post.slug);
+      toast.success('Post duplicado! Verifique no dashboard.');
+    } catch (error: any) {
+      toast.error('Erro ao duplicar post');
+    }
+  };
+
+  // Garantir que apenas posts publicados sejam exibidos
+  const publishedPosts = blogPosts.filter(post => 
+    post.status === 'published' || post.is_published === true
+  );
+  
+  const featuredPost = publishedPosts.length > 0 ? publishedPosts[0] : null;
+  const regularPosts = publishedPosts.slice(1);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span>Carregando...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <div className="container mx-auto px-4 lg:px-8 py-20 text-center">
+          <h1 className="text-2xl font-bold text-red-500 mb-4">Erro no Blog</h1>
+          <p className="text-muted-foreground mb-6">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Tentar Novamente
+          </Button>
+          <div className="mt-8 text-sm text-muted-foreground">
+            <p>Se o problema persistir, verifique se o backend está rodando em http://localhost:8000</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
       <Header />
-      
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary to-secondary text-white py-20">
         <div className="container mx-auto px-4 lg:px-8">
@@ -96,7 +114,6 @@ const Blog = () => {
               Acompanhe nossas atividades, histórias de impacto e reflexões sobre 
               desenvolvimento comunitário em Cabo Delgado
             </p>
-            
             {/* Search Bar */}
             <div className="max-w-md mx-auto relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -126,26 +143,25 @@ const Blog = () => {
         </div>
       </section>
 
-      {/* Featured Post */}
-      {featuredPost && (
+      {/* Featured Post - Apenas se for publicado */}
+      {featuredPost && (featuredPost.status === 'published' || featuredPost.is_published === true) && (
         <section className="py-16">
           <div className="container mx-auto px-4 lg:px-8">
             <div className="mb-8">
               <h2 className="text-2xl font-bold mb-2">Artigo em Destaque</h2>
               <div className="w-20 h-1 bg-primary"></div>
             </div>
-            
             <Card className="overflow-hidden shadow-lg">
               <div className="grid lg:grid-cols-2 gap-0">
                 <div className="aspect-video lg:aspect-auto bg-gradient-to-br from-primary/20 to-secondary/20 overflow-hidden">
                   <img 
-                    src="https://images.unsplash.com/photo-1567057420215-0afa9aa9253a?q=80&w=1172&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                    alt="Educação em Cabo Delgado"
+                    src={featuredPost.featured_image_url || "https://images.unsplash.com/photo-1567057420215-0afa9aa9253a?q=80&w=1172&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"}
+                    alt={featuredPost.title}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                   />
                 </div>
                 <CardContent className="p-8 flex flex-col justify-center">
-                  <Badge className="w-fit mb-4">{featuredPost.category}</Badge>
+                  <Badge className="w-fit mb-4">{featuredPost.category?.name || 'Sem categoria'}</Badge>
                   <CardTitle className="text-2xl lg:text-3xl mb-4 leading-tight">
                     {featuredPost.title}
                   </CardTitle>
@@ -155,15 +171,20 @@ const Blog = () => {
                   <div className="flex items-center text-sm text-muted-foreground mb-6 space-x-4">
                     <div className="flex items-center space-x-2">
                       <User className="h-4 w-4" />
-                      <span>{featuredPost.author}</span>
+                      <span>{featuredPost.author?.username || featuredPost.author?.full_name || 'Autor'}</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Calendar className="h-4 w-4" />
-                      <span>{featuredPost.date}</span>
+                      <span>{new Date(featuredPost.created_at).toLocaleDateString('pt-BR')}</span>
                     </div>
-                    <span>{featuredPost.readTime} de leitura</span>
+                    <span>
+                      {featuredPost.read_time && featuredPost.read_time > 0 
+                        ? `${featuredPost.read_time} min de leitura`
+                        : '5 min de leitura'
+                      }
+                    </span>
                   </div>
-                  <Link to={`/blog/${featuredPost.id}`}>
+                  <Link to={`/blog/${featuredPost.slug}`}>
                     <Button size="lg">
                       Ler Artigo Completo
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -176,26 +197,25 @@ const Blog = () => {
         </section>
       )}
 
-      {/* Regular Posts Grid */}
+      {/* Regular Posts Grid - Apenas posts publicados */}
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="mb-8">
             <h2 className="text-2xl font-bold mb-2">Últimos Artigos</h2>
             <div className="w-20 h-1 bg-secondary"></div>
           </div>
-          
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {regularPosts.map((post) => (
               <Card key={post.id} className="group hover:shadow-lg transition-shadow duration-300 overflow-hidden">
                 <div className="aspect-video overflow-hidden">
                   <img 
-                    src={post.image} 
+                    src={post.featured_image_url || "https://images.unsplash.com/photo-1567057420215-0afa9aa9253a?q=80&w=1172&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"} 
                     alt={post.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 </div>
                 <CardContent className="p-6">
-                  <Badge variant="secondary" className="mb-3">{post.category}</Badge>
+                  <Badge variant="secondary" className="mb-3">{post.category?.name || 'Sem categoria'}</Badge>
                   <CardTitle className="text-xl mb-3 group-hover:text-primary transition-colors">
                     {post.title}
                   </CardTitle>
@@ -205,30 +225,62 @@ const Blog = () => {
                   <div className="flex items-center text-sm text-muted-foreground mb-4 space-x-4">
                     <div className="flex items-center space-x-1">
                       <User className="h-3 w-3" />
-                      <span>{post.author}</span>
+                      <span>{post.author?.username || post.author?.full_name || 'Autor'}</span>
                     </div>
-                    <span>{post.readTime}</span>
+                    <span>
+                      {post.read_time && post.read_time > 0 
+                        ? `${post.read_time} min de leitura`
+                        : '5 min de leitura'
+                      }
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">{post.date}</span>
-                    <Link to={`/blog/${post.id}`}>
-                      <Button variant="ghost" size="sm">
-                        Ler mais
-                        <ArrowRight className="ml-1 h-3 w-3" />
-                      </Button>
-                    </Link>
+                    <span className="text-sm text-muted-foreground">
+                      {new Date(post.created_at).toLocaleDateString('pt-BR')}
+                    </span>
+                    <div className="flex items-center space-x-2">
+                      <Link to={`/blog/${post.slug}`}>
+                        <Button variant="ghost" size="sm">
+                          Ler mais
+                          <ArrowRight className="ml-1 h-3 w-3" />
+                        </Button>
+                      </Link>
+                      
+                      {/* Admin Quick Actions - Apenas para usuários logados */}
+                      {user && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleQuickDuplicate(post)}
+                          title="Duplicar post (Admin)"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
           
-          {/* Load More Button */}
-          <div className="text-center mt-12">
-            <Button variant="outline" size="lg">
-              Carregar Mais Artigos
-            </Button>
-          </div>
+          {/* Mostrar mensagem se não houver posts publicados */}
+          {publishedPosts.length === 0 && !loading && (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground text-lg">Nenhum artigo publicado ainda.</p>
+              <p className="text-muted-foreground">Volte em breve para novos conteúdos!</p>
+            </div>
+          )}
+          
+          {/* Load More Button - Apenas se houver posts */}
+          {publishedPosts.length > 0 && (
+            <div className="text-center mt-12">
+              <Button variant="outline" size="lg">
+                Carregar Mais Artigos
+              </Button>
+            </div>
+          )}
         </div>
       </section>
 

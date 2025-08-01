@@ -1,7 +1,7 @@
 from rest_framework import permissions
 
 
-class IsAuthorOrReadOnly(permissions.BasePermission):
+class IsAuthorOrReadOnly(permissions.AllowAny):
     """
     Custom permission to only allow authors to edit their own posts.
     """
@@ -17,7 +17,7 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
         return obj.author == request.user or request.user.is_staff
 
 
-class IsOwnerOrReadOnly(permissions.BasePermission):
+class IsOwnerOrReadOnly(permissions.AllowAny):
     """
     Custom permission to only allow owners of an object to edit it.
     """
@@ -38,7 +38,7 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
         return False
 
 
-class IsStaffOrReadOnly(permissions.BasePermission):
+class IsStaffOrReadOnly(permissions.AllowAny):
     """
     Custom permission to only allow staff to edit.
     """

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,9 +7,104 @@ import Footer from "@/components/Footer";
 import { Calendar, User, ArrowLeft, Share2, Heart, MessageCircle, ArrowRight, Clock } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
+import { fetchPostDetail, fetchPosts } from "@/lib/api";
 
 const BlogDetail = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
+  const [post, setPost] = useState<any>(null);
+  const [relatedPosts, setRelatedPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadData() {
+      if (!slug) {
+        console.warn("BlogDetail: slug não encontrado na URL.");
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        console.log("BlogDetail: Buscando post detail para slug:", slug);
+        
+        const [postData, postsData] = await Promise.all([
+          fetchPostDetail(slug),
+          fetchPosts()
+        ]);
+        
+        console.log("BlogDetail: postData recebido:", postData);
+        console.log("BlogDetail: postsData recebido:", postsData);
+
+        // Verificar se o post existe e está publicado
+        if (!postData || Object.keys(postData).length === 0) {
+          console.warn("BlogDetail: postData vazio ou nulo.", postData);
+          setError("Artigo não encontrado.");
+          setPost(null);
+        } else if (postData.status !== 'published' && !postData.is_published) {
+          // Se o post não estiver publicado, mostrar erro 404
+          console.warn("BlogDetail: Post não publicado:", postData.status);
+          setError("Artigo não encontrado.");
+          setPost(null);
+        } else {
+          setPost(postData);
+        }
+        
+        // Garantir que postsData é um array e filtrar apenas posts publicados
+        const posts = Array.isArray(postsData) ? postsData : postsData.results || [];
+        console.log("BlogDetail: posts para relacionados:", posts);
+        
+        const publishedPosts = posts.filter(p => 
+          p.status === 'published' || p.is_published === true
+        );
+        
+        const related = publishedPosts
+          .filter((p: any) => p.slug !== slug)
+          .slice(0, 3);
+        setRelatedPosts(related);
+        
+      } catch (err: any) {
+        console.error('BlogDetail: Erro detalhado no BlogDetail:', err);
+        setError("Erro ao carregar o artigo");
+        setPost(null);
+      } finally {
+        setLoading(false);
+        console.log("BlogDetail: loading finalizado. post:", post, "error:", error);
+      }
+    }
+    
+    loadData();
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <div className="container mx-auto px-4 py-16 text-center">
+          <span>Carregando artigo...</span>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !post) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <div className="container mx-auto px-4 py-16 text-center">
+          <h1 className="text-2xl font-bold text-red-500">Artigo não encontrado</h1>
+          <p className="text-muted-foreground mt-4">{error || "O artigo que você procura não existe."}</p>
+          <Link to="/blog">
+            <Button className="mt-6">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar ao Blog
+            </Button>
+          </Link>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   // Dados dos artigos do blog (normalmente viriam de uma API)
   const blogPosts = [
@@ -195,13 +291,41 @@ const BlogDetail = () => {
     }
   ];
 
-  // Encontrar o artigo atual
-  const currentPost = blogPosts.find(post => post.id === parseInt(id || "1"));
-  
-  // Artigos relacionados (excluindo o atual)
-  const relatedPosts = blogPosts.filter(post => post.id !== parseInt(id || "1")).slice(0, 3);
 
-  if (!currentPost) {
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <div className="container mx-auto px-4 lg:px-8 py-20 text-center">
+          <div className="flex items-center justify-center space-x-2">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <span>Carregando artigo...</span>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <div className="container mx-auto px-4 lg:px-8 py-20 text-center">
+          <h1 className="text-3xl font-bold text-muted-foreground mb-4">{error}</h1>
+          <Link to="/blog">
+            <Button className="mt-4">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar ao Blog
+            </Button>
+          </Link>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!post) {
     return (
       <div className="min-h-screen">
         <Header />
@@ -232,7 +356,7 @@ const BlogDetail = () => {
               <span>/</span>
               <Link to="/blog" className="hover:text-primary">Blog</Link>
               <span>/</span>
-              <span className="text-foreground">{currentPost.title}</span>
+              <span className="text-foreground">{post.title}</span>
             </div>
             <Link to="/blog">
               <Button variant="outline" size="sm">
@@ -251,34 +375,39 @@ const BlogDetail = () => {
             {/* Categoria e data */}
             <div className="flex items-center space-x-4 mb-6">
               <Badge variant="secondary" className="bg-primary/10 text-primary">
-                {currentPost.category}
+                {post.category?.name || 'Sem categoria'}
               </Badge>
               <div className="flex items-center text-sm text-muted-foreground space-x-4">
                 <div className="flex items-center space-x-1">
                   <Calendar className="h-4 w-4" />
-                  <span>{currentPost.date}</span>
+                  <span>{new Date(post.created_at).toLocaleDateString('pt-BR')}</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <Clock className="h-4 w-4" />
-                  <span>{currentPost.readTime}</span>
+                  <span>
+                    {post.read_time && post.read_time > 0 
+                      ? `${post.read_time} min de leitura`
+                      : '5 min de leitura'
+                    }
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Título */}
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-6">
-              {currentPost.title}
+              {post.title}
             </h1>
 
             {/* Autor e ações */}
             <div className="flex items-center justify-between mb-8 pb-6 border-b">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-semibold">
-                  {currentPost.author.split(' ').map(n => n[0]).join('')}
+                  {(post.author?.username || post.author?.full_name || 'A').split(' ').map(n => n[0]).join('')}
                 </div>
                 <div>
-                  <div className="font-semibold">{currentPost.author}</div>
-                  <div className="text-sm text-muted-foreground">{currentPost.authorBio}</div>
+                  <div className="font-semibold">{post.author?.username || post.author?.full_name || 'Autor'}</div>
+                  <div className="text-sm text-muted-foreground">Autor</div>
                 </div>
               </div>
               
@@ -295,11 +424,11 @@ const BlogDetail = () => {
             </div>
 
             {/* Imagem principal */}
-            {currentPost.image && (
+            {post.featured_image && (
               <div className="mb-8">
                 <img 
-                  src={currentPost.image} 
-                  alt={currentPost.title}
+                  src={post.featured_image} 
+                  alt={post.title}
                   className="w-full h-64 md:h-96 object-cover rounded-lg shadow-lg"
                 />
               </div>
@@ -308,20 +437,18 @@ const BlogDetail = () => {
             {/* Conteúdo do artigo */}
             <article className="prose prose-lg max-w-none mb-12">
               <div 
-                dangerouslySetInnerHTML={{ __html: currentPost.content }}
+                dangerouslySetInnerHTML={{ __html: post.content }}
                 className="space-y-6 text-foreground leading-relaxed [&>h2]:text-2xl [&>h2]:font-bold [&>h2]:mt-8 [&>h2]:mb-4 [&>h2]:text-foreground [&>h3]:text-xl [&>h3]:font-semibold [&>h3]:mt-6 [&>h3]:mb-3 [&>h3]:text-foreground [&>p]:mb-4 [&>p]:leading-relaxed [&>ul]:my-4 [&>ul>li]:mb-2 [&>ul>li]:ml-6 [&>blockquote]:border-l-4 [&>blockquote]:border-primary [&>blockquote]:pl-6 [&>blockquote]:italic [&>blockquote]:bg-muted/30 [&>blockquote]:py-4 [&>blockquote]:my-6 [&>blockquote>cite]:block [&>blockquote>cite]:mt-2 [&>blockquote>cite]:text-sm [&>blockquote>cite]:text-muted-foreground [&>blockquote>cite]:not-italic"
               />
             </article>
 
             {/* Tags */}
             <div className="mb-8">
-              <h3 className="text-lg font-semibold mb-3">Tags</h3>
+              <h3 className="text-lg font-semibold mb-3">Categoria</h3>
               <div className="flex flex-wrap gap-2">
-                {currentPost.tags.map((tag, index) => (
-                  <Badge key={index} variant="outline">
-                    {tag}
-                  </Badge>
-                ))}
+                <Badge variant="outline">
+                  {post.category?.name || 'Sem categoria'}
+                </Badge>
               </div>
             </div>
 
@@ -348,44 +475,53 @@ const BlogDetail = () => {
         </div>
       </section>
 
-      {/* Artigos relacionados */}
+      {/* Artigos relacionados - Apenas posts publicados */}
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl font-bold text-center mb-12">Artigos Relacionados</h2>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {relatedPosts.map((post) => (
-                <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  {post.image && (
+              {relatedPosts
+                .filter(relatedPost => relatedPost.status === 'published' || relatedPost.is_published === true)
+                .map((relatedPost) => (
+                <Card key={relatedPost.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  {relatedPost.featured_image && (
                     <div className="h-48 overflow-hidden">
                       <img 
-                        src={post.image} 
-                        alt={post.title}
+                        src={relatedPost.featured_image} 
+                        alt={relatedPost.title}
                         className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       />
                     </div>
                   )}
                   <CardContent className="p-6">
                     <Badge variant="secondary" className="mb-3">
-                      {post.category}
+                      {relatedPost.category?.name || 'Sem categoria'}
                     </Badge>
                     <h3 className="text-xl font-semibold mb-3 line-clamp-2">
-                      {post.title}
+                      {relatedPost.title}
                     </h3>
                     <p className="text-muted-foreground mb-4 line-clamp-3">
-                      {post.excerpt}
+                      {relatedPost.excerpt || relatedPost.content.replace(/<[^>]*>/g, '').substring(0, 150) + '...'}
                     </p>
                     <div className="flex items-center text-sm text-muted-foreground mb-4 space-x-4">
                       <div className="flex items-center space-x-1">
                         <User className="h-3 w-3" />
-                        <span>{post.author}</span>
+                        <span>{relatedPost.author?.username || relatedPost.author?.full_name || 'Autor'}</span>
                       </div>
-                      <span>{post.readTime}</span>
+                      <span>
+                        {relatedPost.read_time && relatedPost.read_time > 0 
+                          ? `${relatedPost.read_time} min de leitura`
+                          : '5 min de leitura'
+                        }
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">{post.date}</span>
-                      <Link to={`/blog/${post.id}`}>
+                      <span className="text-sm text-muted-foreground">
+                        {new Date(relatedPost.created_at).toLocaleDateString('pt-BR')}
+                      </span>
+                      <Link to={`/blog/${relatedPost.slug}`}>
                         <Button variant="ghost" size="sm">
                           Ler mais
                           <ArrowRight className="ml-1 h-3 w-3" />
@@ -396,6 +532,13 @@ const BlogDetail = () => {
                 </Card>
               ))}
             </div>
+            
+            {/* Mensagem se não houver posts relacionados publicados */}
+            {relatedPosts.filter(p => p.status === 'published' || p.is_published === true).length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Nenhum artigo relacionado encontrado.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
