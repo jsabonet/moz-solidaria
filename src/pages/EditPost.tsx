@@ -22,6 +22,9 @@ interface PostFormData {
   excerpt: string;
   category: string;
   featured_image: string;
+  featured_image_caption: string;
+  featured_image_credit: string;
+  featured_image_source_url: string;
   is_published: boolean;
 }
 
@@ -44,6 +47,9 @@ const EditPost: React.FC = () => {
     excerpt: '',
     category: '',
     featured_image: '',
+    featured_image_caption: '',
+    featured_image_credit: '',
+    featured_image_source_url: '',
     is_published: false,
   });
 
@@ -57,6 +63,9 @@ const EditPost: React.FC = () => {
       formData.excerpt !== initialFormData.excerpt ||
       formData.category !== initialFormData.category ||
       formData.featured_image !== initialFormData.featured_image ||
+      formData.featured_image_caption !== initialFormData.featured_image_caption ||
+      formData.featured_image_credit !== initialFormData.featured_image_credit ||
+      formData.featured_image_source_url !== initialFormData.featured_image_source_url ||
       formData.is_published !== initialFormData.is_published
     );
   };
@@ -90,7 +99,7 @@ const EditPost: React.FC = () => {
 
         setPost(post);
 
-        // Preparar dados do formulário
+        // Preparar dados do formulário incluindo créditos
         const initialData = {
           title: post.title ?? '',
           content: post.content ?? '',
@@ -98,6 +107,9 @@ const EditPost: React.FC = () => {
           category: post.category?.id?.toString() ?? 
             (typeof post.category === 'string' ? post.category : ''),
           featured_image: post.featured_image_url ?? post.featured_image ?? '',
+          featured_image_caption: post.featured_image_caption ?? '',
+          featured_image_credit: post.featured_image_credit ?? '',
+          featured_image_source_url: post.featured_image_source_url ?? '',
           is_published: !!(post.is_published ?? (post.status === 'published')),
         };
 
@@ -159,6 +171,9 @@ const EditPost: React.FC = () => {
         excerpt: formData.excerpt,
         category: formData.category ? parseInt(formData.category) : null,
         featured_image: formData.featured_image || null,
+        featured_image_caption: formData.featured_image_caption,
+        featured_image_credit: formData.featured_image_credit,
+        featured_image_source_url: formData.featured_image_source_url,
         // Corrigir lógica de status
         status: publishNow !== undefined 
           ? (publishNow ? 'published' : 'draft')
@@ -577,8 +592,21 @@ const EditPost: React.FC = () => {
                   <ImageUpload
                     value={formData.featured_image}
                     onChange={(url) => setFormData({ ...formData, featured_image: url })}
-                    onClear={() => setFormData({ ...formData, featured_image: '' })}
+                    onClear={() => setFormData({ 
+                      ...formData, 
+                      featured_image: '',
+                      featured_image_caption: '',
+                      featured_image_credit: '',
+                      featured_image_source_url: ''
+                    })}
                     label="Imagem Destacada"
+                    showCredits={true}
+                    caption={formData.featured_image_caption}
+                    credit={formData.featured_image_credit}
+                    sourceUrl={formData.featured_image_source_url}
+                    onCaptionChange={(caption) => setFormData({ ...formData, featured_image_caption: caption })}
+                    onCreditChange={(credit) => setFormData({ ...formData, featured_image_credit: credit })}
+                    onSourceUrlChange={(url) => setFormData({ ...formData, featured_image_source_url: url })}
                   />
                   
                   <div className="mt-3 pt-3 border-t">

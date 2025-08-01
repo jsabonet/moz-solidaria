@@ -1,7 +1,7 @@
 import requests
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import BlogPost, Category, Tag, Comment, Newsletter
+from .models import BlogPost, Category, Tag, Comment, Newsletter, ImageCredit
 
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -59,6 +59,15 @@ class TagSerializer(serializers.ModelSerializer):
         return obj.blogpost_set.filter(status='published').count()
 
 
+class ImageCreditSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ImageCredit
+        fields = [
+            'id', 'image_url', 'image_filename', 'caption', 'credit', 
+            'source_url', 'photographer', 'license_type', 'alt_text', 'created_at'
+        ]
+
+
 class BlogPostListSerializer(serializers.ModelSerializer):
     author = AuthorSerializer(read_only=True)
     category = CategorySerializer(read_only=True)
@@ -102,14 +111,16 @@ class BlogPostDetailSerializer(serializers.ModelSerializer):
     absolute_url = serializers.SerializerMethodField()
     comments_count = serializers.SerializerMethodField()
     is_published = serializers.SerializerMethodField()
+    image_credits = ImageCreditSerializer(many=True, read_only=True)
     
     class Meta:
         model = BlogPost
         fields = [
             'id', 'title', 'slug', 'excerpt', 'content', 'author', 'category', 
-            'tags', 'featured_image_url', 'status', 'is_published', 'is_featured', 'meta_description',
+            'tags', 'featured_image_url', 'featured_image_caption', 'featured_image_credit',
+            'featured_image_source_url', 'status', 'is_published', 'is_featured', 'meta_description',
             'meta_keywords', 'created_at', 'updated_at', 'published_at', 
-            'views_count', 'read_time', 'absolute_url', 'comments_count'
+            'views_count', 'read_time', 'absolute_url', 'comments_count', 'image_credits'
         ]
     
     def get_is_published(self, obj):
@@ -142,7 +153,8 @@ class BlogPostCreateUpdateSerializer(serializers.ModelSerializer):
         model = BlogPost
         fields = [
             'title', 'slug', 'excerpt', 'content', 'author', 'category', 'tags',
-            'featured_image', 'status', 'is_featured', 'meta_description',
+            'featured_image', 'featured_image_caption', 'featured_image_credit',
+            'featured_image_source_url', 'status', 'is_featured', 'meta_description',
             'meta_keywords', 'published_at'
         ]
         extra_kwargs = {

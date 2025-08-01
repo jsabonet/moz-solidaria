@@ -272,10 +272,8 @@ const Dashboard: React.FC = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={post.status === 'published' ? "default" : "secondary"}>
-                          {post.status === 'published' ? 'Publicado' : 
-                           post.status === 'draft' ? 'Rascunho' : 
-                           post.status === 'archived' ? 'Arquivado' : 'Rascunho'}
+                        <Badge variant={post.is_published ? "default" : "secondary"}>
+                          {post.is_published ? 'Publicado' : 'Rascunho'}
                         </Badge>
                       </TableCell>
                       <TableCell>

@@ -22,6 +22,9 @@ interface PostFormData {
   excerpt: string;
   category: string;
   featured_image: string;
+  featured_image_caption: string;
+  featured_image_credit: string;
+  featured_image_source_url: string;
   is_published: boolean;
 }
 
@@ -41,6 +44,9 @@ const CreatePost: React.FC = () => {
     excerpt: '',
     category: '',
     featured_image: '',
+    featured_image_caption: '',
+    featured_image_credit: '',
+    featured_image_source_url: '',
     is_published: false,
   });
 
@@ -116,6 +122,9 @@ const CreatePost: React.FC = () => {
         excerpt: formData.excerpt,
         category: formData.category ? parseInt(formData.category) : null,
         featured_image: formData.featured_image || null,
+        featured_image_caption: formData.featured_image_caption,
+        featured_image_credit: formData.featured_image_credit,
+        featured_image_source_url: formData.featured_image_source_url,
         // Corrigir lógica de status
         status: publishNow ? 'published' : 'draft',
         is_published: publishNow,
@@ -163,6 +172,9 @@ const CreatePost: React.FC = () => {
         excerpt: '',
         category: '',
         featured_image: '',
+        featured_image_caption: '',
+        featured_image_credit: '',
+        featured_image_source_url: '',
         is_published: false,
       });
       localStorage.removeItem('draft_post');
@@ -301,11 +313,24 @@ const CreatePost: React.FC = () => {
                           <p className="text-lg text-muted-foreground mb-4">{formData.excerpt}</p>
                         )}
                         {formData.featured_image && (
-                          <img 
-                            src={formData.featured_image} 
-                            alt="Imagem destacada" 
-                            className="w-full h-64 object-cover rounded-lg mb-4"
-                          />
+                          <div className="mb-4">
+                            <img 
+                              src={formData.featured_image} 
+                              alt={formData.featured_image_caption || "Imagem destacada"} 
+                              className="w-full h-64 object-cover rounded-lg mb-2"
+                            />
+                            {/* Mostrar créditos na preview */}
+                            {(formData.featured_image_caption || formData.featured_image_credit) && (
+                              <div className="text-sm text-muted-foreground space-y-1">
+                                {formData.featured_image_caption && (
+                                  <p className="font-medium">{formData.featured_image_caption}</p>
+                                )}
+                                {formData.featured_image_credit && (
+                                  <p>📸 {formData.featured_image_credit}</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         )}
                         <div 
                           className="prose prose-lg max-w-none"
@@ -369,7 +394,7 @@ const CreatePost: React.FC = () => {
                         value={formData.category} 
                         onValueChange={(value) => setFormData({ ...formData, category: value })}
                         disabled={loadingCategories}
-                        required // Adicionado para acessibilidade, mas validação é feita no handleSubmit
+                        required
                       >
                         <SelectTrigger>
                           <SelectValue placeholder={
@@ -404,8 +429,21 @@ const CreatePost: React.FC = () => {
                       <ImageUpload
                         value={formData.featured_image}
                         onChange={(url) => setFormData({ ...formData, featured_image: url })}
-                        onClear={() => setFormData({ ...formData, featured_image: '' })}
+                        onClear={() => setFormData({ 
+                          ...formData, 
+                          featured_image: '',
+                          featured_image_caption: '',
+                          featured_image_credit: '',
+                          featured_image_source_url: ''
+                        })}
                         label="Imagem Destacada"
+                        showCredits={true}
+                        caption={formData.featured_image_caption}
+                        credit={formData.featured_image_credit}
+                        sourceUrl={formData.featured_image_source_url}
+                        onCaptionChange={(caption) => setFormData({ ...formData, featured_image_caption: caption })}
+                        onCreditChange={(credit) => setFormData({ ...formData, featured_image_credit: credit })}
+                        onSourceUrlChange={(url) => setFormData({ ...formData, featured_image_source_url: url })}
                       />
                       
                       <div className="mt-3 pt-3 border-t">
@@ -453,6 +491,28 @@ const CreatePost: React.FC = () => {
                         }
                       </Badge>
                     </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Imagem Principal:</span>
+                      <Badge variant={formData.featured_image ? "default" : "secondary"}>
+                        {formData.featured_image ? 'Definida' : 'Não definida'}
+                      </Badge>
+                    </div>
+                    {formData.featured_image && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-sm">Legenda:</span>
+                          <Badge variant={formData.featured_image_caption ? "default" : "secondary"}>
+                            {formData.featured_image_caption ? 'Sim' : 'Não'}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm">Crédito:</span>
+                          <Badge variant={formData.featured_image_credit ? "default" : "secondary"}>
+                            {formData.featured_image_credit ? 'Sim' : 'Não'}
+                          </Badge>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </CardContent>
               </Card>

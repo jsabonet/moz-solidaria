@@ -12,10 +12,11 @@ from django.conf import settings
 from rest_framework.views import APIView
 from slugify import slugify
 
-from .models import BlogPost, Category, Tag, Comment, Newsletter
+from .models import BlogPost, Category, Tag, Comment, Newsletter, ImageCredit
 from .serializers import (
     BlogPostListSerializer, BlogPostDetailSerializer, BlogPostCreateUpdateSerializer,
-    CategorySerializer, TagSerializer, CommentSerializer, NewsletterSerializer
+    CategorySerializer, TagSerializer, CommentSerializer, NewsletterSerializer,
+    ImageCreditSerializer
 )
 from .filters import BlogPostFilter
 from .permissions import IsAuthorOrReadOnly
@@ -353,16 +354,63 @@ class NewsletterViewSet(viewsets.ModelViewSet):
             )
 
 
+class ImageCreditViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gerenciar créditos de imagens
+    """
+    serializer_class = ImageCreditSerializer
+    authentication_classes = []
+    permission_classes = []
+    
+    def get_queryset(self):
+        post_slug = self.kwargs.get('post_slug')
+        if post_slug:
+            post = get_object_or_404(BlogPost, slug=post_slug)
+            return ImageCredit.objects.filter(post=post)
+        return ImageCredit.objects.none()
+    
+    def perform_create(self, serializer):
+        post_slug = self.kwargs.get('post_slug')
+        if post_slug:
+            post = get_object_or_404(BlogPost, slug=post_slug)
+            serializer.save(post=post)
+
 class ImageUploadView(APIView):
     parser_classes = [MultiPartParser, FormParser]
-    authentication_classes = []  # <--- Adicionado: Remove autenticação obrigatória
-    permission_classes = []      # <--- Já estava correto
+    authentication_classes = []
+    permission_classes = []
 
     def post(self, request, *args, **kwargs):
         image = request.FILES.get('image')
         if not image:
             return Response({'error': 'Nenhuma imagem enviada.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Extrair informações de crédito dos metadados da requisição
+        caption = request.data.get('caption', '')
+        credit = request.data.get('credit', '')
+        source_url = request.data.get('source_url', '')
+        photographer = request.data.get('photographer', '')
+        license_type = request.data.get('license_type', '')
+        alt_text = request.data.get('alt_text', '')
+        
         # Salva a imagem na pasta MEDIA_ROOT/uploads/
         path = default_storage.save(f'uploads/{image.name}', image)
         image_url = settings.MEDIA_URL + path
-        return Response({'url': request.build_absolute_uri(image_url)}, status=status.HTTP_201_CREATED)
+        full_image_url = request.build_absolute_uri(image_url)
+        
+        # Preparar resposta com informações de crédito
+        response_data = {
+            'url': full_image_url,
+            'filename': image.name,
+            'size': image.size,
+            'credit_info': {
+                'caption': caption,
+                'credit': credit,
+                'source_url': source_url,
+                'photographer': photographer,
+                'license_type': license_type,
+                'alt_text': alt_text,
+            }
+        }
+        
+        return Response(response_data, status=status.HTTP_201_CREATED)

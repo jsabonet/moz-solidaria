@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { imageUploadService } from '@/lib/imageUpload';
+import FeaturedImageCredit from './FeaturedImageCredit';
 
 interface ImageUploadProps {
   value?: string;
@@ -11,6 +12,14 @@ interface ImageUploadProps {
   onClear: () => void;
   label?: string;
   className?: string;
+  // Novos props para créditos
+  caption?: string;
+  credit?: string;
+  sourceUrl?: string;
+  onCaptionChange?: (caption: string) => void;
+  onCreditChange?: (credit: string) => void;
+  onSourceUrlChange?: (url: string) => void;
+  showCredits?: boolean;
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
@@ -18,7 +27,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   onChange,
   onClear,
   label = "Imagem",
-  className = ""
+  className = "",
+  caption = "",
+  credit = "",
+  sourceUrl = "",
+  onCaptionChange = () => {},
+  onCreditChange = () => {},
+  onSourceUrlChange = () => {},
+  showCredits = false
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -101,6 +117,12 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const handleRemove = () => {
     onClear();
     setUploadProvider('');
+    // Limpar também os créditos
+    if (showCredits) {
+      onCaptionChange('');
+      onCreditChange('');
+      onSourceUrlChange('');
+    }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -116,7 +138,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             <div className="relative">
               <img
                 src={value}
-                alt="Preview"
+                alt={caption || "Preview"}
                 className="w-full h-48 object-cover rounded-lg"
                 onError={(e) => {
                   e.currentTarget.src = '/placeholder.svg';
@@ -136,7 +158,26 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                   📤 {uploadProvider}
                 </div>
               )}
+              
+              {/* Mostrar legenda se existir */}
+              {caption && (
+                <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded max-w-32 truncate">
+                  {caption}
+                </div>
+              )}
             </div>
+            
+            {/* Mostrar créditos abaixo da imagem se habilitado */}
+            {showCredits && (
+              <FeaturedImageCredit
+                caption={caption}
+                credit={credit}
+                sourceUrl={sourceUrl}
+                onCaptionChange={onCaptionChange}
+                onCreditChange={onCreditChange}
+                onSourceUrlChange={onSourceUrlChange}
+              />
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -168,9 +209,12 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                     <p className="text-xs text-muted-foreground">
                       PNG, JPG, GIF, WEBP até 10MB
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      ✨ Upload automático com múltiplos providers
-                    </p>
+                    {showCredits && (
+                      <p className="text-xs text-primary flex items-center justify-center gap-1">
+                        <Info className="h-3 w-3" />
+                        Inclua informações de crédito após o upload
+                      </p>
+                    )}
                   </div>
                 </>
               )}

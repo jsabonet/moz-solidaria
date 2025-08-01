@@ -72,6 +72,9 @@ class BlogPost(models.Model):
     
     # Media
     featured_image = models.ImageField(upload_to='blog_images/', null=True, blank=True, verbose_name="Imagem em destaque")
+    featured_image_caption = models.CharField(max_length=300, blank=True, verbose_name="Legenda da imagem principal")
+    featured_image_credit = models.CharField(max_length=200, blank=True, verbose_name="Crédito da imagem principal")
+    featured_image_source_url = models.URLField(blank=True, verbose_name="URL da fonte da imagem principal")
     
     # Status and visibility
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft', verbose_name="Status")
@@ -170,3 +173,27 @@ class Newsletter(models.Model):
     
     def __str__(self):
         return self.email
+
+
+class ImageCredit(models.Model):
+    """
+    Modelo para gerenciar créditos de imagens dentro do conteúdo dos posts
+    """
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='image_credits', verbose_name="Post")
+    image_url = models.URLField(verbose_name="URL da imagem")
+    image_filename = models.CharField(max_length=255, blank=True, verbose_name="Nome do arquivo")
+    caption = models.CharField(max_length=300, blank=True, verbose_name="Legenda")
+    credit = models.CharField(max_length=200, blank=True, verbose_name="Crédito/Fonte")
+    source_url = models.URLField(blank=True, verbose_name="URL da fonte")
+    photographer = models.CharField(max_length=100, blank=True, verbose_name="Fotógrafo")
+    license_type = models.CharField(max_length=100, blank=True, verbose_name="Tipo de licença")
+    alt_text = models.CharField(max_length=200, blank=True, verbose_name="Texto alternativo")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
+    
+    class Meta:
+        verbose_name = "Crédito de Imagem"
+        verbose_name_plural = "Créditos de Imagens"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Crédito para {self.image_filename or self.image_url[:50]} - {self.post.title}"

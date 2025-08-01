@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import BlogPostViewSet, CategoryViewSet, TagViewSet, NewsletterViewSet, CommentViewSet, ImageUploadView
+from .views import BlogPostViewSet, CategoryViewSet, TagViewSet, NewsletterViewSet, CommentViewSet, ImageUploadView, ImageCreditViewSet
 from . import views
 
 app_name = 'blog'
@@ -50,4 +50,16 @@ urlpatterns = [
     path('posts/<slug:post_slug>/duplicate/', views.BlogPostViewSet.as_view({
         'post': 'duplicate'
     }), name='post-duplicate'),
+    
+    # Image credits nested under posts
+    path('posts/<slug:post_slug>/image-credits/', views.ImageCreditViewSet.as_view({
+        'get': 'list',
+        'post': 'create'
+    }), name='post-image-credits'),
+    path('posts/<slug:post_slug>/image-credits/<int:pk>/', views.ImageCreditViewSet.as_view({
+        'get': 'retrieve',
+        'put': 'update',
+        'patch': 'partial_update',
+        'delete': 'destroy'
+    }), name='post-image-credit-detail'),
 ]

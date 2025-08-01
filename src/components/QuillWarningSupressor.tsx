@@ -6,7 +6,7 @@ let warningsSuppressed = false;
 const suppressQuillWarnings = (): void => {
   if (warningsSuppressed) return;
 
-  // Interceptar console.warn
+  // Interceptar console.warn apenas para mensagens específicas do Quill
   const originalWarn = console.warn;
   console.warn = (...args: unknown[]) => {
     const message = String(args[0] || '');
@@ -15,15 +15,14 @@ const suppressQuillWarnings = (): void => {
       message.includes('DOMNodeInserted') ||
       message.includes('mutation event') ||
       message.includes('MutationEvent') ||
-      message.includes('Support for this event type has been removed') ||
-      (message.includes('deprecated') && message.includes('ReactDOM'))
+      message.includes('Support for this event type has been removed')
     ) {
-      return; // Filtrar completamente estes warnings
+      return; // Filtrar apenas estes warnings específicos
     }
     originalWarn.apply(console, args);
   };
 
-  // Interceptar console.error
+  // Interceptar console.error apenas para erros específicos do Quill
   const originalError = console.error;
   console.error = (...args: unknown[]) => {
     const message = String(args[0] || '');
@@ -33,28 +32,15 @@ const suppressQuillWarnings = (): void => {
       message.includes('mutation event') ||
       message.includes('MutationEvent')
     ) {
-      return; // Filtrar completamente estes erros
+      return; // Filtrar apenas estes erros específicos
     }
     originalError.apply(console, args);
-  };
-
-  // Interceptar window.addEventListener para eventos obsoletos
-  const originalAddEventListener = window.addEventListener;
-  window.addEventListener = function (
-    type: string,
-    listener: EventListenerOrEventListenerObject,
-    options?: boolean | AddEventListenerOptions
-  ) {
-    if (type === 'DOMNodeInserted' || type === 'DOMNodeRemoved') {
-      return; // Ignorar tentativas de adicionar listeners para eventos obsoletos
-    }
-    return originalAddEventListener.call(this, type, listener, options);
   };
 
   warningsSuppressed = true;
 };
 
-// Aplicar supressão imediatamente quando o módulo for carregado
+// Aplicar supressão apenas quando necessário
 if (typeof window !== 'undefined') {
   suppressQuillWarnings();
 }
