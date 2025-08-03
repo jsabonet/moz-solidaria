@@ -1,0 +1,55 @@
+{# Meta tags SEO básicas #}
+<title>{{ post.meta_title|default:post.title }} | Moz Solidária</title>
+<meta name="description" content="{{ post.meta_description|default:post.excerpt }}">
+{% if post.meta_keywords %}
+<meta name="keywords" content="{{ post.meta_keywords }}">
+{% endif %}
+{% if post.canonical_url %}
+<link rel="canonical" href="{{ post.canonical_url }}">
+{% else %}
+<link rel="canonical" href="{{ request.build_absolute_uri:post.get_absolute_url }}">
+{% endif %}
+{% if post.robots_meta %}
+<meta name="robots" content="{{ post.robots_meta }}">
+{% else %}
+<meta name="robots" content="index,follow">
+{% endif %}
+
+{# Open Graph tags #}
+{% for key, value in og_tags.items %}
+    {% if value %}
+        {% if key == 'article:tag' %}
+            {% for tag in value %}
+<meta property="{{ key }}" content="{{ tag }}">
+            {% endfor %}
+        {% else %}
+<meta property="{{ key }}" content="{{ value }}">
+        {% endif %}
+    {% endif %}
+{% endfor %}
+
+{# Twitter Card tags #}
+{% for key, value in twitter_tags.items %}
+    {% if value %}
+<meta name="{{ key }}" content="{{ value }}">
+    {% endif %}
+{% endfor %}
+
+{# Schema.org structured data #}
+<script type="application/ld+json">
+{{ post.get_schema_data|safe }}
+</script>
+
+{# Breadcrumb schema #}
+{% if breadcrumb_schema %}
+<script type="application/ld+json">
+{{ breadcrumb_schema|safe }}
+</script>
+{% endif %}
+
+{# FAQ schema #}
+{% if faq_schema %}
+<script type="application/ld+json">
+{{ faq_schema|safe }}
+</script>
+{% endif %}

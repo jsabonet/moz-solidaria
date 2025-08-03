@@ -118,8 +118,21 @@ class BlogPostDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'slug', 'excerpt', 'content', 'author', 'category', 
             'tags', 'featured_image_url', 'featured_image_caption', 'featured_image_credit',
-            'featured_image_source_url', 'status', 'is_published', 'is_featured', 'meta_description',
-            'meta_keywords', 'created_at', 'updated_at', 'published_at', 
+            'featured_image_source_url', 'status', 'is_published', 'is_featured', 
+            # Campos SEO básicos
+            'meta_title', 'meta_description', 'meta_keywords', 'canonical_url', 'focus_keyword',
+            # Open Graph
+            'og_title', 'og_description', 'og_image', 'og_type',
+            # Twitter
+            'twitter_title', 'twitter_description', 'twitter_card',
+            # Schema.org
+            'schema_type',
+            # SEO Avançado
+            'noindex', 'nofollow', 'robots_txt', 'hashtags',
+            # Análise SEO
+            'seo_score', 'readability_score',
+            # Timestamps e outros
+            'created_at', 'updated_at', 'published_at', 
             'views_count', 'read_time', 'absolute_url', 'comments_count', 'image_credits'
         ]
     
@@ -154,8 +167,13 @@ class BlogPostCreateUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'title', 'slug', 'excerpt', 'content', 'author', 'category', 'tags',
             'featured_image', 'featured_image_caption', 'featured_image_credit',
-            'featured_image_source_url', 'status', 'is_featured', 'meta_description',
-            'meta_keywords', 'published_at'
+            'featured_image_source_url', 'status', 'is_featured', 
+            # Campos SEO
+            'meta_title', 'meta_description', 'meta_keywords', 'canonical_url', 'focus_keyword',
+            'og_title', 'og_description', 'og_image', 'og_type',
+            'twitter_title', 'twitter_description', 'twitter_card',
+            'schema_type', 'noindex', 'nofollow', 'robots_txt', 'hashtags',
+            'published_at'
         ]
         extra_kwargs = {
             'slug': {'required': False},
