@@ -1,11 +1,21 @@
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, logout, isAuthenticated, isStaff } = useAuth();
 
   const isActivePage = (path: string) => {
     return location.pathname === path;
@@ -47,14 +57,73 @@ const Header = () => {
                 {item.label}
               </Link>
             ))}
-            <Link to="/dashboard">
-              <Button 
-                variant="outline" 
-                size="sm"
-              >
-                Dashboard
-              </Button>
-            </Link>
+            
+            {/* Dashboard - apenas para administradores */}
+            {isAuthenticated && isStaff && (
+              <Link to="/dashboard">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                >
+                  Dashboard
+                </Button>
+              </Link>
+            )}
+
+            {/* Portal de Comunidade - apenas para usuários não-admin */}
+            {isAuthenticated && !isStaff && (
+              <Link to="/client-area">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                >
+                  Portal de Comunidade
+                </Button>
+              </Link>
+            )}
+
+            {/* Login/Logout */}
+            {isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                    <User className="h-4 w-4" />
+                    <span>{user?.username}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {/* Portal de Comunidade - apenas para usuários não-admin */}
+                  {!isStaff && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/client-area">Portal de Comunidade</Link>
+                    </DropdownMenuItem>
+                  )}
+                  {/* Dashboard - apenas para administradores */}
+                  {isStaff && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/dashboard">Dashboard</Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={logout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sair</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link to="/login">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Entrar
+                </Button>
+              </Link>
+            )}
+            
             <Link to="/doacao">
               <Button 
                 variant="default" 
@@ -95,17 +164,67 @@ const Header = () => {
                   {item.label}
                 </Link>
               ))}
+              
+              {/* Dashboard para mobile - apenas usuários autenticados */}
+              {isAuthenticated && (
+                <div className="px-3 py-2 space-y-2">
+                  <Link to="/client-area" onClick={() => setIsMenuOpen(false)}>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="w-full"
+                    >
+                      Portal de Comunidade
+                    </Button>
+                  </Link>
+                  {isStaff && (
+                    <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="w-full"
+                      >
+                        Dashboard
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              )}
+
+              {/* Login/Logout para mobile */}
               <div className="px-3 py-2">
-                <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="w-full mb-2"
-                  >
-                    Dashboard
-                  </Button>
-                </Link>
+                {isAuthenticated ? (
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">
+                      Olá, {user?.username}
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        logout();
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sair
+                    </Button>
+                  </div>
+                ) : (
+                  <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="w-full mb-2"
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Entrar
+                    </Button>
+                  </Link>
+                )}
               </div>
+              
               <div className="px-3 py-2">
                 <Link to="/doacao" onClick={() => setIsMenuOpen(false)}>
                   <Button 

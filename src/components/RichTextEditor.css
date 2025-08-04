@@ -22,6 +22,11 @@
   background: hsl(var(--muted));
   border: none;
   padding: 0.5rem 1rem;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  height: auto !important;
+  overflow: visible !important;
 }
 
 .ql-container.ql-snow {

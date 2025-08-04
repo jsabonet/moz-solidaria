@@ -1,0 +1,29 @@
+{
+  "name": "Moz Solidária",
+  "short_name": "MozSolidaria",
+  "description": "Plataforma de solidariedade e apoio comunitário em Moçambique",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#dc2626",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "logo-moz-solidaria-v2.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "logo-moz-solidaria-v2.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["social", "utilities"],
+  "lang": "pt-PT",
+  "dir": "ltr",
+  "scope": "/",
+  "prefer_related_applications": false
+}

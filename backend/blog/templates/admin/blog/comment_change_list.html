@@ -1,0 +1,122 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static admin_list %}
+
+{% block content_title %}
+    <h1>Gestão de Comentários</h1>
+    <p class="help">Modere, aprove e gerencie todos os comentários do blog</p>
+{% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <style>
+        .stats-dashboard {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .stat-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        .pending { color: #f39c12; }
+        .approved { color: #27ae60; }
+        .total { color: #3498db; }
+        .recent { color: #9b59b6; }
+        
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .quick-actions a {
+            padding: 8px 16px;
+            background: #007cba;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .quick-actions a:hover {
+            background: #005a87;
+        }
+        .quick-actions .pending-action {
+            background: #f39c12;
+        }
+        .quick-actions .approved-action {
+            background: #27ae60;
+        }
+    </style>
+{% endblock %}
+
+{% block result_list %}
+    <div class="stats-dashboard">
+        <h2>📊 Estatísticas de Comentários</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number total">{{ total_comments|default:0 }}</div>
+                <div class="stat-label">Total de Comentários</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number pending">{{ pending_comments|default:0 }}</div>
+                <div class="stat-label">⏳ Aguardando Aprovação</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number approved">{{ approved_comments|default:0 }}</div>
+                <div class="stat-label">✅ Aprovados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number recent">{{ recent_comments|default:0 }}</div>
+                <div class="stat-label">📅 Últimos 7 dias</div>
+            </div>
+        </div>
+        
+        <div class="quick-actions">
+            <a href="?is_approved__exact=0" class="pending-action">
+                ⏳ Ver Pendentes ({{ pending_comments|default:0 }})
+            </a>
+            <a href="?is_approved__exact=1" class="approved-action">
+                ✅ Ver Aprovados ({{ approved_comments|default:0 }})
+            </a>
+            <a href="?created_at__gte={{ recent_date }}">
+                📅 Ver Recentes
+            </a>
+            <a href="{% url 'admin:blog_comment_add' %}">
+                ➕ Adicionar Comentário
+            </a>
+        </div>
+    </div>
+    
+    {% if pending_comments > 0 %}
+        <div class="messagelist">
+            <div class="warning">
+                <strong>⚠️ Atenção:</strong> Existem {{ pending_comments }} comentário(s) aguardando sua aprovação.
+                <a href="?is_approved__exact=0" style="margin-left: 10px;">Ver agora »</a>
+            </div>
+        </div>
+    {% endif %}
+    
+    {{ block.super }}
+{% endblock %}

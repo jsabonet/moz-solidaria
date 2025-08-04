@@ -506,14 +506,54 @@ class BlogPost(models.Model):
         self.views_count += 1
         self.save(update_fields=['views_count'])
 
+    @property
+    def likes_count(self):
+        """Get total number of likes"""
+        return self.likes.count()
+    
+    @property
+    def shares_count(self):
+        """Get total number of shares"""
+        return self.shares.count()
+    
+    @property
+    def comments_count(self):
+        """Get total number of approved comments (excluding replies)"""
+        return self.comments.filter(is_approved=True, parent__isnull=True).count()
+    
+    @property
+    def total_comments_count(self):
+        """Get total number of approved comments (including replies)"""
+        return self.comments.filter(is_approved=True).count()
+    
+    def is_liked_by_user(self, user):
+        """Check if a specific user has liked this post"""
+        if not user.is_authenticated:
+            return False
+        return self.likes.filter(user=user).exists()
+    
+    def toggle_like(self, user):
+        """Toggle like status for a user. Returns True if liked, False if unliked"""
+        if not user.is_authenticated:
+            return False
+        
+        like, created = self.likes.get_or_create(user=user)
+        if not created:
+            like.delete()
+            return False
+        return True
+
 
 class Comment(models.Model):
     post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='comments', verbose_name="Post")
+    author = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Autor")
     author_name = models.CharField(max_length=100, verbose_name="Nome do autor")
     author_email = models.EmailField(verbose_name="Email do autor")
     content = models.TextField(verbose_name="Comentário")
     is_approved = models.BooleanField(default=False, verbose_name="Aprovado")
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies', verbose_name="Resposta para")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
     
     class Meta:
         verbose_name = "Comentário"
@@ -522,6 +562,55 @@ class Comment(models.Model):
     
     def __str__(self):
         return f'Comentário de {self.author_name} em {self.post.title}'
+
+    @property
+    def is_reply(self):
+        return self.parent is not None
+
+
+class Like(models.Model):
+    """Modelo para curtidas em posts"""
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='likes', verbose_name="Post")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Usuário")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Curtido em")
+    
+    class Meta:
+        verbose_name = "Curtida"
+        verbose_name_plural = "Curtidas"
+        unique_together = ('post', 'user')  # Um usuário só pode curtir uma vez
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f'{self.user.username} curtiu {self.post.title}'
+
+
+class Share(models.Model):
+    """Modelo para compartilhamentos de posts"""
+    SHARE_TYPES = [
+        ('facebook', 'Facebook'),
+        ('twitter', 'Twitter'),
+        ('linkedin', 'LinkedIn'),
+        ('whatsapp', 'WhatsApp'),
+        ('email', 'Email'),
+        ('copy_link', 'Copiar Link'),
+        ('other', 'Outro'),
+    ]
+    
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='shares', verbose_name="Post")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Usuário")
+    share_type = models.CharField(max_length=20, choices=SHARE_TYPES, verbose_name="Tipo de compartilhamento")
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name="Endereço IP")
+    user_agent = models.TextField(blank=True, verbose_name="User Agent")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Compartilhado em")
+    
+    class Meta:
+        verbose_name = "Compartilhamento"
+        verbose_name_plural = "Compartilhamentos"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        user_name = self.user.username if self.user else "Anônimo"
+        return f'{user_name} compartilhou {self.post.title} via {self.get_share_type_display()}'
 
 
 class Newsletter(models.Model):

@@ -13,7 +13,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 const Dashboard: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const location = useLocation();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -31,10 +31,9 @@ const Dashboard: React.FC = () => {
   }, [location.state]);
 
   useEffect(() => {
-    if (user) {
-      loadData();
-    }
-  }, [user]);
+    // Carregar dados sempre, já que a rota é protegida
+    loadData();
+  }, []);
 
   const loadData = async () => {
     try {
@@ -63,23 +62,14 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  if (!user) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-md mx-auto">
-            <Card>
-              <CardHeader>
-                <CardTitle>Acesso ao Dashboard</CardTitle>
-                <CardDescription>
-                  Faça login para acessar o painel administrativo
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <LoginForm />
-              </CardContent>
-            </Card>
+        <div className="container mx-auto px-4 py-8 text-center">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <span className="text-muted-foreground">Carregando dados do dashboard...</span>
           </div>
         </div>
         <Footer />

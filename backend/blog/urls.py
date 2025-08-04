@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import BlogPostViewSet, CategoryViewSet, TagViewSet, NewsletterViewSet, CommentViewSet, ImageUploadView, ImageCreditViewSet
+from .admin_views import CommentAdminViewSet, SocialStatsViewSet
 from . import views
 
 app_name = 'blog'
@@ -10,6 +11,10 @@ router.register(r'posts', views.BlogPostViewSet, basename='blogpost')
 router.register(r'categories', views.CategoryViewSet, basename='category')
 router.register(r'tags', views.TagViewSet, basename='tag')
 router.register(r'newsletter', views.NewsletterViewSet, basename='newsletter')
+
+# Admin routes (requer permissões de admin)
+router.register(r'admin/comments', CommentAdminViewSet, basename='admin-comments')
+router.register(r'admin/social-stats', SocialStatsViewSet, basename='admin-social-stats')
 
 # Nested routes for comments
 urlpatterns = [

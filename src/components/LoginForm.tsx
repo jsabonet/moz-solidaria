@@ -1,5 +1,6 @@
 // src/components/LoginForm.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,12 +12,36 @@ import { Heart, Loader2 } from "lucide-react";
 const LoginForm = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const { login, loading, error } = useAuth();
+  const { login, loading, error, isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirecionamento após login bem-sucedido
+  useEffect(() => {
+    console.log('🔍 LoginForm - Estado auth:', { isAuthenticated, user });
+    if (isAuthenticated && user) {
+      // Verificar se há uma página de origem para redirecionar
+      let targetPath = location.state?.from?.pathname;
+      
+      // Se não há página de origem, definir destino baseado no tipo de usuário
+      if (!targetPath) {
+        if (user.is_staff || user.is_superuser) {
+          targetPath = '/dashboard';
+        } else {
+          targetPath = '/client-area';
+        }
+      }
+      
+      console.log('🚀 LoginForm - Redirecionando para:', targetPath);
+      navigate(targetPath, { replace: true });
+    }
+  }, [isAuthenticated, user, navigate, location.state]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await login(username, password);
+      // O redirecionamento será feito pelo useEffect acima
     } catch (err) {
       // O erro já está sendo gerenciado pelo contexto
     }

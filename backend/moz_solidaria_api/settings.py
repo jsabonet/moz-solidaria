@@ -42,14 +42,19 @@ INSTALLED_APPS = [
     
     # Third party apps
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
     'django_filters',
     'rest_framework_simplejwt',
     'django_extensions',
+    'channels',
     
     # Local apps
     'core',
     'blog',
+    'client_area',
+    'donations',
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -64,6 +69,17 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'moz_solidaria_api.urls'
+
+# Channels configuration
+ASGI_APPLICATION = 'moz_solidaria_api.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('127.0.0.1', 6379)],
+        },
+    },
+}
 
 TEMPLATES = [
     {
@@ -143,11 +159,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Django REST Framework Configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
@@ -188,7 +205,7 @@ SIMPLE_JWT = {
 }
 
 # CORS Configuration
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:8000,http://127.0.0.1:8000').split(',')
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:8000,http://127.0.0.1:8000,http://localhost:8081,http://127.0.0.1:8081').split(',')
 
 CORS_ALLOW_CREDENTIALS = True
 

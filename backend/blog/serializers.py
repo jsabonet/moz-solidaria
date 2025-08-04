@@ -1,7 +1,7 @@
 import requests
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import BlogPost, Category, Tag, Comment, Newsletter, ImageCredit
+from .models import BlogPost, Category, Tag, Comment, Newsletter, ImageCredit, Like, Share
 
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -75,6 +75,10 @@ class BlogPostListSerializer(serializers.ModelSerializer):
     featured_image_url = serializers.SerializerMethodField()
     absolute_url = serializers.SerializerMethodField()
     is_published = serializers.SerializerMethodField()
+    likes_count = serializers.ReadOnlyField()
+    shares_count = serializers.ReadOnlyField()
+    comments_count = serializers.ReadOnlyField()
+    is_liked_by_user = serializers.SerializerMethodField()
     
     class Meta:
         model = BlogPost
@@ -82,6 +86,7 @@ class BlogPostListSerializer(serializers.ModelSerializer):
             'id', 'title', 'slug', 'excerpt', 'author', 'category', 'tags',
             'featured_image_url', 'status', 'is_published', 'is_featured', 'created_at', 
             'updated_at', 'published_at', 'views_count', 'read_time',
+            'likes_count', 'shares_count', 'comments_count', 'is_liked_by_user',
             'absolute_url'
         ]
     
@@ -102,6 +107,12 @@ class BlogPostListSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(obj.get_absolute_url())
         return obj.get_absolute_url()
 
+    def get_is_liked_by_user(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.is_liked_by_user(request.user)
+        return False
+
 
 class BlogPostDetailSerializer(serializers.ModelSerializer):
     author = AuthorSerializer(read_only=True)
@@ -112,6 +123,12 @@ class BlogPostDetailSerializer(serializers.ModelSerializer):
     comments_count = serializers.SerializerMethodField()
     is_published = serializers.SerializerMethodField()
     image_credits = ImageCreditSerializer(many=True, read_only=True)
+    
+    # Campos de interação social
+    likes_count = serializers.ReadOnlyField()
+    shares_count = serializers.ReadOnlyField()
+    total_comments_count = serializers.ReadOnlyField()
+    is_liked_by_user = serializers.SerializerMethodField()
     
     class Meta:
         model = BlogPost
@@ -131,6 +148,8 @@ class BlogPostDetailSerializer(serializers.ModelSerializer):
             'noindex', 'nofollow', 'robots_txt', 'hashtags',
             # Análise SEO
             'seo_score', 'readability_score',
+            # Interações sociais
+            'likes_count', 'shares_count', 'total_comments_count', 'is_liked_by_user',
             # Timestamps e outros
             'created_at', 'updated_at', 'published_at', 
             'views_count', 'read_time', 'absolute_url', 'comments_count', 'image_credits'
@@ -155,6 +174,12 @@ class BlogPostDetailSerializer(serializers.ModelSerializer):
     
     def get_comments_count(self, obj):
         return obj.comments.filter(is_approved=True).count()
+
+    def get_is_liked_by_user(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.is_liked_by_user(request.user)
+        return False
 
 
 class BlogPostCreateUpdateSerializer(serializers.ModelSerializer):
@@ -327,6 +352,87 @@ class NewsletterSerializer(serializers.ModelSerializer):
                 except requests.RequestException as e:
                     print(f"❌ Erro de rede ao baixar imagem: {e}")
                 except Exception as e:
-                    print(f"❌ Erro inesperado ao baixar imagem: {e}")
+                        print(f"❌ Erro inesperado ao baixar imagem: {e}")
                     
         return super().to_internal_value(data)
+
+
+class LikeSerializer(serializers.ModelSerializer):
+    user = AuthorSerializer(read_only=True)
+    
+    class Meta:
+        model = Like
+        fields = ['id', 'user', 'created_at']
+        read_only_fields = ['user', 'created_at']
+
+
+class ShareSerializer(serializers.ModelSerializer):
+    user = AuthorSerializer(read_only=True)
+    share_type_display = serializers.CharField(source='get_share_type_display', read_only=True)
+    
+    class Meta:
+        model = Share
+        fields = ['id', 'user', 'share_type', 'share_type_display', 'created_at']
+        read_only_fields = ['user', 'created_at', 'ip_address', 'user_agent']
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = AuthorSerializer(read_only=True)
+    replies = serializers.SerializerMethodField()
+    replies_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Comment
+        fields = [
+            'id', 'author', 'author_name', 'author_email', 'content', 
+            'is_approved', 'parent', 'created_at', 'updated_at',
+            'replies', 'replies_count', 'is_reply'
+        ]
+        read_only_fields = ['author', 'is_approved', 'created_at', 'updated_at']
+    
+    def get_replies(self, obj):
+        if obj.replies.exists():
+            replies = obj.replies.filter(is_approved=True)
+            return CommentSerializer(replies, many=True, context=self.context).data
+        return []
+    
+    def get_replies_count(self, obj):
+        return obj.replies.filter(is_approved=True).count()
+    
+    def create(self, validated_data):
+        # Associar usuário autenticado se disponível
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            validated_data['author'] = request.user
+            validated_data['author_name'] = request.user.get_full_name() or request.user.username
+            validated_data['author_email'] = request.user.email
+        
+        return super().create(validated_data)
+
+
+class CommentAdminSerializer(serializers.ModelSerializer):
+    """Serializer especial para admin com informações do post"""
+    author = AuthorSerializer(read_only=True)
+    post = serializers.SerializerMethodField()
+    replies_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Comment
+        fields = [
+            'id', 'author', 'author_name', 'author_email', 'content', 
+            'is_approved', 'parent', 'post', 'created_at', 'updated_at',
+            'replies_count', 'is_reply'
+        ]
+        read_only_fields = ['author', 'created_at', 'updated_at']
+    
+    def get_post(self, obj):
+        if obj.post:
+            return {
+                'id': obj.post.id,
+                'title': obj.post.title,
+                'slug': obj.post.slug
+            }
+        return None
+    
+    def get_replies_count(self, obj):
+        return obj.replies.count()

@@ -4,6 +4,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
+import PostKeywords from "@/components/PostKeywords";
+import PostHashtags from "@/components/PostHashtags";
+import SocialInteractions from "@/components/SocialInteractions";
+import Comments from "@/components/Comments";
 import { Calendar, User, ArrowLeft, Share2, Heart, MessageCircle, ArrowRight, Clock } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
@@ -15,6 +20,16 @@ const BlogDetail = () => {
   const [relatedPosts, setRelatedPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Função para atualizar post com dados sociais
+  const handlePostUpdate = (updatedPost: any) => {
+    setPost(updatedPost);
+  };
+
+  // Função para atualizar contagem de comentários
+  const handleCommentsUpdate = (count: number) => {
+    setPost((prev: any) => prev ? { ...prev, comments_count: count } : null);
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -35,7 +50,7 @@ const BlogDetail = () => {
         console.log("BlogDetail: postData recebido:", postData);
         console.log("BlogDetail: postsData recebido:", postsData);
 
-        // Debug: Verificar dados da imagem principal
+        // Verificar dados da imagem principal
         if (postData && postData.featured_image) {
           console.log("🖼️ BlogDetail - Imagem principal encontrada:");
           console.log("  - featured_image:", postData.featured_image);
@@ -62,7 +77,7 @@ const BlogDetail = () => {
         const posts = Array.isArray(postsData) ? postsData : postsData.results || [];
         console.log("BlogDetail: posts para relacionados:", posts);
         
-        // Debug: Verificar imagens dos posts relacionados
+        // Verificar imagens dos posts relacionados
         posts.forEach((p, index) => {
           console.log(`🖼️ Post relacionado ${index + 1} (${p.title}):`);
           console.log("  - featured_image:", p.featured_image);
@@ -169,6 +184,13 @@ const BlogDetail = () => {
 
   return (
     <div className="min-h-screen">
+      <SEOHead 
+        post={post}
+        title={post.meta_title || post.title}
+        description={post.meta_description || post.excerpt}
+        image={getImageUrl(post.featured_image, null)}
+        type="article"
+      />
       <Header />
       
       {/* Breadcrumb e botão voltar */}
@@ -235,15 +257,21 @@ const BlogDetail = () => {
                 </div>
               </div>
               
-              <div className="flex items-center space-x-2">
-                <Button variant="outline" size="sm">
-                  <Heart className="h-4 w-4 mr-1" />
-                  Curtir
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Share2 className="h-4 w-4 mr-1" />
-                  Compartilhar
-                </Button>
+              {/* Componente de interações sociais integrado */}
+              <div className="min-w-0">
+                <SocialInteractions 
+                  post={{
+                    id: post.id,
+                    slug: post.slug,
+                    title: post.title,
+                    likes_count: post.likes_count || 0,
+                    shares_count: post.shares_count || 0,
+                    comments_count: post.comments_count || 0,
+                    is_liked_by_user: post.is_liked_by_user || false,
+                  }}
+                  onUpdate={handlePostUpdate}
+                  showComments={false}
+                />
               </div>
             </div>
 
@@ -254,7 +282,7 @@ const BlogDetail = () => {
               </p>
             )}
 
-            {/* Imagem principal com debugging */}
+            {/* Imagem principal */}
             {(post.featured_image || post.featured_image_url) && (
               <div className="mb-8">
                 {(() => {
@@ -294,7 +322,7 @@ const BlogDetail = () => {
 
 
               </div>
-            )}z
+            )}
 
             {/* Conteúdo do artigo */}
             <article className="prose prose-lg max-w-none mb-12">
@@ -303,6 +331,12 @@ const BlogDetail = () => {
                 className="space-y-6 text-foreground leading-relaxed [&>h2]:text-2xl [&>h2]:font-bold [&>h2]:mt-8 [&>h2]:mb-4 [&>h2]:text-foreground [&>h3]:text-xl [&>h3]:font-semibold [&>h3]:mt-6 [&>h3]:mb-3 [&>h3]:text-foreground [&>p]:mb-4 [&>p]:leading-relaxed [&>ul]:my-4 [&>ul>li]:mb-2 [&>ul>li]:ml-6 [&>blockquote]:border-l-4 [&>blockquote]:border-primary [&>blockquote]:pl-6 [&>blockquote]:italic [&>blockquote]:bg-muted/30 [&>blockquote]:py-4 [&>blockquote]:my-6 [&>blockquote>cite]:block [&>blockquote>cite]:mt-2 [&>blockquote>cite]:text-sm [&>blockquote>cite]:text-muted-foreground [&>blockquote>cite]:not-italic"
               />
             </article>
+
+            {/* Keywords e Hashtags */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <PostKeywords post={post} />
+              <PostHashtags post={post} />
+            </div>
 
             {/* Tags */}
             <div className="mb-8">
@@ -316,28 +350,32 @@ const BlogDetail = () => {
 
             <Separator className="my-8" />
 
-            {/* Ações do artigo */}
-            <div className="flex items-center justify-between py-6">
-              <div className="flex items-center space-x-4">
-                <Button variant="outline">
-                  <Heart className="h-4 w-4 mr-2" />
-                  Curtir artigo
-                </Button>
-                <Button variant="outline">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Comentários
-                </Button>
-              </div>
-              <Button variant="outline">
-                <Share2 className="h-4 w-4 mr-2" />
-                Compartilhar
-              </Button>
-            </div>
+            {/* Componente de interações sociais principal */}
+            <SocialInteractions 
+              post={{
+                id: post.id,
+                slug: post.slug,
+                title: post.title,
+                likes_count: post.likes_count || 0,
+                shares_count: post.shares_count || 0,
+                comments_count: post.comments_count || 0,
+                is_liked_by_user: post.is_liked_by_user || false,
+              }}
+              onUpdate={handlePostUpdate}
+              showComments={true}
+            />
+
+            {/* Seção de comentários */}
+            <Comments 
+              postSlug={post.slug}
+              commentsCount={post.comments_count || 0}
+              onCommentsUpdate={handleCommentsUpdate}
+            />
           </div>
         </div>
       </section>
 
-      {/* Artigos relacionados com debugging de imagens */}
+      {/* Artigos relacionados */}
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="mab-8">

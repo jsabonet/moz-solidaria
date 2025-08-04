@@ -2,9 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import ProjectGallery from "@/components/ProjectGallery";
 import TestimonialsSection from "@/components/TestimonialsSection";
+import QuickAccessSection from "@/components/QuickAccessSection";
 import { Heart, Users, BookOpen, Home, AlertTriangle, Stethoscope, Handshake, ArrowRight, MapPin, Target, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -57,6 +59,15 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* SEO Meta Tags para a página inicial */}
+      <SEOHead 
+        title="MOZ SOLIDÁRIA - Transformando Vidas em Cabo Delgado"
+        description="A MOZ SOLIDÁRIA é uma organização humanitária sem fins lucrativos que atua no apoio a comunidades afetadas por conflitos em Cabo Delgado, Moçambique."
+        keywords="moçambique, cabo delgado, ong, solidariedade, humanitária, ajuda, apoio comunitário, reconstrução, educação, saúde"
+        type="website"
+        image="/logo-moz-solidaria.png"
+      />
+      
       <Header />
       
       {/* Hero Section */}
@@ -213,6 +224,9 @@ const Index = () => {
 
       {/* Project Gallery */}
       <ProjectGallery />
+
+      {/* Quick Access Section */}
+      <QuickAccessSection />
 
       {/* Testimonials */}
       <TestimonialsSection />

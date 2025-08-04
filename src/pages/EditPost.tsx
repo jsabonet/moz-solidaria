@@ -14,6 +14,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { BlogPost, Category, fetchPosts,fetchPostDetail, fetchCategories, updatePost, deletePost, duplicatePost } from '@/lib/api';
 import RichTextEditor from '@/components/RichTextEditorAsync';
 import ImageUpload from '@/components/ImageUpload';
+import SEOForm, { SEOFormData } from '@/components/SEOForm';
+import HashtagManager from '@/components/HashtagManager';
 import { toast } from 'sonner';
 
 interface PostFormData {
@@ -52,6 +54,26 @@ const EditPost: React.FC = () => {
     featured_image_source_url: '',
     is_published: false,
   });
+
+  const [seoData, setSeoData] = useState<SEOFormData>({
+    meta_title: '',
+    meta_description: '',
+    meta_keywords: '',
+    focus_keyword: '',
+    canonical_url: '',
+    og_title: '',
+    og_description: '',
+    og_type: 'article',
+    twitter_title: '',
+    twitter_description: '',
+    twitter_card: 'summary_large_image',
+    noindex: false,
+    nofollow: false,
+    robots_txt: '',
+    hashtags: '',
+  });
+
+  const [showSEOForm, setShowSEOForm] = useState(false);
 
   // Função para verificar se houve mudanças
   const hasChanges = () => {
@@ -115,6 +137,26 @@ const EditPost: React.FC = () => {
 
         setFormData(initialData);
         setInitialFormData(initialData); // Salvar estado inicial para comparação
+        
+        // Inicializar dados SEO
+        setSeoData({
+          meta_title: post.meta_title || '',
+          meta_description: post.meta_description || '',
+          meta_keywords: post.meta_keywords || '',
+          focus_keyword: post.focus_keyword || '',
+          canonical_url: post.canonical_url || '',
+          og_title: post.og_title || '',
+          og_description: post.og_description || '',
+          og_type: post.og_type || 'article',
+          twitter_title: post.twitter_title || '',
+          twitter_description: post.twitter_description || '',
+          twitter_card: post.twitter_card || 'summary_large_image',
+          noindex: post.noindex || false,
+          nofollow: post.nofollow || false,
+          robots_txt: post.robots_txt || '',
+          hashtags: post.hashtags || '',
+        });
+        
         setCategories(categories);
       } catch (error) {
         console.error('EditPost: Erro ao carregar dados:', error);
@@ -179,6 +221,22 @@ const EditPost: React.FC = () => {
           ? (publishNow ? 'published' : 'draft')
           : (formData.is_published ? 'published' : 'draft'),
         is_published: publishNow !== undefined ? publishNow : formData.is_published,
+        // Adicionar dados SEO
+        meta_title: seoData.meta_title,
+        meta_description: seoData.meta_description,
+        meta_keywords: seoData.meta_keywords,
+        focus_keyword: seoData.focus_keyword,
+        canonical_url: seoData.canonical_url,
+        og_title: seoData.og_title,
+        og_description: seoData.og_description,
+        og_type: seoData.og_type,
+        twitter_title: seoData.twitter_title,
+        twitter_description: seoData.twitter_description,
+        twitter_card: seoData.twitter_card,
+        noindex: seoData.noindex,
+        nofollow: seoData.nofollow,
+        robots_txt: seoData.robots_txt,
+        hashtags: seoData.hashtags,
       };
 
       console.log('EditPost: Updating post data:', postData);
@@ -193,7 +251,8 @@ const EditPost: React.FC = () => {
         ...post,
         ...postData,
         featured_image: postData.featured_image || undefined,
-        category: categories.find(c => c.id === parseInt(formData.category)) || post.category
+        category: categories.find(c => c.id === parseInt(formData.category)) || post.category,
+        status: postData.status as "published" | "draft" | "archived"
       };
       
       setPost(updatedPost);
@@ -635,6 +694,45 @@ const EditPost: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* SEO Form */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>SEO & Otimização</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowSEOForm(!showSEOForm)}
+                  >
+                    {showSEOForm ? 'Ocultar' : 'Configurar SEO'}
+                  </Button>
+                </CardTitle>
+                {!showSEOForm && (
+                  <CardDescription>
+                    Configure meta tags, Open Graph e otimizações para motores de busca
+                  </CardDescription>
+                )}
+              </CardHeader>
+              {showSEOForm && (
+                <CardContent className="p-0">
+                  <SEOForm
+                    data={seoData}
+                    onChange={setSeoData}
+                    postTitle={formData.title}
+                    postContent={formData.content}
+                  />
+                </CardContent>
+              )}
+            </Card>
+
+            {/* Hashtag Manager */}
+            <HashtagManager
+              hashtags={seoData.hashtags || ''}
+              onChange={(hashtags) => setSeoData({ ...seoData, hashtags })}
+              contentText={formData.content + ' ' + formData.title + ' ' + formData.excerpt}
+            />
 
             <Card>
               <CardHeader>

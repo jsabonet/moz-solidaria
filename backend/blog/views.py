@@ -12,14 +12,14 @@ from django.conf import settings
 from rest_framework.views import APIView
 from slugify import slugify
 
-from .models import BlogPost, Category, Tag, Comment, Newsletter, ImageCredit
+from .models import BlogPost, Category, Tag, Comment, Newsletter, ImageCredit, Like, Share
 from .serializers import (
     BlogPostListSerializer, BlogPostDetailSerializer, BlogPostCreateUpdateSerializer,
     CategorySerializer, TagSerializer, CommentSerializer, NewsletterSerializer,
-    ImageCreditSerializer
+    ImageCreditSerializer, LikeSerializer, ShareSerializer
 )
 from .filters import BlogPostFilter
-from .permissions import IsAuthorOrReadOnly
+from .permissions import IsAuthorOrReadOnly, IsStaffOrReadOnly
 
 
 class BlogPostViewSet(viewsets.ModelViewSet):
@@ -27,8 +27,7 @@ class BlogPostViewSet(viewsets.ModelViewSet):
     ViewSet para operações CRUD de posts do blog
     """
     queryset = BlogPost.objects.all()
-    authentication_classes = []  # <--- Adicionado: Remove autenticação obrigatória para posts
-    permission_classes = []      # <--- Já estava correto
+    permission_classes = [IsAuthorOrReadOnly]  # <--- Aplicando permissões corretas
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = BlogPostFilter
     search_fields = ['title', 'excerpt', 'content']
@@ -109,23 +108,130 @@ class BlogPostViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     def perform_create(self, serializer):
-        # Se o usuário estiver autenticado, usa normalmente
-        user = self.request.user if self.request.user.is_authenticated and not self.request.user.is_anonymous else None
-        if not user:
-            # Busca o primeiro superusuário como fallback
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
-            user = User.objects.filter(is_superuser=True).first()
-        serializer.save(author=user)
+        # Apenas usuários autenticados podem criar posts
+        if not self.request.user.is_authenticated:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Você precisa estar logado para criar posts.")
+        serializer.save(author=self.request.user)
 
     def perform_update(self, serializer):
-        # Garante que o author nunca seja AnonymousUser
-        user = self.request.user if self.request.user.is_authenticated and not self.request.user.is_anonymous else None
-        if not user:
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
-            user = User.objects.filter(is_superuser=True).first()
-        serializer.save(author=user)
+        # Apenas usuários autenticados podem atualizar posts
+        if not self.request.user.is_authenticated:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Você precisa estar logado para editar posts.")
+        serializer.save()
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def like(self, request, slug=None):
+        """Toggle like status for a post"""
+        post = self.get_object()
+        is_liked = post.toggle_like(request.user)
+        
+        return Response({
+            'is_liked': is_liked,
+            'likes_count': post.likes_count,
+            'message': 'Post curtido!' if is_liked else 'Curtida removida!'
+        })
+
+    @action(detail=True, methods=['get'])
+    def likes(self, request, slug=None):
+        """Get list of users who liked the post"""
+        post = self.get_object()
+        likes = post.likes.all().order_by('-created_at')
+        page = self.paginate_queryset(likes)
+        
+        if page is not None:
+            serializer = LikeSerializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = LikeSerializer(likes, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[])
+    def share(self, request, slug=None):
+        """Record a share action for a post"""
+        post = self.get_object()
+        share_type = request.data.get('share_type', 'other')
+        
+        # Capturar informações do request
+        ip_address = request.META.get('REMOTE_ADDR')
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        
+        share_data = {
+            'post': post,
+            'share_type': share_type,
+            'ip_address': ip_address,
+            'user_agent': user_agent,
+        }
+        
+        # Associar usuário se autenticado
+        if request.user.is_authenticated:
+            share_data['user'] = request.user
+        
+        share = Share.objects.create(**share_data)
+        serializer = ShareSerializer(share, context={'request': request})
+        
+        return Response({
+            'message': 'Compartilhamento registrado!',
+            'share': serializer.data,
+            'shares_count': post.shares_count
+        }, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['get'])
+    def shares(self, request, slug=None):
+        """Get share statistics for a post"""
+        post = self.get_object()
+        shares = post.shares.all().order_by('-created_at')
+        
+        # Estatísticas por tipo
+        stats = {}
+        for share_type, display_name in Share.SHARE_TYPES:
+            count = shares.filter(share_type=share_type).count()
+            stats[share_type] = {
+                'count': count,
+                'display_name': display_name
+            }
+        
+        return Response({
+            'total_shares': post.shares_count,
+            'stats_by_type': stats,
+            'recent_shares': ShareSerializer(
+                shares[:10], 
+                many=True, 
+                context={'request': request}
+            ).data
+        })
+
+    @action(detail=True, methods=['get', 'post'], permission_classes=[])
+    def comments(self, request, slug=None):
+        """Get or create comments for a post"""
+        post = self.get_object()
+        
+        if request.method == 'GET':
+            # Buscar apenas comentários principais (não respostas)
+            comments = post.comments.filter(
+                is_approved=True, 
+                parent__isnull=True
+            ).order_by('-created_at')
+            
+            page = self.paginate_queryset(comments)
+            if page is not None:
+                serializer = CommentSerializer(page, many=True, context={'request': request})
+                return self.get_paginated_response(serializer.data)
+            
+            serializer = CommentSerializer(comments, many=True, context={'request': request})
+            return Response(serializer.data)
+        
+        elif request.method == 'POST':
+            # Criar novo comentário
+            serializer = CommentSerializer(data=request.data, context={'request': request})
+            if serializer.is_valid():
+                serializer.save(post=post)
+                return Response({
+                    'message': 'Comentário enviado! Aguarde a aprovação.',
+                    'comment': serializer.data
+                }, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
     def duplicate(self, request, slug=None):
@@ -210,13 +316,13 @@ class CategoryViewSet(viewsets.ModelViewSet):
     """
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    # Remover lookup_field para usar ID por padrão
-    authentication_classes = []
-    permission_classes = []
+    permission_classes = [IsStaffOrReadOnly]  # Apenas staff pode criar/editar/deletar categorias
     
     def get_permissions(self):
-        """Permissions configuration"""
-        return []
+        """Permissions configuration - staff can manage, all can read"""
+        if self.action in ['list', 'retrieve', 'posts']:
+            return []  # Permitir leitura sem autenticação
+        return [IsStaffOrReadOnly()]
     
     def destroy(self, request, *args, **kwargs):
         """Override destroy to prevent deletion of categories with posts"""
@@ -285,7 +391,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     ViewSet para comentários
     """
     serializer_class = CommentSerializer
-    permission_classes = []
+    permission_classes = [IsAuthenticatedOrReadOnly]  # Precisa estar logado para comentar
     
     def get_queryset(self):
         if hasattr(self, 'kwargs') and 'post_slug' in self.kwargs:

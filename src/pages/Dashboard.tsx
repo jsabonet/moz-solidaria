@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Plus, Edit, Tag, Trash2, Eye, Calendar, TrendingUp, Copy } from 'lucide-react';
+import { Plus, Edit, Tag, Trash2, Eye, Calendar, TrendingUp, Copy, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAuth } from '@/hooks/use-auth';
 import { BlogPost, Category, fetchPosts, fetchCategories, deletePost, duplicatePost } from '@/lib/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AdminDonations from '@/components/AdminDonations';
+import DonationDetails from '@/components/DonationDetails';
+import NotificationTest from '@/components/NotificationTest';
 import {
   BarChart3,
   Users,
@@ -21,6 +24,7 @@ import {
   Filter,
   Search,
   MoreHorizontal,
+  Bell,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -32,6 +36,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedDonation, setSelectedDonation] = useState<any>(null);
 
   // Mock data for stats
   const stats = {
@@ -102,6 +107,16 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleViewDonationDetails = (donation: any) => {
+    setSelectedDonation(donation);
+    setActiveTab('donation-details');
+  };
+
+  const handleBackToDonations = () => {
+    setSelectedDonation(null);
+    setActiveTab('donations');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -149,7 +164,7 @@ const Dashboard: React.FC = () => {
 
       <div className="p-3 md:p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-5 h-auto p-1">
+          <TabsList className="grid w-full grid-cols-6 h-auto p-1">
             <TabsTrigger value="overview" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
               <BarChart3 className="h-4 w-4 md:h-4 md:w-4" />
               <span className="hidden sm:block">Visão Geral</span>
@@ -164,16 +179,28 @@ const Dashboard: React.FC = () => {
               <span className="hidden sm:block">Doações</span>
               <span className="sm:hidden text-xs">Doar</span>
             </TabsTrigger>
-            <TabsTrigger value="projects" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
-              <Heart className="h-4 w-4 md:h-4 md:w-4" />
-              <span className="hidden sm:block">Projetos</span>
-              <span className="sm:hidden text-xs">Proj</span>
+            <TabsTrigger value="community" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+              <Users className="h-4 w-4 md:h-4 md:w-4" />
+              <span className="hidden sm:block">Comunidade</span>
+              <span className="sm:hidden text-xs">Com</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
               <Settings className="h-4 w-4 md:h-4 md:w-4" />
               <span className="hidden sm:block">Configurações</span>
               <span className="sm:hidden text-xs">Config</span>
             </TabsTrigger>
+            <TabsTrigger value="notifications-test" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+              <Bell className="h-4 w-4 md:h-4 md:w-4" />
+              <span className="hidden sm:block">Teste Notif</span>
+              <span className="sm:hidden text-xs">Notif</span>
+            </TabsTrigger>
+            {selectedDonation && (
+              <TabsTrigger value="donation-details" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+                <Eye className="h-4 w-4 md:h-4 md:w-4" />
+                <span className="hidden sm:block">Detalhes</span>
+                <span className="sm:hidden text-xs">Det</span>
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Overview Tab */}
@@ -353,12 +380,127 @@ const Dashboard: React.FC = () => {
 
           {/* Donations Tab */}
           <TabsContent value="donations" className="space-y-4 md:space-y-6">
-            {/* ...existing code for donations management... */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <h2 className="text-xl md:text-2xl font-bold">Gestão de Doações</h2>
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtros
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar
+                </Button>
+              </div>
+            </div>
+            
+            <AdminDonations onViewDetails={handleViewDonationDetails} />
           </TabsContent>
 
-          {/* Projects Tab */}
-          <TabsContent value="projects" className="space-y-4 md:space-y-6">
-            {/* ...existing code for projects management... */}
+          {/* Donation Details Tab */}
+          {selectedDonation && (
+            <TabsContent value="donation-details" className="space-y-4 md:space-y-6">
+              <DonationDetails
+                donationId={selectedDonation.id}
+                onBack={handleBackToDonations}
+              />
+            </TabsContent>
+          )}
+
+          {/* Community Tab - Gestão do Portal de Comunidade */}
+          <TabsContent value="community" className="space-y-4 md:space-y-6">
+            <div>
+              <h2 className="text-xl md:text-2xl font-bold mb-2">Portal de Comunidade</h2>
+              <p className="text-muted-foreground">Gestão administrativa do Portal de Comunidade para usuários não-admin</p>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+              {/* Estatísticas da Comunidade */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Doadores Ativos</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.volunteers || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Usuários com perfil doador
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Voluntários</CardTitle>
+                  <Heart className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.communities || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Usuários voluntários ativos
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total de Doações</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.donations || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Via Portal de Comunidade
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+              {/* Gestão de Usuários */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Gestão de Usuários</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Controle administrativo dos usuários do Portal de Comunidade
+                  </p>
+                  <div className="space-y-2">
+                    <Button variant="outline" className="w-full justify-start" disabled>
+                      <Users className="h-4 w-4 mr-2" />
+                      Visualizar Doadores (Em breve)
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start" disabled>
+                      <Heart className="h-4 w-4 mr-2" />
+                      Gerenciar Voluntários (Em breve)
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Relatórios */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Relatórios</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Análises e estatísticas do Portal de Comunidade
+                  </p>
+                  <div className="space-y-2">
+                    <Button variant="outline" className="w-full justify-start" disabled>
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      Relatório de Atividades (Em breve)
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start" disabled>
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Analytics da Comunidade (Em breve)
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Settings Tab */}
@@ -377,6 +519,12 @@ const Dashboard: React.FC = () => {
                       Gerenciar Categorias
                     </Button>
                   </Link>
+                  <Link to="/dashboard/comments">
+                    <Button variant="outline" className="w-full justify-start">
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Gerenciar Comentários
+                    </Button>
+                  </Link>
                   <Button variant="outline" className="w-full justify-start" disabled>
                     <FileText className="h-4 w-4 mr-2" />
                     Gerenciar Tags
@@ -390,6 +538,11 @@ const Dashboard: React.FC = () => {
 
               {/* ...existing configuration cards... */}
             </div>
+          </TabsContent>
+
+          {/* Notifications Test Tab */}
+          <TabsContent value="notifications-test" className="space-y-4 md:space-y-6">
+            <NotificationTest />
           </TabsContent>
         </Tabs>
       </div>
