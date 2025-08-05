@@ -7,6 +7,7 @@ app_name = 'donations'
 urlpatterns = [
     # Doações
     path('', views.DonationListCreateView.as_view(), name='donation-list'),
+    path('guest/', views.GuestDonationCreateView.as_view(), name='guest-donation-create'),
     path('<int:pk>/', views.DonationDetailView.as_view(), name='donation-detail'),
     path('<int:donation_id>/comments/', views.donation_comments, name='donation-comments'),
     

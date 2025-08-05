@@ -11,7 +11,8 @@ from datetime import datetime, timedelta
 from .models import Donation, DonationComment, DonationMethod, DonationStats
 from .serializers import (
     DonationSerializer, DonationCreateSerializer, DonationUpdateSerializer,
-    DonationCommentSerializer, DonationMethodSerializer, DonationStatsSerializer
+    DonationCommentSerializer, DonationMethodSerializer, DonationStatsSerializer,
+    GuestDonationCreateSerializer
 )
 from notifications.services import NotificationService
 
@@ -43,6 +44,32 @@ class DonationListCreateView(generics.ListCreateAPIView):
         donation = serializer.save(donor=self.request.user)
         # Disparar notificações para nova doação
         NotificationService.notify_donation_created(donation)
+
+class GuestDonationCreateView(generics.CreateAPIView):
+    """Permite que usuários não logados criem doações como convidados"""
+    serializer_class = GuestDonationCreateSerializer
+    permission_classes = []  # Endpoint público
+    
+    def create(self, request, *args, **kwargs):
+        print(f"🔍 GuestDonationCreateView - Dados recebidos:")
+        print(f"   request.data: {request.data}")
+        print(f"   request.FILES: {request.FILES}")
+        
+        try:
+            return super().create(request, *args, **kwargs)
+        except Exception as e:
+            print(f"❌ Erro no GuestDonationCreateView: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {'error': f'Erro ao processar doação: {str(e)}'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    def perform_create(self, serializer):
+        donation = serializer.save()
+        # Disparar notificações para doação de convidado
+        NotificationService.notify_guest_donation_created(donation)
 
 class DonationDetailView(generics.RetrieveUpdateAPIView):
     """Detalhe e atualização de doação"""
@@ -273,7 +300,7 @@ def bulk_update_donations(request):
     })
 
 class DonationMethodListView(generics.ListAPIView):
-    """Lista métodos de doação disponíveis"""
+    """Lista métodos de doação disponíveis - endpoint público"""
     queryset = DonationMethod.objects.filter(is_active=True)
     serializer_class = DonationMethodSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = []  # Endpoint público para formulário de doações

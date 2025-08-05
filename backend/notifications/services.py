@@ -88,6 +88,24 @@ class NotificationService:
             )
     
     @staticmethod
+    def notify_guest_donation_created(donation):
+        """Notifica sobre nova doação criada por convidado"""
+        
+        # Notificar apenas administradores para doações de convidados
+        admin_users = User.objects.filter(is_staff=True)
+        for admin in admin_users:
+            NotificationService.create_notification(
+                recipient=admin,
+                title="Nova Doação de Convidado",
+                message=f"Doação de {donation.formatted_amount} recebida de convidado (ID: {donation.id}). Verificar dados pessoais nas notas administrativas.",
+                notification_type='guest_donation_created',
+                priority='high',
+                related_donation_id=donation.id,
+                action_url=f"/admin/donations/{donation.id}",
+                action_text="Revisar Doação de Convidado"
+            )
+    
+    @staticmethod
     def notify_donation_status_changed(donation, old_status, new_status, changed_by=None):
         """Notifica sobre mudança de status da doação"""
         

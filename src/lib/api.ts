@@ -105,11 +105,9 @@ export async function fetchTags() {
 
 // Funções de autenticação
 export async function login(username: string, password: string) {
-  console.log('🔑 API Login - Tentando autenticação para:', username);
+  console.log('🔑 API Login - Tentando autenticação JWT para:', username);
   
-  // Try JWT authentication first
   try {
-    console.log('🔄 Tentando JWT auth...');
     const res = await fetch(`${API_BASE}/auth/token/`, {
       method: 'POST',
       headers: {
@@ -121,68 +119,55 @@ export async function login(username: string, password: string) {
       }),
     });
     
-    if (res.ok) {
-      const data = await res.json();
-      console.log('✅ JWT login successful:', data);
-      
-      // Buscar dados reais do usuário usando o token JWT
-      try {
-        const userRes = await fetch(`${API_BASE}/auth/user/`, {
-          headers: {
-            'Authorization': `Bearer ${data.access}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          console.log('✅ Dados do usuário JWT obtidos:', userData);
-          return {
-            token: data.access,
-            refresh: data.refresh,
-            user: userData
-          };
-        }
-      } catch (userError) {
-        console.warn('❌ Erro ao buscar dados do usuário JWT:', userError);
-      }
-      
-      // Fallback com dados básicos
-      return {
-        token: data.access,
-        refresh: data.refresh,
-        user: {
-          id: 1, // ID válido para não falhar na verificação
-          username: username,
-          is_staff: true,
-          is_superuser: true
-        }
-      };
-    } else {
+    if (!res.ok) {
       console.log('❌ JWT auth falhou, status:', res.status);
+      const errorText = await res.text();
+      throw new Error(`Credenciais inválidas: ${errorText}`);
     }
+    
+    const data = await res.json();
+    console.log('✅ JWT login successful:', data);
+    
+    // Buscar dados reais do usuário usando o token JWT
+    try {
+      const userRes = await fetch(`${API_BASE}/auth/user/`, {
+        headers: {
+          'Authorization': `Bearer ${data.access}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        console.log('✅ Dados do usuário JWT obtidos:', userData);
+        return {
+          token: data.access,
+          refresh: data.refresh,
+          user: userData
+        };
+      } else {
+        console.warn('❌ Erro ao buscar dados do usuário, status:', userRes.status);
+      }
+    } catch (userError) {
+      console.warn('❌ Erro ao buscar dados do usuário:', userError);
+    }
+    
+    // Fallback com dados básicos (mas ainda usando JWT token)
+    return {
+      token: data.access,
+      refresh: data.refresh,
+      user: {
+        id: 1,
+        username: username,
+        is_staff: false,
+        is_superuser: false
+      }
+    };
+    
   } catch (error) {
-    console.warn('❌ JWT login failed, trying fallback:', error);
+    console.error('❌ JWT authentication completely failed:', error);
+    throw error;
   }
-  
-  // Fallback to client-area auth
-  console.log('🔄 Tentando client-area auth...');
-  const res = await fetch(`${API_BASE}/client-area/auth/login/`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ username, password }),
-  });
-  
-  if (!res.ok) {
-    console.log('❌ Client-area auth falhou, status:', res.status);
-    throw new Error('Credenciais inválidas');
-  }
-  
-  const result = await res.json();
-  console.log('✅ Client-area login successful:', result);
-  return result;
 }
 
 export async function refreshToken(refreshToken: string) {

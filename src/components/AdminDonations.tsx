@@ -38,7 +38,10 @@ interface Donation {
     username: string;
     first_name: string;
     last_name: string;
+    email?: string;
+    is_active?: boolean;
   };
+  admin_notes?: string;
 }
 
 interface DonationStats {
@@ -311,9 +314,18 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
   };
 
   const getUserDisplayName = (user: any) => {
+    // Para doações de convidados, verificar se é um usuário inativo
+    if (!user.is_active && user.username.startsWith('guest_')) {
+      return `${user.first_name} ${user.last_name}`.trim() || user.email || user.username;
+    }
+    
     return user.first_name && user.last_name 
       ? `${user.first_name} ${user.last_name}`
       : user.username;
+  };
+
+  const isGuestDonation = (donation: Donation) => {
+    return !donation.donor.is_active && donation.donor.username.startsWith('guest_');
   };
 
   if (!user?.is_staff) {
@@ -527,8 +539,14 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
                             </div>
                             
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
-                              <div>
-                                <span className="font-medium">Doador:</span> {getUserDisplayName(donation.donor)}
+                              <div className="flex items-center space-x-2">
+                                <span className="font-medium">Doador:</span> 
+                                <span>{getUserDisplayName(donation.donor)}</span>
+                                {isGuestDonation(donation) && (
+                                  <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-300">
+                                    Convidado
+                                  </Badge>
+                                )}
                               </div>
                               <div>
                                 <span className="font-medium">Método:</span> {donation.donation_method?.name || 'Não especificado'}
@@ -542,6 +560,19 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
                               <p className="text-gray-700 mb-4 line-clamp-2">
                                 {donation.donor_message}
                               </p>
+                            )}
+
+                            {/* Informação especial para doações de convidados */}
+                            {isGuestDonation(donation) && (
+                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                                <div className="flex items-center space-x-2 text-blue-800 text-sm">
+                                  <span className="font-medium">💝 Doação de Convidado</span>
+                                </div>
+                                <p className="text-blue-700 text-xs mt-1">
+                                  Esta doação foi enviada por um usuário não registrado. 
+                                  Os dados pessoais estão nas notas administrativas.
+                                </p>
+                              </div>
                             )}
 
                             <div className="flex items-center justify-between">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,13 +46,17 @@ const AuthPage = () => {
   const { login, loading, error, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   // Redirecionamento após login bem-sucedido
   useEffect(() => {
     console.log('🔍 AuthPage - Estado auth:', { isAuthenticated, user });
     if (isAuthenticated && user) {
+      // Verificar se há uma página de redirecionamento nos parâmetros da URL
+      const redirectPath = searchParams.get('redirect');
+      
       // Verificar se há uma página de origem para redirecionar
-      let targetPath = location.state?.from?.pathname;
+      let targetPath = redirectPath || location.state?.from?.pathname;
       
       // Se não há página de origem, definir destino baseado no tipo de usuário
       if (!targetPath) {
@@ -66,7 +70,7 @@ const AuthPage = () => {
       console.log('🚀 AuthPage - Redirecionando para:', targetPath);
       navigate(targetPath, { replace: true });
     }
-  }, [isAuthenticated, user, navigate, location.state]);
+  }, [isAuthenticated, user, navigate, location.state, searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

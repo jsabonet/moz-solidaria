@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Copy, Phone, Mail, MapPin, Building2, CreditCard, Banknote, Heart, CheckCircle } from "lucide-react";
+import { Copy, Phone, Mail, MapPin, Building2, CreditCard, Banknote, Heart, CheckCircle, FileText, Upload } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 const Doacao = () => {
   const [copiedText, setCopiedText] = useState<string>("");
@@ -79,6 +80,16 @@ const Doacao = () => {
             <Badge variant="secondary" className="text-lg px-6 py-2">
               💝 Toda doação faz a diferença
             </Badge>
+            <div className="mt-8">
+              <Link to="/enviar-comprovante">
+                <Button size="lg" className="bg-white text-mozambique-red hover:bg-gray-100 font-bold px-8 py-4 text-lg">
+                  📄 Envie Seu Comprovante de Doação
+                </Button>
+              </Link>
+              <p className="text-sm opacity-90 mt-2">
+                Já fez sua doação? Envie o comprovante para confirmação
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -140,6 +151,74 @@ const Doacao = () => {
             ))}
           </div>
 
+          {/* Call to Action Principal */}
+          <Card className="bg-gradient-to-r from-mozambique-red/10 to-solidarity-blue/10 border-2 border-mozambique-red/20">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl text-mozambique-red flex items-center justify-center space-x-2">
+                <FileText className="h-6 w-6" />
+                <span>Próximo Passo: Envie Seu Comprovante</span>
+              </CardTitle>
+              <CardDescription className="text-lg">
+                Já fez sua transferência? Envie o comprovante para confirmarmos sua doação
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center space-y-4">
+              <div className="bg-white p-4 rounded-lg border">
+                <h4 className="font-semibold mb-2">📋 Processo Simples em 3 Passos:</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-xs">1</span>
+                    <span>Faça a transferência</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center font-bold text-xs">2</span>
+                    <span>Envie o comprovante</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="w-6 h-6 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold text-xs">3</span>
+                    <span>Receba confirmação</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <Link to="/enviar-comprovante">
+                  <Button size="lg" className="w-full md:w-auto bg-mozambique-red hover:bg-mozambique-red/90 text-white font-bold px-8 py-4">
+                    <Upload className="h-5 w-5 mr-2" />
+                    Enviar Comprovante Agora
+                  </Button>
+                </Link>
+                
+                <div className="text-sm text-gray-600">
+                  <p>✅ Aceita usuários logados e convidados</p>
+                  <p>✅ Processo seguro e criptografado</p>
+                  <p>✅ Confirmação em até 48 horas</p>
+                </div>
+              </div>
+
+              {/* Incentivo ao Registro */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                <div className="flex items-center justify-center space-x-2 text-blue-800 mb-2">
+                  <Heart className="h-4 w-4" />
+                  <span className="font-medium">Maximize o Impacto da Sua Doação</span>
+                </div>
+                <p className="text-blue-700 text-sm mb-3">
+                  Crie uma conta gratuita no portal da comunidade para acompanhar o impacto real 
+                  da sua doação, ver relatórios de transparência e receber atualizações sobre os projetos.
+                </p>
+                <Link to="/login?mode=register">
+                  <Button variant="outline" size="sm" className="border-blue-300 text-blue-700 hover:bg-blue-100">
+                    Criar Conta Gratuita
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Grid com Informações de Impacto e Transparência */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mt-12">
+          
           {/* Impacto e Informações */}
           <div className="space-y-8">
             

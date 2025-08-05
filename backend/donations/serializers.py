@@ -110,6 +110,104 @@ class DonationCreateSerializer(serializers.ModelSerializer):
             )
         return data
 
+class GuestDonationCreateSerializer(serializers.ModelSerializer):
+    """Serializer para criação de doações por usuários não logados (convidados)"""
+    
+    # Campos de informação pessoal para convidados - apenas para input
+    guest_name = serializers.CharField(max_length=150, required=True, write_only=True)
+    guest_email = serializers.EmailField(required=True, write_only=True)
+    guest_phone = serializers.CharField(max_length=20, required=True, write_only=True)
+    
+    # Campos de doação
+    donation_method = serializers.PrimaryKeyRelatedField(
+        queryset=DonationMethod.objects.filter(is_active=True),
+        required=True
+    )
+    
+    class Meta:
+        model = Donation
+        fields = [
+            'id', 'amount', 'donation_method', 'payment_proof', 'donor_message',
+            'status', 'created_at', 'guest_name', 'guest_email', 'guest_phone'
+        ]
+        read_only_fields = ['id', 'status', 'created_at']
+    
+    def validate_amount(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("O valor da doação deve ser maior que zero.")
+        return value
+    
+    def validate_payment_proof(self, value):
+        if not value:
+            raise serializers.ValidationError("O comprovante de pagamento é obrigatório.")
+            
+        # Validar tamanho do arquivo (máx 5MB para convidados)
+        if value.size > 5 * 1024 * 1024:
+            raise serializers.ValidationError("O arquivo deve ter no máximo 5MB.")
+        
+        # Validar tipo de arquivo
+        allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf']
+        
+        if hasattr(value, 'content_type') and value.content_type not in allowed_types:
+            raise serializers.ValidationError(
+                "Formato não suportado. Use JPG, PNG ou PDF."
+            )
+        
+        return value
+    
+    def create(self, validated_data):
+        print(f"🔍 GuestDonationCreateSerializer.create - validated_data: {validated_data}")
+        
+        from django.contrib.auth.models import User
+        from django.utils.crypto import get_random_string
+        
+        # Extrair dados do convidado
+        guest_name = validated_data.pop('guest_name')
+        guest_email = validated_data.pop('guest_email')
+        guest_phone = validated_data.pop('guest_phone')
+        
+        print(f"   guest_name: {guest_name}")
+        print(f"   guest_email: {guest_email}")
+        print(f"   guest_phone: {guest_phone}")
+        
+        # Criar ou obter usuário temporário para o convidado
+        # Usar email como username base
+        base_username = guest_email.split('@')[0]
+        username = f"guest_{base_username}_{get_random_string(8)}"
+        
+        # Verificar se já existe um usuário com este email
+        try:
+            guest_user = User.objects.get(email=guest_email)
+            print(f"   Usuário existente encontrado: {guest_user.username}")
+        except User.DoesNotExist:
+            # Criar usuário temporário
+            guest_user = User.objects.create_user(
+                username=username,
+                email=guest_email,
+                first_name=guest_name.split(' ')[0] if ' ' in guest_name else guest_name,
+                last_name=' '.join(guest_name.split(' ')[1:]) if ' ' in guest_name else '',
+                is_active=False  # Usuário inativo para convidados
+            )
+            print(f"   Novo usuário criado: {guest_user.username}")
+        
+        print(f"   Dados restantes para doação: {validated_data}")
+        
+        # Criar doação
+        donation = Donation.objects.create(
+            donor=guest_user,
+            status='submitted',  # Status especial para doações de convidados
+            **validated_data
+        )
+        
+        # Adicionar nota administrativa com informações do convidado
+        admin_note = f"Doação de convidado:\nNome: {guest_name}\nEmail: {guest_email}\nTelefone: {guest_phone}"
+        donation.admin_notes = admin_note
+        donation.save()
+        
+        print(f"   Doação criada com ID: {donation.id}")
+        
+        return donation
+
 class DonationUpdateSerializer(serializers.ModelSerializer):
     """Serializer para atualização de doações pelo admin"""
     admin_comment = serializers.CharField(required=False, allow_blank=True)

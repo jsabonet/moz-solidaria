@@ -26,6 +26,7 @@ import Contacto from "@/pages/Contacto";
 import Categories from "@/pages/Categories";
 import CommentsPage from "@/pages/CommentsPage";
 import AuthPage from "@/pages/AuthPage";
+import DonationProofPage from "@/pages/DonationProofPage";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,7 @@ const App = () => (
               } 
             />
             <Route path="/doacao" element={<Doacao />} />
+            <Route path="/enviar-comprovante" element={<DonationProofPage />} />
             <Route path="/contacto" element={<Contacto />} />
             <Route path="/login" element={<AuthPage />} />
             
