@@ -21,7 +21,6 @@ import {
 // Pages que são carregadas imediatamente (críticas)
 import Index from "@/pages/Index";
 import Sobre from "@/pages/Sobre";
-import Programas from "@/pages/Programas";
 import Doacao from "@/pages/Doacao";
 import Contacto from "@/pages/Contacto";
 import Categories from "@/pages/Categories";
@@ -43,7 +42,6 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/sobre" element={<Sobre />} />
-            <Route path="/programas" element={<Programas />} />
             <Route 
               path="/blog" 
               element={

@@ -961,7 +961,73 @@ export async function fetchCompleteProjectData(slug: string) {
   try {
     console.log('🔍 Buscando dados completos do projeto:', slug);
     
-    // Buscar dados básicos do projeto (100% público)
+    // Tentar buscar dados do sistema de tracking primeiro (dados mais completos e atualizados)
+    let trackingData = null;
+    try {
+      console.log('� Tentando buscar dados de tracking...');
+      const trackingResponse = await fetch(`${API_BASE}/tracking/project-tracking/${slug}/`);
+      if (trackingResponse.ok) {
+        trackingData = await trackingResponse.json();
+        console.log('✅ Dados de tracking carregados:', trackingData);
+        
+        // Log específico das métricas
+        if (trackingData?.metrics) {
+          console.log('🔢 Métricas do tracking encontradas:', {
+            people_impacted: trackingData.metrics.people_impacted,
+            progress_percentage: trackingData.metrics.progress_percentage,
+            completed_milestones: trackingData.metrics.completed_milestones,
+            total_milestones: trackingData.metrics.total_milestones
+          });
+          
+          // Buscar dados básicos para completar campos que podem estar faltando no tracking
+          console.log('📋 Buscando dados básicos para complementar...');
+          const basicProject = await fetchProjectDetail(slug);
+          
+          // Se tracking tem dados completos, usar diretamente mas complementar com dados básicos
+          const completeData = {
+            ...trackingData,
+            // Preservar campos importantes dos dados básicos que podem não estar no tracking
+            target_beneficiaries: trackingData.target_beneficiaries || basicProject.target_beneficiaries,
+            budget: trackingData.budget || basicProject.budget,
+            raised_amount: trackingData.raised_amount || basicProject.raised_amount,
+            funding_percentage: trackingData.funding_percentage || basicProject.funding_percentage,
+            // Normalizar métricas para o formato esperado pelo frontend
+            metrics: {
+              peopleImpacted: trackingData.metrics.people_impacted,
+              budgetUsed: parseFloat(trackingData.metrics.budget_used || '0'),
+              budgetTotal: parseFloat(trackingData.metrics.budget_total || '0'),
+              progressPercentage: trackingData.metrics.progress_percentage,
+              completedMilestones: trackingData.metrics.completed_milestones,
+              totalMilestones: trackingData.metrics.total_milestones,
+              lastUpdate: trackingData.metrics.last_updated
+            },
+            // Atualizar campos do projeto com dados do tracking
+            current_beneficiaries: trackingData.metrics.people_impacted,
+            progress_percentage: trackingData.metrics.progress_percentage
+          };
+          
+          console.log('✅ Dados completos processados do tracking:', {
+            project: completeData.name,
+            target_beneficiaries: completeData.target_beneficiaries,
+            peopleImpacted: completeData.metrics.peopleImpacted,
+            progressPercentage: completeData.metrics.progressPercentage,
+            completedMilestones: completeData.metrics.completedMilestones,
+            totalMilestones: completeData.metrics.totalMilestones
+          });
+          
+          return completeData;
+        } else {
+          console.warn('⚠️ TrackingData existe mas sem métricas:', Object.keys(trackingData || {}));
+        }
+      } else {
+        console.warn('⚠️ Resposta de tracking não ok:', trackingResponse.status);
+      }
+    } catch (error) {
+      console.warn('⚠️ Dados de tracking não disponíveis:', error);
+    }
+
+    // Fallback: Buscar dados básicos do projeto se tracking falhou
+    console.log('📋 Fallback: Buscando dados básicos do projeto...');
     const project = await fetchProjectDetail(slug);
     
     if (!project) {
@@ -987,24 +1053,22 @@ export async function fetchCompleteProjectData(slug: string) {
       gallery_images: gallery.status === 'fulfilled' ? gallery.value : [],
       milestones: milestones.status === 'fulfilled' ? milestones.value : [],
       metrics: metrics.status === 'fulfilled' ? metrics.value : {
-        peopleImpacted: project.current_beneficiaries || 0,
-        budgetUsed: project.current_spending || 0,
-        budgetTotal: project.target_budget || 0,
-        progressPercentage: project.progress_percentage || 0,
+        // Usar dados básicos do projeto
+        peopleImpacted: project.current_beneficiaries ?? 0,
+        budgetUsed: project.current_spending ?? 0,
+        budgetTotal: project.target_budget ?? 0,
+        progressPercentage: project.progress_percentage ?? 0,
         completedMilestones: 0,
         totalMilestones: 0,
-        lastUpdate: project.updated_at || null
+        lastUpdate: project.updated_at ?? null
       }
     };
 
-    // Log para debug
-    console.log('✅ Dados completos processados:', {
+    console.log('📊 Dados básicos processados (fallback):', {
       project: completeData.name,
-      updates: completeData.updates.length,
-      evidences: completeData.evidences.length,
-      gallery: completeData.gallery_images.length,
-      milestones: completeData.milestones.length,
-      hasMetrics: !!completeData.metrics
+      peopleImpacted: completeData.metrics.peopleImpacted,
+      progressPercentage: completeData.metrics.progressPercentage,
+      source: 'project_basic'
     });
 
     return completeData;

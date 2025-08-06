@@ -247,44 +247,18 @@ const ProjectDetail: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      console.log('🔍 ProjectDetail - Iniciando carregamento do projeto:', slug);
-      
       // Tentar buscar dados completos primeiro
       let projectData;
       try {
-        console.log('📊 ProjectDetail - Tentando fetchCompleteProjectData...');
         projectData = await fetchCompleteProjectData(slug);
-        console.log('✅ ProjectDetail - fetchCompleteProjectData sucesso:', projectData);
-        
-        // Log específico para debugging
-        if (projectData.metrics) {
-          console.log('📈 ProjectDetail - Métricas encontradas:', {
-            peopleImpacted: projectData.metrics.peopleImpacted,
-            progressPercentage: projectData.metrics.progressPercentage,
-            completedMilestones: projectData.metrics.completedMilestones,
-            totalMilestones: projectData.metrics.totalMilestones
-          });
-        } else {
-          console.warn('⚠️ ProjectDetail - Sem métricas no projeto');
-        }
-        
-      } catch (error) {
-        console.error('❌ ProjectDetail - fetchCompleteProjectData falhou:', error);
+      } catch {
         // Fallback para busca básica
-        console.log('📋 ProjectDetail - Tentando fetchProjectDetail como fallback...');
         projectData = await fetchProjectDetail(slug);
-        console.log('✅ ProjectDetail - fetchProjectDetail sucesso:', projectData);
       }
       
-      console.log('🎯 ProjectDetail - Projeto final carregado:', projectData);
-      console.log('🔍 ProjectDetail - Verificando target_beneficiaries:', {
-        target_beneficiaries: projectData.target_beneficiaries,
-        type: typeof projectData.target_beneficiaries,
-        hasProperty: 'target_beneficiaries' in projectData
-      });
       setProject(projectData);
     } catch (error: any) {
-      console.error('❌ Erro ao carregar projeto:', error);
+      console.error('Erro ao carregar projeto:', error);
       setError('Projeto não encontrado ou erro ao carregar dados');
       toast.error('Erro ao carregar projeto');
     } finally {
@@ -335,13 +309,7 @@ const ProjectDetail: React.FC = () => {
 
   const getCurrentBeneficiaries = () => {
     // Priorizar peopleImpacted do ProjectTracker (mais atualizado)
-    const result = project?.metrics?.peopleImpacted ?? project?.current_beneficiaries ?? 0;
-    console.log('🎯 getCurrentBeneficiaries:', {
-      metricsValue: project?.metrics?.peopleImpacted,
-      currentValue: project?.current_beneficiaries,
-      result: result
-    });
-    return result;
+    return project?.metrics?.peopleImpacted ?? project?.current_beneficiaries ?? 0;
   };
 
   const getCurrentBudgetUsed = () => {
@@ -355,41 +323,27 @@ const ProjectDetail: React.FC = () => {
   };
 
   const getCompletedMilestones = () => {
-    let result;
     if (project?.metrics?.completedMilestones !== undefined) {
-      result = project.metrics.completedMilestones;
-    } else if (project?.milestones && Array.isArray(project.milestones)) {
-      result = project.milestones.filter(m => m.is_completed).length;
-    } else {
-      result = 0;
+      return project.metrics.completedMilestones;
     }
     
-    console.log('🎯 getCompletedMilestones:', {
-      metricsValue: project?.metrics?.completedMilestones,
-      milestonesArray: project?.milestones?.length,
-      result: result
-    });
+    if (project?.milestones && Array.isArray(project.milestones)) {
+      return project.milestones.filter(m => m.is_completed).length;
+    }
     
-    return result;
+    return 0;
   };
 
   const getTotalMilestones = () => {
-    let result;
     if (project?.metrics?.totalMilestones !== undefined) {
-      result = project.metrics.totalMilestones;
-    } else if (project?.milestones && Array.isArray(project.milestones)) {
-      result = project.milestones.length;
-    } else {
-      result = 0;
+      return project.metrics.totalMilestones;
     }
     
-    console.log('🎯 getTotalMilestones:', {
-      metricsValue: project?.metrics?.totalMilestones,
-      milestonesArray: project?.milestones?.length,
-      result: result
-    });
+    if (project?.milestones && Array.isArray(project.milestones)) {
+      return project.milestones.length;
+    }
     
-    return result;
+    return 0;
   };
 
   if (loading) {
@@ -769,7 +723,7 @@ const ProjectDetail: React.FC = () => {
                         <div className="flex justify-between items-center mb-2">
                           <Label className="text-sm font-medium">Beneficiários</Label>
                           <span className="text-sm text-muted-foreground">
-                            {getCurrentBeneficiaries().toLocaleString()} / {(project.target_beneficiaries || 0).toLocaleString()}
+                            {getCurrentBeneficiaries().toLocaleString()} / {project.target_beneficiaries.toLocaleString()}
                           </span>
                         </div>
                         <Progress value={calculateBeneficiariesProgress()} className="h-2" />
@@ -1019,7 +973,7 @@ const ProjectDetail: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label className="text-sm font-medium">Beneficiários Alvo</Label>
-                        <p className="text-xl font-bold text-primary">{(project.target_beneficiaries || 0).toLocaleString()}</p>
+                        <p className="text-xl font-bold text-primary">{project.target_beneficiaries.toLocaleString()}</p>
                       </div>
                       <div>
                         <Label className="text-sm font-medium">Beneficiários Atuais</Label>
@@ -1542,6 +1496,64 @@ const ProjectDetail: React.FC = () => {
                   </CardContent>
                 </Card>
               </div>
+                    <p className="text-muted-foreground mb-3">
+                      {formatCurrency(project.metrics?.budgetUsed || project.current_spending || 0)} gastos
+                    </p>
+                    <Progress 
+                      value={project.target_budget ? 
+                        ((project.metrics?.budgetUsed || project.current_spending || 0) / (project.metrics?.budgetTotal || project.target_budget)) * 100 : 
+                        0
+                      } 
+                      className="h-2"
+                    />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <CheckCircle className="h-5 w-5" />
+                      Progresso Geral
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-primary mb-2">
+                      {calculateProjectProgress().toFixed(0)}%
+                    </div>
+                    <p className="text-muted-foreground mb-3">
+                      {project.status === 'completed' ? 'Projeto finalizado' : 'Do projeto concluído'}
+                    </p>
+                    <Progress 
+                      value={calculateProjectProgress()} 
+                      className="h-2" 
+                    />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Target className="h-5 w-5" />
+                      Marcos Concluídos
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-primary mb-2">
+                      {project.milestones?.filter(m => m.is_completed).length || 0}
+                    </div>
+                    <p className="text-muted-foreground mb-3">
+                      De {project.milestones?.length || 0} marcos
+                    </p>
+                    <Progress 
+                      value={project.milestones?.length ? 
+                        ((project.milestones.filter(m => m.is_completed).length || 0) / project.milestones.length) * 100 : 
+                        0
+                      } 
+                      className="h-2"
+                    />
+                  </CardContent>
+                </Card>
+              </div>
 
               {/* Detalhes do Impacto */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -1605,14 +1617,14 @@ const ProjectDetail: React.FC = () => {
                   <CardContent>
                     <div className="prose prose-slate max-w-none">
                       <p>
-                        Este projeto está transformando a vida de {getCurrentBeneficiaries().toLocaleString()} pessoas em {project.location}. 
+                        Este projeto está transformando a vida de {project.current_beneficiaries || project.metrics?.peopleImpacted || 0} pessoas em {project.location}. 
                         Com {calculateProjectProgress().toFixed(0)}% do projeto já concluído, estamos construindo um futuro 
                         melhor para toda a comunidade.
                       </p>
                       
                       <h4 className="font-semibold mt-4 mb-2">Resultados Alcançados:</h4>
                       <ul className="space-y-1">
-                        <li>• {getCurrentBeneficiaries().toLocaleString()} pessoas diretamente beneficiadas</li>
+                        <li>• {project.current_beneficiaries || project.metrics?.peopleImpacted || 0} pessoas diretamente beneficiadas</li>
                         <li>• Melhoria na qualidade de vida da comunidade</li>
                         <li>• Fortalecimento das estruturas locais</li>
                         <li>• Criação de oportunidades de desenvolvimento</li>
@@ -1630,7 +1642,7 @@ const ProjectDetail: React.FC = () => {
                       <div className="mt-6 p-4 bg-primary/5 rounded-lg">
                         <h4 className="font-semibold text-primary mb-2">Próximos Passos</h4>
                         <p className="text-sm text-muted-foreground">
-                          O projeto continuará expandindo seu impacto, com foco em alcançar as {project.target_beneficiaries?.toLocaleString() || 0} pessoas previstas 
+                          O projeto continuará expandindo seu impacto, com foco em alcançar as {project.target_beneficiaries} pessoas previstas 
                           e completar todos os marcos estabelecidos.
                         </p>
                       </div>

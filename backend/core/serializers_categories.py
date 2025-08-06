@@ -90,6 +90,16 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
     gallery = ProjectGallerySerializer(many=True, read_only=True)
     progress_status = serializers.CharField(read_only=True)
     funding_percentage = serializers.FloatField(read_only=True)
+    featured_image = serializers.SerializerMethodField()
+    
+    def get_featured_image(self, obj):
+        """Retorna URL absoluta da imagem principal"""
+        if obj.featured_image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.featured_image.url)
+            return obj.featured_image.url
+        return None
     
     class Meta:
         model = Project
@@ -110,6 +120,16 @@ class ProjectListSerializer(serializers.ModelSerializer):
     category = ProjectCategoryListSerializer(read_only=True)
     progress_status = serializers.CharField(read_only=True)
     funding_percentage = serializers.FloatField(read_only=True)
+    featured_image = serializers.SerializerMethodField()
+    
+    def get_featured_image(self, obj):
+        """Retorna URL absoluta da imagem principal"""
+        if obj.featured_image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.featured_image.url)
+            return obj.featured_image.url
+        return None
     
     class Meta:
         model = Project
