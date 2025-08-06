@@ -228,9 +228,25 @@ class BlogPost(models.Model):
         if all_hashtags:
             self.hashtags = ', '.join(all_hashtags)
     
+    def generate_unique_slug(self):
+        """Gera um slug único baseado no título"""
+        if not self.title:
+            return ''
+            
+        base_slug = slugify(self.title)
+        unique_slug = base_slug
+        counter = 1
+        
+        # Verificar se já existe um post com este slug (excluindo o próprio post se estivermos editando)
+        while BlogPost.objects.filter(slug=unique_slug).exclude(pk=self.pk).exists():
+            unique_slug = f"{base_slug}-{counter}"
+            counter += 1
+            
+        return unique_slug
+    
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
+            self.slug = self.generate_unique_slug()
         
         # Processar hashtags do conteúdo
         self.update_hashtags_from_content()

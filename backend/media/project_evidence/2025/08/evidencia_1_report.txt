@@ -1,0 +1,4 @@
+Documento de exemplo: Relatório de Progresso - Julho 2025
+Criado em: 2025-08-06 12:42:36.106169
+Descrição: Relatório detalhado do progresso do projeto durante o mês de julho, incluindo conquistas e desafios.
+Este é um arquivo de exemplo para demonstrar a funcionalidade de evidências.

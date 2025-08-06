@@ -72,6 +72,61 @@ class Program(models.Model):
         return self.name
 
 
+class ProjectCategory(models.Model):
+    """
+    Categorias específicas para projetos (diferentes dos programas)
+    Ex: Educação -> Construção de Escolas, Formação de Professores, etc.
+    """
+    name = models.CharField(max_length=100, verbose_name="Nome")
+    slug = models.SlugField(max_length=100, unique=True, verbose_name="Slug")
+    description = models.TextField(blank=True, verbose_name="Descrição")
+    color = models.CharField(
+        max_length=20, 
+        default='blue',
+        choices=[
+            ('blue', 'Azul'),
+            ('green', 'Verde'),
+            ('red', 'Vermelho'),
+            ('yellow', 'Amarelo'),
+            ('purple', 'Roxo'),
+            ('orange', 'Laranja'),
+            ('pink', 'Rosa'),
+            ('gray', 'Cinza'),
+        ],
+        verbose_name="Cor"
+    )
+    icon = models.CharField(
+        max_length=50, 
+        blank=True, 
+        help_text="Nome do ícone Lucide React (ex: Building, Heart, etc.)",
+        verbose_name="Ícone"
+    )
+    program = models.ForeignKey(
+        Program, 
+        on_delete=models.CASCADE, 
+        related_name='categories',
+        verbose_name="Programa"
+    )
+    is_active = models.BooleanField(default=True, verbose_name="Ativa")
+    order = models.PositiveIntegerField(default=0, verbose_name="Ordem")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criada em")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Atualizada em")
+    
+    class Meta:
+        verbose_name = "Categoria de Projeto"
+        verbose_name_plural = "Categorias de Projetos"
+        ordering = ['program__name', 'order', 'name']
+        unique_together = ['program', 'slug']
+    
+    def __str__(self):
+        return f"{self.program.name} - {self.name}"
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+
 class TeamMember(models.Model):
     name = models.CharField(max_length=100, verbose_name="Nome")
     role = models.CharField(max_length=100, verbose_name="Cargo")
@@ -99,37 +154,154 @@ class Project(models.Model):
         ('suspended', 'Suspenso'),
     ]
     
+    PRIORITY_CHOICES = [
+        ('low', 'Baixa'),
+        ('medium', 'Média'),
+        ('high', 'Alta'),
+        ('urgent', 'Urgente'),
+    ]
+    
     name = models.CharField(max_length=150, verbose_name="Nome")
     slug = models.SlugField(max_length=150, unique=True, verbose_name="Slug")
     description = models.TextField(verbose_name="Descrição")
     short_description = models.TextField(max_length=300, verbose_name="Descrição curta")
+    content = models.TextField(blank=True, verbose_name="Conteúdo completo", help_text="Conteúdo detalhado em HTML")
+    
+    # Relationships
     program = models.ForeignKey(Program, on_delete=models.CASCADE, verbose_name="Programa")
+    category = models.ForeignKey(
+        ProjectCategory, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        verbose_name="Categoria"
+    )
     
     # Project details
     location = models.CharField(max_length=100, verbose_name="Localização")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='planning', verbose_name="Status")
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium', verbose_name="Prioridade")
     start_date = models.DateField(verbose_name="Data de início")
     end_date = models.DateField(null=True, blank=True, verbose_name="Data de fim")
+    
+    # Progress tracking
+    progress_percentage = models.PositiveIntegerField(
+        default=0, 
+        verbose_name="Progresso (%)",
+        help_text="Progresso do projeto em porcentagem (0-100)"
+    )
+    current_beneficiaries = models.PositiveIntegerField(
+        default=0, 
+        verbose_name="Beneficiários atuais",
+        help_text="Número atual de beneficiários sendo atendidos"
+    )
+    target_beneficiaries = models.PositiveIntegerField(
+        default=0, 
+        verbose_name="Meta de beneficiários",
+        help_text="Número total de beneficiários que se pretende atender"
+    )
     
     # Images
     featured_image = models.ImageField(upload_to='projects/', null=True, blank=True, verbose_name="Imagem principal")
     
-    # Statistics
-    beneficiaries = models.PositiveIntegerField(default=0, verbose_name="Beneficiários")
+    # Financial
     budget = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name="Orçamento")
+    raised_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Valor arrecadado")
     
-    # Metadata
+    # SEO and metadata
+    meta_title = models.CharField(max_length=160, blank=True, verbose_name="Título SEO")
+    meta_description = models.CharField(max_length=320, blank=True, verbose_name="Descrição SEO")
+    meta_keywords = models.CharField(max_length=255, blank=True, verbose_name="Palavras-chave SEO")
+    
+    # Flags
     is_featured = models.BooleanField(default=False, verbose_name="Em destaque")
+    is_public = models.BooleanField(default=True, verbose_name="Público")
+    accepts_donations = models.BooleanField(default=True, verbose_name="Aceita doações")
+    
+    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
     
     class Meta:
         verbose_name = "Projeto"
         verbose_name_plural = "Projetos"
-        ordering = ['-created_at']
+        ordering = ['-is_featured', '-created_at']
     
     def __str__(self):
         return self.name
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        if not self.meta_title:
+            self.meta_title = self.name
+        if not self.meta_description:
+            self.meta_description = self.short_description
+        super().save(*args, **kwargs)
+    
+    @property
+    def progress_status(self):
+        """Retorna o status do progresso em texto"""
+        if self.progress_percentage == 0:
+            return "Não iniciado"
+        elif self.progress_percentage < 25:
+            return "Iniciado"
+        elif self.progress_percentage < 75:
+            return "Em andamento"
+        elif self.progress_percentage < 100:
+            return "Quase concluído"
+        else:
+            return "Concluído"
+    
+    @property
+    def funding_percentage(self):
+        """Retorna a porcentagem de financiamento"""
+        if not self.budget or self.budget == 0:
+            return 0
+        return min(100, (float(self.raised_amount) / float(self.budget)) * 100)
+
+
+class ProjectUpdate(models.Model):
+    """
+    Atualizações/novidades sobre projetos específicos
+    """
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='updates', verbose_name="Projeto")
+    title = models.CharField(max_length=200, verbose_name="Título")
+    content = models.TextField(verbose_name="Conteúdo")
+    image = models.ImageField(upload_to='project_updates/', null=True, blank=True, verbose_name="Imagem")
+    is_milestone = models.BooleanField(default=False, verbose_name="É um marco", help_text="Marcar se esta atualização é um marco importante")
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name="Criado por")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
+    
+    class Meta:
+        verbose_name = "Atualização de Projeto"
+        verbose_name_plural = "Atualizações de Projetos"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.project.name} - {self.title}"
+
+
+class ProjectGallery(models.Model):
+    """
+    Galeria de imagens para projetos
+    """
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='gallery', verbose_name="Projeto")
+    title = models.CharField(max_length=200, verbose_name="Título")
+    description = models.TextField(blank=True, verbose_name="Descrição")
+    image = models.ImageField(upload_to='project_gallery/', verbose_name="Imagem")
+    order = models.PositiveIntegerField(default=0, verbose_name="Ordem")
+    is_featured = models.BooleanField(default=False, verbose_name="Imagem destaque")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criada em")
+    
+    class Meta:
+        verbose_name = "Imagem da Galeria"
+        verbose_name_plural = "Galeria de Projetos"
+        ordering = ['project', 'order', '-created_at']
+    
+    def __str__(self):
+        return f"{self.project.name} - {self.title}"
 
 
 class Testimonial(models.Model):

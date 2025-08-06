@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import (
     UserProfile, Cause, Skill, Certification, Donor, Beneficiary, 
-    Volunteer, VolunteerCertification, Partner
+    Volunteer, VolunteerCertification, Partner, Program, ProjectCategory
 )
 
 
@@ -31,6 +31,29 @@ class CauseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cause
         fields = ['id', 'name', 'slug', 'description', 'icon', 'color', 'is_active']
+
+
+class ProgramSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Program
+        fields = [
+            'id', 'name', 'slug', 'description', 'short_description', 
+            'icon', 'color', 'image', 'is_active', 'order',
+            'beneficiaries_count', 'communities_reached', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class ProjectCategorySerializer(serializers.ModelSerializer):
+    program = ProgramSerializer(read_only=True)
+    
+    class Meta:
+        model = ProjectCategory
+        fields = [
+            'id', 'name', 'slug', 'description', 'icon', 'color', 
+            'program', 'is_active', 'order', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
 
 
 class SkillSerializer(serializers.ModelSerializer):

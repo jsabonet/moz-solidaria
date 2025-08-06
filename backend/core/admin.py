@@ -5,7 +5,8 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import (
     Contact, Program, TeamMember, Project, Testimonial, SiteSettings,
     UserProfile, Cause, Skill, Certification, Donor, Beneficiary, 
-    Volunteer, VolunteerCertification, Partner
+    Volunteer, VolunteerCertification, Partner, ProjectCategory,
+    ProjectUpdate, ProjectGallery
 )
 
 
@@ -248,28 +249,139 @@ class TeamMemberAdmin(admin.ModelAdmin):
     search_fields = ['name', 'role', 'email']
 
 
-@admin.register(Project)
-class ProjectAdmin(admin.ModelAdmin):
-    list_display = ['name', 'program', 'location', 'status', 'start_date', 'beneficiaries', 'is_featured']
-    list_filter = ['status', 'program', 'is_featured', 'start_date']
-    search_fields = ['name', 'description', 'location']
+@admin.register(ProjectCategory)
+class ProjectCategoryAdmin(admin.ModelAdmin):
+    list_display = ['name', 'program', 'color', 'is_active', 'order', 'projects_count']
+    list_filter = ['program', 'color', 'is_active']
+    search_fields = ['name', 'description']
     prepopulated_fields = {'slug': ('name',)}
+    list_editable = ['order', 'is_active']
     
     fieldsets = (
         ('Informações Básicas', {
-            'fields': ('name', 'slug', 'description', 'short_description', 'program')
+            'fields': ('name', 'slug', 'description', 'program')
+        }),
+        ('Aparência', {
+            'fields': ('color', 'icon')
+        }),
+        ('Configurações', {
+            'fields': ('is_active', 'order')
+        }),
+    )
+    
+    def projects_count(self, obj):
+        """Retorna o número de projetos nesta categoria"""
+        return obj.project_set.count()
+    projects_count.short_description = 'Projetos'
+    projects_count.admin_order_field = 'project_count'
+
+
+class ProjectUpdateInline(admin.TabularInline):
+    model = ProjectUpdate
+    extra = 0
+    fields = ['title', 'content', 'is_milestone', 'created_at']
+    readonly_fields = ['created_at']
+
+
+class ProjectGalleryInline(admin.TabularInline):
+    model = ProjectGallery
+    extra = 0
+    fields = ['title', 'image', 'order', 'is_featured']
+
+
+@admin.register(Project)
+class ProjectAdmin(admin.ModelAdmin):
+    list_display = [
+        'name', 'program', 'category', 'location', 'status', 'priority',
+        'progress_percentage', 'current_beneficiaries', 'is_featured', 'is_public'
+    ]
+    list_filter = [
+        'status', 'priority', 'program', 'category', 'is_featured', 
+        'is_public', 'accepts_donations', 'start_date'
+    ]
+    search_fields = ['name', 'description', 'location', 'meta_keywords']
+    prepopulated_fields = {'slug': ('name',)}
+    list_editable = ['status', 'priority', 'progress_percentage', 'is_featured', 'is_public']
+    inlines = [ProjectUpdateInline, ProjectGalleryInline]
+    
+    fieldsets = (
+        ('Informações Básicas', {
+            'fields': ('name', 'slug', 'short_description', 'program', 'category')
+        }),
+        ('Conteúdo', {
+            'fields': ('description', 'content')
         }),
         ('Detalhes do Projeto', {
-            'fields': ('location', 'status', 'start_date', 'end_date')
+            'fields': (
+                'location', 'status', 'priority', 'start_date', 'end_date'
+            )
+        }),
+        ('Progresso e Beneficiários', {
+            'fields': (
+                'progress_percentage', 'current_beneficiaries', 'target_beneficiaries'
+            )
+        }),
+        ('Financeiro', {
+            'fields': ('budget', 'raised_amount')
         }),
         ('Mídia', {
             'fields': ('featured_image',)
         }),
-        ('Estatísticas', {
-            'fields': ('beneficiaries', 'budget')
+        ('SEO', {
+            'fields': ('meta_title', 'meta_description', 'meta_keywords'),
+            'classes': ('collapse',)
         }),
         ('Configurações', {
-            'fields': ('is_featured',)
+            'fields': ('is_featured', 'is_public', 'accepts_donations')
+        }),
+    )
+    
+    def get_queryset(self, request):
+        """Otimiza consultas incluindo relacionamentos"""
+        return super().get_queryset(request).select_related('program', 'category')
+
+
+@admin.register(ProjectUpdate)
+class ProjectUpdateAdmin(admin.ModelAdmin):
+    list_display = ['title', 'project', 'is_milestone', 'created_by', 'created_at']
+    list_filter = ['is_milestone', 'project__program', 'created_at']
+    search_fields = ['title', 'content', 'project__name']
+    
+    fieldsets = (
+        ('Informações Básicas', {
+            'fields': ('project', 'title', 'content')
+        }),
+        ('Mídia', {
+            'fields': ('image',)
+        }),
+        ('Configurações', {
+            'fields': ('is_milestone', 'created_by')
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        """Define automaticamente o usuário que criou a atualização"""
+        if not change:  # Se é um novo objeto
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(ProjectGallery)
+class ProjectGalleryAdmin(admin.ModelAdmin):
+    list_display = ['title', 'project', 'is_featured', 'order', 'created_at']
+    list_filter = ['is_featured', 'project__program', 'created_at']
+    search_fields = ['title', 'description', 'project__name']
+    list_editable = ['order', 'is_featured']
+    
+    fieldsets = (
+        ('Informações Básicas', {
+            'fields': ('project', 'title', 'description')
+        }),
+        ('Mídia', {
+            'fields': ('image',)
+        }),
+        ('Configurações', {
+            'fields': ('order', 'is_featured')
         }),
     )
 

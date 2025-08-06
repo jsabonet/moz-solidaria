@@ -1,0 +1,4 @@
+Documento de exemplo: Certificado de Conformidade Ambiental
+Criado em: 2025-08-06 12:42:36.279175
+Descrição: Certificado emitido pelas autoridades ambientais confirmando conformidade do projeto.
+Este é um arquivo de exemplo para demonstrar a funcionalidade de evidências.

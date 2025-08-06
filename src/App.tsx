@@ -14,6 +14,7 @@ import {
   LazyDashboard, 
   LazyCreatePost, 
   LazyEditPost,
+  LazyCreateProject,
   ComponentLoader 
 } from "@/components/LazyComponents";
 
@@ -27,6 +28,7 @@ import Categories from "@/pages/Categories";
 import CommentsPage from "@/pages/CommentsPage";
 import AuthPage from "@/pages/AuthPage";
 import DonationProofPage from "@/pages/DonationProofPage";
+import ProjectDetail from "@/pages/ProjectDetail";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +60,7 @@ const App = () => (
                 </Suspense>
               } 
             />
+            <Route path="/projeto/:slug" element={<ProjectDetail />} />
             <Route path="/doacao" element={<Doacao />} />
             <Route path="/enviar-comprovante" element={<DonationProofPage />} />
             <Route path="/contacto" element={<Contacto />} />
@@ -102,6 +105,36 @@ const App = () => (
                 <ProtectedRoute requireAuth={true} requireStaff={true}>
                   <Suspense fallback={<ComponentLoader />}>
                     <LazyEditPost />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/projects/new" 
+              element={
+                <ProtectedRoute requireAuth={true} requireStaff={true}>
+                  <Suspense fallback={<ComponentLoader />}>
+                    <LazyCreateProject />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/projects/edit/:slug" 
+              element={
+                <ProtectedRoute requireAuth={true} requireStaff={true}>
+                  <Suspense fallback={<ComponentLoader />}>
+                    <LazyCreateProject />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/projects/view/:slug" 
+              element={
+                <ProtectedRoute requireAuth={true} requireStaff={true}>
+                  <Suspense fallback={<ComponentLoader />}>
+                    <ProjectDetail />
                   </Suspense>
                 </ProtectedRoute>
               } 

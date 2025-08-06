@@ -8,13 +8,14 @@ from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from .models import (
     UserProfile, Cause, Skill, Certification, Donor, Beneficiary, 
-    Volunteer, VolunteerCertification, Partner
+    Volunteer, VolunteerCertification, Partner, Program, ProjectCategory
 )
 from .serializers import (
     UserProfileSerializer, CauseSerializer, SkillSerializer, CertificationSerializer,
     DonorSerializer, BeneficiarySerializer, VolunteerSerializer, PartnerSerializer,
     UserRegistrationSerializer, DonorRegistrationSerializer, BeneficiaryRegistrationSerializer,
-    VolunteerRegistrationSerializer, PartnerRegistrationSerializer
+    VolunteerRegistrationSerializer, PartnerRegistrationSerializer, ProgramSerializer, 
+    ProjectCategorySerializer
 )
 
 User = get_user_model()
@@ -444,3 +445,32 @@ def _get_partner_stats(user):
         })
     except Partner.DoesNotExist:
         return Response({'error': 'Perfil de parceiro não encontrado'}, status=404)
+
+
+# =====================================
+# PROGRAM & PROJECT CATEGORIES VIEWS
+# =====================================
+
+class ProgramViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet para listar programas
+    """
+    queryset = Program.objects.filter(is_active=True).order_by('order', 'name')
+    serializer_class = ProgramSerializer
+    permission_classes = [AllowAny]  # Público para seleção em formulários
+
+
+class ProjectCategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet para listar categorias de projetos
+    """
+    queryset = ProjectCategory.objects.filter(is_active=True).order_by('program__order', 'order', 'name')
+    serializer_class = ProjectCategorySerializer
+    permission_classes = [AllowAny]  # Público para seleção em formulários
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        program_id = self.request.query_params.get('program_id', None)
+        if program_id is not None:
+            queryset = queryset.filter(program_id=program_id)
+        return queryset

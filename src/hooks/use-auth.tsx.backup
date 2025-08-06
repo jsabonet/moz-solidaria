@@ -1,0 +1,260 @@
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { 
+  setAuthToken, 
+  setRefreshToken, 
+  setUserData, 
+  clearAuthData, 
+  getAuthToken, 
+  getRefreshToken, 
+  getUserData,
+  isAuthenticated as checkAuth,
+  debugAuthState 
+} from '@/lib/auth-utils';
+
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  is_staff?: boolean;
+  is_superuser?: boolean;
+  first_name?: string;
+  last_name?: string;
+  profile?: any;
+}
+
+interface AuthContextType {
+  user: User | null;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => void;
+  loading: boolean;
+  error: string | null;
+  isAuthenticated: boolean;
+  isStaff: boolean;
+  checkAuthStatus: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Função para fazer login via JWT
+async function jwtLogin(username: string, password: string) {
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+  
+  const res = await fetch(`${API_BASE}/auth/token/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username, password }),
+  });
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Credenciais inválidas: ${errorText}`);
+  }
+  
+  const data = await res.json();
+  
+  // Buscar dados do usuário
+  const userRes = await fetch(`${API_BASE}/auth/user/`, {
+    headers: {
+      'Authorization': `Bearer ${data.access}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  let userData;
+  if (userRes.ok) {
+    userData = await userRes.json();
+  } else {
+    // Fallback para dados básicos
+    userData = {
+      id: 1,
+      username: username,
+      is_staff: true,
+      is_superuser: false
+    };
+  }
+  
+  return {
+    token: data.access,
+    refresh: data.refresh,
+    user: userData
+  };
+}
+
+// Função para refresh do token
+async function jwtRefresh(refreshToken: string) {
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+  
+  const res = await fetch(`${API_BASE}/auth/token/refresh/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ refresh: refreshToken }),
+  });
+  
+  if (!res.ok) throw new Error('Token inválido');
+  return res.json();
+}
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const isAuthenticated = !!user && (typeof user.id === 'number' ? user.id >= 0 : !!user.username);
+  const isStaff = !!user && (user.is_staff || user.is_superuser);
+
+  console.log('🔍 Auth State:', { 
+    user: user ? { id: user.id, username: user.username, is_staff: user.is_staff } : null, 
+    isAuthenticated, 
+    isStaff, 
+    loading 
+  });
+
+  const checkAuthStatus = async () => {
+    console.log('🔍 Verificando status de autenticação...');
+    const token = localStorage.getItem('authToken');
+    const refreshToken = localStorage.getItem('refreshToken');
+    const storedUserData = localStorage.getItem('userData');
+    
+    if (!token) {
+      console.log('❌ Nenhum token encontrado');
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
+    // Se temos dados do usuário salvos, usar primeiro
+    if (storedUserData) {
+      try {
+        const userData = JSON.parse(storedUserData);
+        console.log('✅ Dados do usuário recuperados do localStorage:', userData);
+        setUser(userData);
+        setLoading(false);
+        return;
+      } catch (error) {
+        console.warn('⚠️ Erro ao parsear userData do localStorage:', error);
+      }
+    }
+
+    try {
+      // Verificar se o token ainda é válido
+      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const response = await fetch(`${API_BASE}/auth/user/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('✅ Token válido, dados do usuário obtidos:', userData);
+        setUser(userData);
+        localStorage.setItem('userData', JSON.stringify(userData));
+      } else {
+        console.log('⚠️ Token inválido, tentando refresh...');
+        if (refreshToken) {
+          try {
+            const refreshResponse = await jwtRefresh(refreshToken);
+            setAuthToken(refreshResponse.access);
+            setRefreshToken(refreshResponse.refresh);
+            
+            // Buscar dados atualizados do usuário
+            const userResponse = await fetch(`${API_BASE}/auth/user/`, {
+              headers: {
+                'Authorization': `Bearer ${refreshResponse.access}`,
+                'Content-Type': 'application/json',
+              },
+            });
+            
+            if (userResponse.ok) {
+              const userData = await userResponse.json();
+              setUser(userData);
+              setUserData(userData);
+              console.log('✅ Token refreshed e dados atualizados');
+            } else {
+              console.error('Erro ao carregar perfil após refresh');
+            }
+              logout();
+            }
+          } catch (refreshError) {
+            console.error('❌ Refresh falhou:', refreshError);
+            logout();
+          }
+        } else {
+          console.log('❌ Sem refresh token, fazendo logout');
+          logout();
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao verificar autenticação:', error);
+      logout();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const login = async (username: string, password: string) => {
+    setError(null);
+    setLoading(true);
+    console.log('🔐 Iniciando processo de login para:', username);
+    
+    try {
+      const response = await jwtLogin(username, password);
+      console.log('✅ Login bem-sucedido:', response);
+      
+      // Salvar tokens usando funções centralizadas
+      setAuthToken(response.token);
+      setRefreshToken(response.refresh);
+      setUserData(response.user);
+      
+      setUser(response.user);
+      console.log('🎉 Login concluído com sucesso!');
+      debugAuthState(); // Debug do estado
+    } catch (error) {
+      console.error('❌ Erro no login:', error);
+      setError('Credenciais inválidas. Verifique seu usuário e senha.');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = () => {
+    console.log('🚪 Fazendo logout...');
+    clearAuthData(); // Usar função centralizada que limpa tudo
+    setUser(null);
+    console.log('✅ Logout concluído');
+  };
+
+  return (
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      logout, 
+      loading, 
+      error, 
+      isAuthenticated, 
+      isStaff, 
+      checkAuthStatus 
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+  }
+  return context;
+};

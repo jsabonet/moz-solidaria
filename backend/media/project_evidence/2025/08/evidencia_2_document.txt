@@ -1,0 +1,4 @@
+Documento de exemplo: Contrato de Fornecimento de Materiais
+Criado em: 2025-08-06 12:42:36.139543
+Descrição: Documento oficial do contrato firmado com fornecedores locais para aquisição de materiais de construção.
+Este é um arquivo de exemplo para demonstrar a funcionalidade de evidências.

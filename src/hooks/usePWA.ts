@@ -18,9 +18,15 @@ export const usePWA = () => {
 
     // Handle install prompt
     const handleBeforeInstallPrompt = (e: Event) => {
+      // Importante: preventDefault() para capturar o evento
       e.preventDefault();
+      console.log('PWA: beforeinstallprompt event captured and prevented');
+      
       setInstallPrompt(e as any);
       setIsInstallable(true);
+      
+      // Note: Para mostrar o banner, chame installPrompt.prompt() quando apropriado
+      // O browser não irá mostrar o banner automático após preventDefault()
     };
 
     // Handle app installed
@@ -51,22 +57,32 @@ export const usePWA = () => {
   }, []);
 
   const install = async () => {
-    if (!installPrompt) return false;
+    if (!installPrompt) {
+      console.log('PWA: No install prompt available');
+      return false;
+    }
 
     try {
+      console.log('PWA: Showing install prompt');
+      // Aqui chamamos prompt() para mostrar o banner de instalação
       await installPrompt.prompt();
+      
       const choiceResult = await installPrompt.userChoice;
+      console.log('PWA: User choice result:', choiceResult);
       
       if (choiceResult.outcome === 'accepted') {
+        console.log('PWA: User accepted installation');
         setIsInstalled(true);
         setIsInstallable(false);
         setInstallPrompt(null);
         return true;
+      } else {
+        console.log('PWA: User dismissed installation');
       }
       
       return false;
     } catch (error) {
-      console.error('Install failed:', error);
+      console.error('PWA: Install failed:', error);
       return false;
     }
   };

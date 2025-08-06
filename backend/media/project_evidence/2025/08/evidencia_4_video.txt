@@ -1,0 +1,4 @@
+Documento de exemplo: Vídeo de Treinamento da Comunidade
+Criado em: 2025-08-06 12:42:36.172505
+Descrição: Vídeo documentando o treinamento fornecido à comunidade local sobre manutenção da infraestrutura.
+Este é um arquivo de exemplo para demonstrar a funcionalidade de evidências.

@@ -9,12 +9,7 @@ function getAuthHeaders() {
   };
   
   if (token) {
-    // Check if it's a JWT token (starts with ey) or DRF Token
-    if (token.startsWith('ey')) {
-      headers.Authorization = `Bearer ${token}`;
-    } else {
-      headers.Authorization = `Token ${token}`;
-    }
+    headers.Authorization = `Bearer ${token}`;
   }
   
   return headers;

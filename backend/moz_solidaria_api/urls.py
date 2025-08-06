@@ -73,6 +73,9 @@ urlpatterns = [
         path('client-area/', include('client_area.urls')),
         path('donations/', include('donations.urls')),
         path('notifications/', include('notifications.urls')),
+        path('projects/', include('core.urls_categories')),
+        path('tracking/', include('project_tracking.urls')),
+        path('reports/', include('reports.urls')),
         # path('core/', include('core.urls')),  # Temporariamente desabilitado
     ])),
 ]

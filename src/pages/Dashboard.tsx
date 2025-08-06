@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Plus, Edit, Tag, Trash2, Eye, Calendar, TrendingUp, Copy, MessageCircle } from 'lucide-react';
+import { Plus, Edit, Tag, Trash2, Eye, Calendar, TrendingUp, Copy, MessageCircle, Heart, Settings, DollarSign, MapPin, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,19 +12,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminDonations from '@/components/AdminDonations';
 import DonationDetails from '@/components/DonationDetails';
 import NotificationTest from '@/components/NotificationTest';
+import ProjectManagement from '@/components/ProjectManagement';
+import ProjectCategoryManagement from '@/components/admin/ProjectCategoryManagement';
+import GlobalProjectAnalytics from '@/components/GlobalProjectAnalytics';
 import {
   BarChart3,
   Users,
   FileText,
-  Heart,
-  Settings,
-  DollarSign,
-  MapPin,
   Download,
   Filter,
   Search,
   MoreHorizontal,
-  Bell,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -164,15 +162,30 @@ const Dashboard: React.FC = () => {
 
       <div className="p-3 md:p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-6 h-auto p-1">
+          <TabsList className="grid w-full grid-cols-9 h-auto p-1">
             <TabsTrigger value="overview" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
               <BarChart3 className="h-4 w-4 md:h-4 md:w-4" />
               <span className="hidden sm:block">Visão Geral</span>
               <span className="sm:hidden text-xs">Geral</span>
             </TabsTrigger>
+            <TabsTrigger value="analytics" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+              <TrendingUp className="h-4 w-4 md:h-4 md:w-4" />
+              <span className="hidden sm:block">Analytics</span>
+              <span className="sm:hidden text-xs">Anál</span>
+            </TabsTrigger>
             <TabsTrigger value="blog" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
               <FileText className="h-4 w-4 md:h-4 md:w-4" />
               <span>Blog</span>
+            </TabsTrigger>
+            <TabsTrigger value="projects" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+              <MapPin className="h-4 w-4 md:h-4 md:w-4" />
+              <span className="hidden sm:block">Projetos</span>
+              <span className="sm:hidden text-xs">Proj</span>
+            </TabsTrigger>
+            <TabsTrigger value="categories" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+              <Tag className="h-4 w-4 md:h-4 md:w-4" />
+              <span className="hidden sm:block">Categorias</span>
+              <span className="sm:hidden text-xs">Cat</span>
             </TabsTrigger>
             <TabsTrigger value="donations" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
               <DollarSign className="h-4 w-4 md:h-4 md:w-4" />
@@ -260,6 +273,11 @@ const Dashboard: React.FC = () => {
             <div className="grid lg:grid-cols-2 gap-4 md:gap-6">
               {/* ...existing code for charts and recent activity... */}
             </div>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-4 md:space-y-6">
+            <GlobalProjectAnalytics />
           </TabsContent>
 
           {/* Blog Tab */}
@@ -376,6 +394,16 @@ const Dashboard: React.FC = () => {
                 </Button>
               </div>
             )}
+          </TabsContent>
+
+          {/* Projects Tab */}
+          <TabsContent value="projects" className="space-y-4 md:space-y-6">
+            <ProjectManagement />
+          </TabsContent>
+
+          {/* Categories Tab */}
+          <TabsContent value="categories" className="space-y-4 md:space-y-6">
+            <ProjectCategoryManagement />
           </TabsContent>
 
           {/* Donations Tab */}

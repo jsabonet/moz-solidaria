@@ -45,7 +45,6 @@ const SEOHead: React.FC<SEOHeadProps> = ({
       tag.content = content;
       document.head.appendChild(tag);
       
-      console.log(`🏷️ SEOHead - Meta tag atualizada: ${attribute}="${name}" content="${content}"`);
     };
 
     // Função para atualizar robots meta tag baseada nos campos do post
@@ -84,7 +83,6 @@ const SEOHead: React.FC<SEOHeadProps> = ({
     if (customKeywords && customKeywords.trim()) {
       // 0. PRIORIDADE MÁXIMA: keywords passadas diretamente (para páginas estáticas)
       keywordsToUse = customKeywords.trim();
-      console.log('🏷️ SEOHead - Usando keywords customizadas:', keywordsToUse);
     } else if (post?.meta_keywords && post.meta_keywords.trim()) {
       // 1. PRIORIDADE: usar meta_keywords específicas do post (do formulário)
       keywordsToUse = post.meta_keywords.trim();
@@ -105,12 +103,6 @@ const SEOHead: React.FC<SEOHeadProps> = ({
       const uniqueKeywords = [...new Set(keywords.filter(Boolean))];
       keywordsToUse = uniqueKeywords.join(', ');
       
-      console.log('🏷️ SEOHead - Gerando keywords automáticas:', {
-        focus_keyword: post.focus_keyword,
-        category: post.category?.name,
-        tags: post.tags,
-        generated_keywords: keywordsToUse
-      });
     }
     
     if (keywordsToUse) {

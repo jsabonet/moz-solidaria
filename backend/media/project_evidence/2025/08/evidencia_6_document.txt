@@ -1,0 +1,4 @@
+Documento de exemplo: Lista de Beneficiários
+Criado em: 2025-08-06 12:42:36.289924
+Descrição: Documento oficial listando todas as famílias e indivíduos beneficiados pelo projeto.
+Este é um arquivo de exemplo para demonstrar a funcionalidade de evidências.

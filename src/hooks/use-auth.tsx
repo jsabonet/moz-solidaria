@@ -1,5 +1,4 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { login as apiLogin, refreshToken as apiRefreshToken, fetchUserProfile } from '@/lib/api';
 
 interface User {
   id: number;
@@ -9,7 +8,7 @@ interface User {
   is_superuser?: boolean;
   first_name?: string;
   last_name?: string;
-  profile?: any; // Dados do UserProfile do client-area
+  profile?: any;
 }
 
 interface AuthContextType {
@@ -25,6 +24,69 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Função para fazer login via JWT
+async function jwtLogin(username: string, password: string) {
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+  
+  const res = await fetch(`${API_BASE}/auth/token/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username, password }),
+  });
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Credenciais inválidas: ${errorText}`);
+  }
+  
+  const data = await res.json();
+  
+  // Buscar dados do usuário
+  const userRes = await fetch(`${API_BASE}/auth/user/`, {
+    headers: {
+      'Authorization': `Bearer ${data.access}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  let userData;
+  if (userRes.ok) {
+    userData = await userRes.json();
+  } else {
+    // Fallback para dados básicos
+    userData = {
+      id: 1,
+      username: username,
+      is_staff: true,
+      is_superuser: false
+    };
+  }
+  
+  return {
+    token: data.access,
+    refresh: data.refresh,
+    user: userData
+  };
+}
+
+// Função para refresh do token
+async function jwtRefresh(refreshToken: string) {
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+  
+  const res = await fetch(`${API_BASE}/auth/token/refresh/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ refresh: refreshToken }),
+  });
+  
+  if (!res.ok) throw new Error('Token inválido');
+  return res.json();
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,7 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isStaff = !!user && (user.is_staff || user.is_superuser);
 
   console.log('🔍 Auth State:', { 
-    user: user ? { id: user.id, username: user.username } : null, 
+    user: user ? { id: user.id, username: user.username, is_staff: user.is_staff } : null, 
     isAuthenticated, 
     isStaff, 
     loading 
@@ -43,7 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const checkAuthStatus = async () => {
     console.log('🔍 Verificando status de autenticação...');
     const token = localStorage.getItem('authToken');
-    const refreshTokenValue = localStorage.getItem('refreshToken');
+    const refreshToken = localStorage.getItem('refreshToken');
     const storedUserData = localStorage.getItem('userData');
     
     if (!token) {
@@ -67,48 +129,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      // Verificar se o token ainda é válido fazendo uma requisição para o perfil
-      const response = await fetch('http://localhost:8000/api/v1/client-area/profile/', {
+      // Verificar se o token ainda é válido
+      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const response = await fetch(`${API_BASE}/auth/user/`, {
         method: 'GET',
         headers: {
-          'Authorization': `Token ${token}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
 
       if (response.ok) {
-        // Token válido, usar dados retornados pela requisição
-        const profileData = await response.json();
-        console.log('✅ Dados do perfil obtidos da API:', profileData);
-        const userData = {
-          ...profileData.user, // Dados do Django User (com is_staff, is_superuser)
-          profile: profileData  // Dados do UserProfile do client-area
-        };
+        const userData = await response.json();
+        console.log('✅ Token válido, dados do usuário obtidos:', userData);
         setUser(userData);
-        // Salvar dados atualizados
         localStorage.setItem('userData', JSON.stringify(userData));
       } else {
         console.log('⚠️ Token inválido, tentando refresh...');
-        // Token inválido, tentar refresh
-        if (refreshTokenValue) {
+        if (refreshToken) {
           try {
-            const refreshResponse = await apiRefreshToken(refreshTokenValue);
+            const refreshResponse = await jwtRefresh(refreshToken);
             localStorage.setItem('authToken', refreshResponse.access);
             localStorage.setItem('refreshToken', refreshResponse.refresh);
             
             // Buscar dados atualizados do usuário
-            try {
-              const userData = await fetchUserProfile();
+            const userResponse = await fetch(`${API_BASE}/auth/user/`, {
+              headers: {
+                'Authorization': `Bearer ${refreshResponse.access}`,
+                'Content-Type': 'application/json',
+              },
+            });
+            
+            if (userResponse.ok) {
+              const userData = await userResponse.json();
               setUser(userData);
               localStorage.setItem('userData', JSON.stringify(userData));
               console.log('✅ Token refreshed e dados atualizados');
-            } catch (profileError) {
-              console.error('Erro ao carregar perfil após refresh:', profileError);
+            } else {
+              console.error('Erro ao carregar perfil após refresh');
               logout();
             }
           } catch (refreshError) {
             console.error('❌ Refresh falhou:', refreshError);
-            // Refresh falhou, fazer logout
             logout();
           }
         } else {
@@ -134,55 +196,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     console.log('🔐 Iniciando processo de login para:', username);
     
     try {
-      const response = await apiLogin(username, password);
-      console.log('✅ Login API bem-sucedido:', response);
+      const response = await jwtLogin(username, password);
+      console.log('✅ Login bem-sucedido:', response);
       
-      // Salvar token
+      // Salvar tokens
       localStorage.setItem('authToken', response.token);
-      console.log('💾 Token salvo:', response.token.substring(0, 20) + '...');
+      localStorage.setItem('refreshToken', response.refresh);
+      localStorage.setItem('userData', JSON.stringify(response.user));
       
-      // Store refresh token if available (JWT)
-      if (response.refresh) {
-        localStorage.setItem('refreshToken', response.refresh);
-        console.log('💾 Refresh token salvo');
-      }
-      
-      // Handle user data differently for JWT vs DRF Token
-      let userData;
-      if (response.user && response.user.user) {
-        // DRF Token response (client-area)
-        userData = {
-          ...response.user.user, // Dados do Django User (com is_staff, is_superuser)
-          profile: response.user  // Dados do UserProfile do client-area
-        };
-        console.log('👤 Usando dados DRF Token:', userData);
-      } else if (response.user) {
-        // JWT response ou formato simples
-        userData = response.user;
-        console.log('👤 Usando dados JWT/simples:', userData);
-      } else {
-        // Fallback - criar dados básicos
-        userData = {
-          id: 1,
-          username: username,
-          is_staff: true,
-          is_superuser: true
-        };
-        console.log('👤 Usando dados fallback:', userData);
-      }
-      
-      // Garantir que userData tem as propriedades necessárias
-      if (!userData.id && userData.id !== 0) {
-        userData.id = 1; // ID padrão válido
-      }
-      if (!userData.username) {
-        userData.username = username;
-      }
-      
-      console.log('👤 Dados finais do usuário:', userData);
-      setUser(userData);
-      localStorage.setItem('userData', JSON.stringify(userData));
-      console.log('🎉 Login concluído com sucesso! isAuthenticated será true agora');
+      setUser(response.user);
+      console.log('🎉 Login concluído com sucesso!');
     } catch (error) {
       console.error('❌ Erro no login:', error);
       setError('Credenciais inválidas. Verifique seu usuário e senha.');
@@ -197,6 +220,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('userData');
+    // Limpar qualquer token antigo
+    localStorage.removeItem('access_token');
     setUser(null);
     console.log('✅ Logout concluído');
   };

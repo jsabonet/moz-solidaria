@@ -98,6 +98,12 @@ export const LazyEditPost = lazy(() =>
   }))
 );
 
+export const LazyCreateProject = lazy(() => 
+  import('@/pages/CreateProject').then(module => ({ 
+    default: module.default 
+  }))
+);
+
 // Componente RichTextEditor assíncrono para performance
 export const LazyRichTextEditor = lazy(() => 
   import('@/components/RichTextEditorAsync').then(module => ({ 
