@@ -991,6 +991,8 @@ export async function fetchCompleteProjectData(slug: string) {
             budget: trackingData.budget || basicProject.budget,
             raised_amount: trackingData.raised_amount || basicProject.raised_amount,
             funding_percentage: trackingData.funding_percentage || basicProject.funding_percentage,
+            featured_image: trackingData.featured_image || basicProject.featured_image,
+            image: trackingData.image || basicProject.image,
             // Normalizar métricas para o formato esperado pelo frontend
             metrics: {
               peopleImpacted: trackingData.metrics.people_impacted,
@@ -1009,6 +1011,8 @@ export async function fetchCompleteProjectData(slug: string) {
           console.log('✅ Dados completos processados do tracking:', {
             project: completeData.name,
             target_beneficiaries: completeData.target_beneficiaries,
+            featured_image: completeData.featured_image,
+            gallery_images_count: completeData.gallery_images?.length || 0,
             peopleImpacted: completeData.metrics.peopleImpacted,
             progressPercentage: completeData.metrics.progressPercentage,
             completedMilestones: completeData.metrics.completedMilestones,

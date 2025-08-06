@@ -282,6 +282,11 @@ const ProjectDetail: React.FC = () => {
         type: typeof projectData.target_beneficiaries,
         hasProperty: 'target_beneficiaries' in projectData
       });
+      console.log('🖼️ ProjectDetail - Verificando imagens:', {
+        featured_image: projectData.featured_image,
+        gallery_images_count: projectData.gallery_images?.length || 0,
+        first_gallery_image: projectData.gallery_images?.[0]
+      });
       setProject(projectData);
     } catch (error: any) {
       console.error('❌ Erro ao carregar projeto:', error);
@@ -1335,7 +1340,7 @@ const ProjectDetail: React.FC = () => {
                       <Card key={image.id} className="overflow-hidden group">
                         <div className="relative">
                           <img 
-                            src={image.url}
+                            src={image.image_url || image.image || image.url}
                             alt={image.title}
                             className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
                             onError={(e) => {
