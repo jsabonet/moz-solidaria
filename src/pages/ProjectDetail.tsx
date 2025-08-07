@@ -71,7 +71,7 @@ interface Project {
     name: string;
   };
   status: 'planning' | 'active' | 'completed' | 'suspended';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
   progress_percentage: number;
   manager?: {
     id: number;
@@ -79,8 +79,8 @@ interface Project {
     full_name: string;
   };
   location: string;
-  district: string;
-  province: string;
+  district?: string;
+  province?: string;
   coordinates?: string;
   start_date: string;
   end_date?: string;
@@ -118,13 +118,29 @@ interface Project {
     end_date?: string;
   }[];
   
+  updates?: {
+    id: number;
+    title: string;
+    description: string;
+    type: 'progress' | 'milestone' | 'issue' | 'achievement' | 'financial' | 'community';
+    status: 'draft' | 'published' | 'archived';
+    people_impacted?: number;
+    budget_spent?: string;
+    progress_percentage?: number;
+    author_name?: string;
+    created_at: string;
+    updated_at: string;
+  }[];
+  
   gallery_images?: {
     id: number;
     title: string;
     description: string;
-    url: string;
+    url?: string;
+    image?: string;
+    image_url?: string;
     category: 'before' | 'after' | 'progress' | 'team' | 'community' | 'infrastructure' | 'events';
-    uploadDate: string;
+    upload_date: string;
   }[];
   
   evidences?: {
@@ -133,7 +149,7 @@ interface Project {
     description: string;
     file_url: string;
     file_type: 'pdf' | 'image' | 'document';
-    uploaded_at: string;
+    upload_date: string;
   }[];
   
   metrics?: {
@@ -182,7 +198,8 @@ const getStatusColor = (status: string) => {
 };
 
 const getPriorityIcon = (priority: string) => {
-  switch (priority) {
+  const normalizedPriority = priority?.toString().trim().toLowerCase();
+  switch (normalizedPriority) {
     case 'low': return <Circle className="h-4 w-4" />;
     case 'medium': return <AlertCircle className="h-4 w-4" />;
     case 'high': return <TrendingUp className="h-4 w-4" />;
@@ -192,17 +209,22 @@ const getPriorityIcon = (priority: string) => {
 };
 
 const getPriorityLabel = (priority: string) => {
-  switch (priority) {
+  // Normalizar o valor removendo espaços e convertendo para lowercase
+  const normalizedPriority = priority?.toString().trim().toLowerCase();
+  
+  switch (normalizedPriority) {
     case 'low': return 'Baixa';
     case 'medium': return 'Média';
     case 'high': return 'Alta';
     case 'urgent': return 'Urgente';
-    default: return 'Não definida';
+    default: 
+      return 'Média'; // Valor padrão em vez de "Não definida"
   }
 };
 
 const getPriorityColor = (priority: string) => {
-  switch (priority) {
+  const normalizedPriority = priority?.toString().trim().toLowerCase();
+  switch (normalizedPriority) {
     case 'low': return 'bg-blue-100 text-blue-800';
     case 'medium': return 'bg-yellow-100 text-yellow-800';
     case 'high': return 'bg-orange-100 text-orange-800';
@@ -211,11 +233,29 @@ const getPriorityColor = (priority: string) => {
   }
 };
 
-const formatDate = (date: string | Date) => {
+const formatDate = (date: string | Date | null | undefined) => {
   try {
+    // Verificar se a data é válida
+    if (!date) {
+      return 'Data não informada';
+    }
+
+    // Se for string vazia
+    if (typeof date === 'string' && date.trim() === '') {
+      return 'Data não informada';
+    }
+
     const dateObj = new Date(date);
+    
+    // Verificar se a data é válida
+    if (isNaN(dateObj.getTime())) {
+      console.warn('Data inválida recebida:', date);
+      return 'Data inválida';
+    }
+
     return format(dateObj, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
-  } catch {
+  } catch (error) {
+    console.error('Erro ao formatar data:', error, 'Valor recebido:', date);
     return 'Data inválida';
   }
 };
@@ -286,6 +326,26 @@ const ProjectDetail: React.FC = () => {
         featured_image: projectData.featured_image,
         gallery_images_count: projectData.gallery_images?.length || 0,
         first_gallery_image: projectData.gallery_images?.[0]
+      });
+      console.log('📝 ProjectDetail - Verificando updates:', {
+        updates_count: projectData.updates?.length || 0,
+        first_update: projectData.updates?.[0],
+        activities_count: projectData.activities?.length || 0
+      });
+      console.log('📅 ProjectDetail - Verificando datas:', {
+        start_date: projectData.start_date,
+        end_date: projectData.end_date,
+        created_at: projectData.created_at,
+        updated_at: projectData.updated_at,
+        milestone_dates: projectData.milestones?.slice(0, 2).map(m => ({
+          target_date: m.target_date,
+          completion_date: m.completion_date
+        }))
+      });
+      console.log('🎯 ProjectDetail - Teste formatDate:', {
+        start_date_formatted: formatDate(projectData.start_date),
+        created_at_formatted: formatDate(projectData.created_at),
+        test_date_formatted: formatDate('2025-08-06T23:30:24.511638+02:00')
       });
       setProject(projectData);
     } catch (error: any) {
@@ -397,6 +457,47 @@ const ProjectDetail: React.FC = () => {
     return result;
   };
 
+  const getPublishedUpdates = () => {
+    if (!project?.updates) return [];
+    return project.updates.filter(update => update.status === 'published');
+  };
+
+  const getUpdateTypeIcon = (type: string) => {
+    switch (type) {
+      case 'milestone': return <Target className="h-4 w-4" />;
+      case 'progress': return <TrendingUp className="h-4 w-4" />;
+      case 'issue': return <AlertCircle className="h-4 w-4" />;
+      case 'achievement': return <CheckCircle className="h-4 w-4" />;
+      case 'financial': return <DollarSign className="h-4 w-4" />;
+      case 'community': return <Users className="h-4 w-4" />;
+      default: return <Activity className="h-4 w-4" />;
+    }
+  };
+
+  const getUpdateTypeLabel = (type: string) => {
+    switch (type) {
+      case 'milestone': return 'Marco';
+      case 'progress': return 'Progresso';
+      case 'issue': return 'Problema';
+      case 'achievement': return 'Conquista';
+      case 'financial': return 'Financeiro';
+      case 'community': return 'Comunidade';
+      default: return type;
+    }
+  };
+
+  const getUpdateTypeColor = (type: string) => {
+    switch (type) {
+      case 'milestone': return 'bg-blue-100 text-blue-800';
+      case 'progress': return 'bg-green-100 text-green-800';
+      case 'issue': return 'bg-red-100 text-red-800';
+      case 'achievement': return 'bg-yellow-100 text-yellow-800';
+      case 'financial': return 'bg-purple-100 text-purple-800';
+      case 'community': return 'bg-indigo-100 text-indigo-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -434,6 +535,13 @@ const ProjectDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Debug temporário - remover depois */}
+      {project && (
+        <div className="bg-yellow-100 p-2 text-xs">
+          <strong>DEBUG:</strong> Location: "{project.location}", District: "{project.district}", Province: "{project.province}"
+        </div>
+      )}
+      
       <SEOHead 
         title={`${project.name} - Moz Solidária Hub`}
         description={project.description}
@@ -467,9 +575,9 @@ const ProjectDetail: React.FC = () => {
                     {getStatusLabel(project.status)}
                   </Badge>
                   
-                  <Badge className={getPriorityColor(project.priority)}>
-                    {getPriorityIcon(project.priority)}
-                    <span className="ml-1">{getPriorityLabel(project.priority)}</span>
+                  <Badge className={getPriorityColor(project.priority || 'medium')}>
+                    {getPriorityIcon(project.priority || 'medium')}
+                    <span className="ml-1">{getPriorityLabel(project.priority || 'medium')}</span>
                   </Badge>
                 </div>
 
@@ -484,7 +592,11 @@ const ProjectDetail: React.FC = () => {
                 <div className="flex items-center gap-6 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4" />
-                    <span>{project.location}, {project.province}</span>
+                    <span>
+                      {project.location}
+                      {project.district && project.district !== project.location && `, ${project.district}`}
+                      {project.province && `, ${project.province}`}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
@@ -716,9 +828,9 @@ const ProjectDetail: React.FC = () => {
                       
                       <div className="flex items-center justify-between">
                         <Label className="text-sm font-medium">Prioridade</Label>
-                        <Badge className={getPriorityColor(project.priority)}>
-                          {getPriorityIcon(project.priority)}
-                          <span className="ml-1">{getPriorityLabel(project.priority)}</span>
+                        <Badge className={getPriorityColor(project.priority || 'medium')}>
+                          {getPriorityIcon(project.priority || 'medium')}
+                          <span className="ml-1">{getPriorityLabel(project.priority || 'medium')}</span>
                         </Badge>
                       </div>
 
@@ -743,10 +855,12 @@ const ProjectDetail: React.FC = () => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      <div>
-                        <Label className="text-sm font-medium">Província</Label>
-                        <p className="text-muted-foreground">{project.province}</p>
-                      </div>
+                      {project.province && (
+                        <div>
+                          <Label className="text-sm font-medium">Província</Label>
+                          <p className="text-muted-foreground">{project.province}</p>
+                        </div>
+                      )}
                       {project.district && (
                         <div>
                           <Label className="text-sm font-medium">Distrito</Label>
@@ -989,10 +1103,12 @@ const ProjectDetail: React.FC = () => {
                       <Label className="text-sm font-medium">País</Label>
                       <p className="text-muted-foreground">Moçambique</p>
                     </div>
-                    <div>
-                      <Label className="text-sm font-medium">Província</Label>
-                      <p className="text-muted-foreground">{project.province}</p>
-                    </div>
+                    {project.province && (
+                      <div>
+                        <Label className="text-sm font-medium">Província</Label>
+                        <p className="text-muted-foreground">{project.province}</p>
+                      </div>
+                    )}
                     {project.district && (
                       <div>
                         <Label className="text-sm font-medium">Distrito</Label>
@@ -1153,8 +1269,86 @@ const ProjectDetail: React.FC = () => {
                     </Card>
                   )}
 
-                  {/* Atividades e Tarefas */}
-                  {project.activities && project.activities.length > 0 ? (
+                  {/* Atualizações do Projeto */}
+                  {getPublishedUpdates().length > 0 ? (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Activity className="h-5 w-5" />
+                          Atualizações do Projeto
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          {getPublishedUpdates().length} atualizações publicadas
+                        </p>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {getPublishedUpdates()
+                            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                            .slice(0, 10) // Mostrar últimas 10 atualizações
+                            .map((update, index) => (
+                            <div key={update.id} className="flex gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                              <div className="flex-shrink-0 mt-1">
+                                <div className={`p-2 rounded-lg ${getUpdateTypeColor(update.type)}`}>
+                                  {getUpdateTypeIcon(update.type)}
+                                </div>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                  <h4 className="font-medium text-foreground">{update.title}</h4>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    <Badge className={getUpdateTypeColor(update.type)}>
+                                      {getUpdateTypeLabel(update.type)}
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatDate(update.created_at)}
+                                    </span>
+                                  </div>
+                                </div>
+                                <p className="text-sm text-muted-foreground mb-3">{update.description}</p>
+                                
+                                {/* Métricas da Atualização */}
+                                <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                                  {update.people_impacted && (
+                                    <div className="flex items-center gap-1">
+                                      <Users className="h-3 w-3" />
+                                      <span>{update.people_impacted.toLocaleString()} pessoas impactadas</span>
+                                    </div>
+                                  )}
+                                  {update.budget_spent && (
+                                    <div className="flex items-center gap-1">
+                                      <DollarSign className="h-3 w-3" />
+                                      <span>{formatCurrency(parseFloat(update.budget_spent))} gastos</span>
+                                    </div>
+                                  )}
+                                  {update.progress_percentage && (
+                                    <div className="flex items-center gap-1">
+                                      <TrendingUp className="h-3 w-3" />
+                                      <span>{update.progress_percentage}% de progresso</span>
+                                    </div>
+                                  )}
+                                  {update.author_name && (
+                                    <div className="flex items-center gap-1">
+                                      <User className="h-3 w-3" />
+                                      <span>por {update.author_name}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {getPublishedUpdates().length > 10 && (
+                          <div className="mt-4 text-center">
+                            <p className="text-sm text-muted-foreground">
+                              Mostrando as 10 atualizações mais recentes de {getPublishedUpdates().length} total
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ) : project.activities && project.activities.length > 0 ? (
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -1186,10 +1380,92 @@ const ProjectDetail: React.FC = () => {
                     <Card>
                       <CardContent className="p-8 text-center">
                         <Activity className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-medium mb-2">Atividades em Breve</h3>
+                        <h3 className="text-lg font-medium mb-2">Atualizações em Breve</h3>
                         <p className="text-muted-foreground">
-                          As atividades do projeto serão detalhadas em breve
+                          As atualizações e atividades do projeto serão publicadas em breve
                         </p>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Histórico de Atualizações Detalhado */}
+                  {getPublishedUpdates().length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Clock className="h-5 w-5" />
+                          Histórico de Atualizações
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          Timeline completo das atualizações do projeto
+                        </p>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-6">
+                          {getPublishedUpdates()
+                            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                            .map((update, index) => (
+                            <div key={update.id} className="relative">
+                              {/* Timeline line */}
+                              {index < getPublishedUpdates().length - 1 && (
+                                <div className="absolute left-6 top-12 w-0.5 h-8 bg-border"></div>
+                              )}
+                              
+                              <div className="flex gap-4">
+                                <div className="flex-shrink-0">
+                                  <div className={`p-3 rounded-full ${getUpdateTypeColor(update.type)}`}>
+                                    {getUpdateTypeIcon(update.type)}
+                                  </div>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-2 mb-2">
+                                    <div>
+                                      <h4 className="font-medium">{update.title}</h4>
+                                      <p className="text-xs text-muted-foreground">
+                                        {formatDate(update.created_at)} 
+                                        {update.author_name && ` • por ${update.author_name}`}
+                                      </p>
+                                    </div>
+                                    <Badge className={getUpdateTypeColor(update.type)}>
+                                      {getUpdateTypeLabel(update.type)}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground mb-3">{update.description}</p>
+                                  
+                                  {/* Métricas em grid */}
+                                  {(update.people_impacted || update.budget_spent || update.progress_percentage) && (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-3 bg-muted/50 rounded-lg">
+                                      {update.people_impacted && (
+                                        <div className="text-center">
+                                          <div className="text-lg font-semibold text-primary">
+                                            {update.people_impacted.toLocaleString()}
+                                          </div>
+                                          <div className="text-xs text-muted-foreground">Pessoas Impactadas</div>
+                                        </div>
+                                      )}
+                                      {update.budget_spent && (
+                                        <div className="text-center">
+                                          <div className="text-lg font-semibold text-primary">
+                                            {formatCurrency(parseFloat(update.budget_spent))}
+                                          </div>
+                                          <div className="text-xs text-muted-foreground">Orçamento Gasto</div>
+                                        </div>
+                                      )}
+                                      {update.progress_percentage && (
+                                        <div className="text-center">
+                                          <div className="text-lg font-semibold text-primary">
+                                            {update.progress_percentage}%
+                                          </div>
+                                          <div className="text-xs text-muted-foreground">Progresso Reportado</div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </CardContent>
                     </Card>
                   )}
@@ -1372,7 +1648,7 @@ const ProjectDetail: React.FC = () => {
                           <h4 className="font-medium mb-1">{image.title}</h4>
                           <p className="text-sm text-muted-foreground mb-2">{image.description}</p>
                           <div className="text-xs text-muted-foreground">
-                            {formatDate(image.uploadDate)}
+                            {formatDate(image.upload_date)}
                           </div>
                         </CardContent>
                       </Card>
@@ -1394,35 +1670,29 @@ const ProjectDetail: React.FC = () => {
 
             {/* Evidências e Documentação */}
             <TabsContent value="evidence" className="space-y-8">
-              {project.evidences && project.evidences.length > 0 ? (
+              {project.evidences && project.evidences.filter(evidence => evidence.file_type === 'pdf').length > 0 ? (
                 <div>
                   <div className="mb-6">
                     <h3 className="text-xl font-bold mb-2">Evidências e Documentação</h3>
                     <p className="text-muted-foreground">
-                      Documentos, relatórios e evidências do projeto
+                      Documentos PDF, relatórios e evidências do projeto
                     </p>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {project.evidences.map((evidence) => (
+                    {project.evidences.filter(evidence => evidence.file_type === 'pdf').map((evidence) => (
                       <Card key={evidence.id} className="group hover:shadow-md transition-shadow">
                         <CardContent className="p-6">
                           <div className="flex items-start gap-4">
                             <div className="p-3 bg-primary/10 rounded-lg">
-                              {evidence.file_type === 'pdf' ? (
-                                <FileText className="h-6 w-6 text-primary" />
-                              ) : evidence.file_type === 'image' ? (
-                                <ImageIcon className="h-6 w-6 text-primary" />
-                              ) : (
-                                <Download className="h-6 w-6 text-primary" />
-                              )}
+                              <FileText className="h-6 w-6 text-primary" />
                             </div>
                             <div className="flex-1 min-w-0">
                               <h4 className="font-medium mb-1">{evidence.title}</h4>
                               <p className="text-sm text-muted-foreground mb-3">{evidence.description}</p>
                               <div className="flex items-center justify-between">
                                 <span className="text-xs text-muted-foreground">
-                                  {formatDate(evidence.uploaded_at)}
+                                  {formatDate(evidence.upload_date)}
                                 </span>
                                 <div className="flex gap-2">
                                   <Button size="sm" variant="outline" asChild>
@@ -1450,9 +1720,9 @@ const ProjectDetail: React.FC = () => {
                 <Card>
                   <CardContent className="p-8 text-center">
                     <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Documentação em Breve</h3>
+                    <h3 className="text-lg font-medium mb-2">Documentos PDF em Breve</h3>
                     <p className="text-muted-foreground">
-                      Os documentos e evidências do projeto serão adicionados em breve
+                      Os documentos PDF e evidências do projeto serão adicionados em breve
                     </p>
                   </CardContent>
                 </Card>

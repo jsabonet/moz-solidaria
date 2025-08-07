@@ -179,6 +179,8 @@ class Project(models.Model):
     
     # Project details
     location = models.CharField(max_length=100, verbose_name="Localização")
+    district = models.CharField(max_length=100, blank=True, verbose_name="Distrito")
+    province = models.CharField(max_length=100, blank=True, verbose_name="Província")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='planning', verbose_name="Status")
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium', verbose_name="Prioridade")
     start_date = models.DateField(verbose_name="Data de início")

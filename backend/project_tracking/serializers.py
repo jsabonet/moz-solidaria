@@ -63,7 +63,14 @@ class ProjectEvidenceSerializer(serializers.ModelSerializer):
     
     def get_file_url(self, obj):
         if obj.file:
-            return self.context['request'].build_absolute_uri(obj.file.url)
+            request = self.context.get('request')
+            if request:
+                try:
+                    return request.build_absolute_uri(obj.file.url)
+                except:
+                    # Fallback para URL relativa se build_absolute_uri falhar
+                    return obj.file.url
+            return obj.file.url
         return None
 
 class ProjectGalleryImageSerializer(serializers.ModelSerializer):
@@ -78,7 +85,14 @@ class ProjectGalleryImageSerializer(serializers.ModelSerializer):
     
     def get_image_url(self, obj):
         if obj.image:
-            return self.context['request'].build_absolute_uri(obj.image.url)
+            request = self.context.get('request')
+            if request:
+                try:
+                    return request.build_absolute_uri(obj.image.url)
+                except:
+                    # Fallback para URL relativa se build_absolute_uri falhar
+                    return obj.image.url
+            return obj.image.url
         return None
 
 class ProjectMetricsEntrySerializer(serializers.ModelSerializer):
@@ -99,6 +113,14 @@ class ProjectTrackingDataSerializer(serializers.ModelSerializer):
     evidence = ProjectEvidenceSerializer(many=True, read_only=True, source='tracking_evidence')
     metrics_entries = ProjectMetricsEntrySerializer(many=True, read_only=True, source='tracking_metrics_entries')
     
+    # Campos de relacionamento
+    program = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField()
+    
+    # Campos com display
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    priority_display = serializers.CharField(source='get_priority_display', read_only=True)
+    
     # Estatísticas calculadas
     total_updates = serializers.SerializerMethodField()
     total_images = serializers.SerializerMethodField()
@@ -109,10 +131,32 @@ class ProjectTrackingDataSerializer(serializers.ModelSerializer):
         model = Project
         fields = [
             'id', 'name', 'slug', 'description', 'short_description',
+            'start_date', 'end_date', 'created_at', 'updated_at',
+            'status', 'status_display', 'priority', 'priority_display',
+            'program', 'category', 'location', 'target_beneficiaries',
+            'current_beneficiaries', 'progress_percentage',
             'metrics', 'updates', 'milestones', 'gallery_images', 
             'evidence', 'metrics_entries', 'total_updates', 'total_images',
             'featured_images', 'recent_updates'
         ]
+    
+    def get_program(self, obj):
+        if obj.program:
+            return {
+                'id': obj.program.id,
+                'name': obj.program.name,
+                'color': obj.program.color
+            }
+        return None
+    
+    def get_category(self, obj):
+        if obj.category:
+            return {
+                'id': obj.category.id,
+                'name': obj.category.name,
+                'color': obj.category.color
+            }
+        return None
     
     def get_total_updates(self, obj):
         return obj.tracking_updates.filter(status='published').count()

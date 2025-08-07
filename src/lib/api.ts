@@ -843,19 +843,27 @@ export default api;
 // Buscar atualizações do projeto (via endpoint público se disponível)
 export async function fetchProjectUpdates(projectId: string | number) {
   try {
-    // Primeiro tenta endpoint público
-    let res = await fetch(`${API_BASE}/projects/public/projects/${projectId}/updates/`);
+    console.log('🔍 fetchProjectUpdates - Buscando atualizações para projeto:', projectId);
+    
+    // Buscar atualizações do projeto pelo endpoint de tracking
+    const url = `${API_BASE}/tracking/project-updates/?project=${projectId}`;
+    console.log('📡 fetchProjectUpdates - URL:', url);
+    
+    const res = await fetch(url);
     if (!res.ok) {
-      // Fallback para endpoint administrativo
-      res = await fetch(`${API_BASE}/projects/admin/projects/${projectId}/updates/`);
-    }
-    if (!res.ok) {
-      console.warn(`Updates endpoint not found for project ${projectId}`);
+      console.warn(`❌ fetchProjectUpdates - Updates endpoint falhou para projeto ${projectId}:`, res.status);
       return [];
     }
-    return await res.json();
+    
+    const data = await res.json();
+    console.log('✅ fetchProjectUpdates - Dados recebidos:', data);
+    
+    const updates = data.results || data; // Retorna o array de resultados
+    console.log('📋 fetchProjectUpdates - Atualizações processadas:', updates.length, 'itens');
+    
+    return updates;
   } catch (error) {
-    console.warn('Erro ao buscar atualizações do projeto:', error);
+    console.error('❌ fetchProjectUpdates - Erro ao buscar atualizações:', error);
     return [];
   }
 }
@@ -986,6 +994,13 @@ export async function fetchCompleteProjectData(slug: string) {
           // Se tracking tem dados completos, usar diretamente mas complementar com dados básicos
           const completeData = {
             ...trackingData,
+            // Mapear evidências do tracking (singular) para o formato esperado pelo frontend (plural)
+            evidences: trackingData.evidence || [],
+            // Mapear datas das métricas para o nível raiz 
+            start_date: trackingData.metrics.start_date || basicProject.start_date,
+            end_date: trackingData.metrics.end_date || basicProject.end_date,
+            created_at: basicProject.created_at, // Usar dados básicos para created_at
+            updated_at: basicProject.updated_at, // Usar dados básicos para updated_at
             // Preservar campos importantes dos dados básicos que podem não estar no tracking
             target_beneficiaries: trackingData.target_beneficiaries || basicProject.target_beneficiaries,
             budget: trackingData.budget || basicProject.budget,
@@ -993,6 +1008,15 @@ export async function fetchCompleteProjectData(slug: string) {
             funding_percentage: trackingData.funding_percentage || basicProject.funding_percentage,
             featured_image: trackingData.featured_image || basicProject.featured_image,
             image: trackingData.image || basicProject.image,
+            // CORREÇÃO: Garantir que status, priority, program e category sempre venham dos dados básicos
+            status: basicProject.status || trackingData.status,
+            priority: basicProject.priority || trackingData.priority,
+            program: basicProject.program || trackingData.program,
+            category: basicProject.category || trackingData.category,
+            // CORREÇÃO: Garantir que campos de localização sejam preservados
+            location: basicProject.location || trackingData.location,
+            district: basicProject.district || trackingData.district,
+            province: basicProject.province || trackingData.province,
             // Normalizar métricas para o formato esperado pelo frontend
             metrics: {
               peopleImpacted: trackingData.metrics.people_impacted,

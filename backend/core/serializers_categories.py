@@ -105,7 +105,7 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
         model = Project
         fields = [
             'id', 'name', 'slug', 'description', 'short_description', 'content',
-            'program', 'category', 'location', 'status', 'priority', 'start_date', 'end_date',
+            'program', 'category', 'location', 'district', 'province', 'status', 'priority', 'start_date', 'end_date',
             'progress_percentage', 'progress_status', 'current_beneficiaries', 'target_beneficiaries',
             'featured_image', 'budget', 'raised_amount', 'funding_percentage',
             'meta_title', 'meta_description', 'meta_keywords',
@@ -135,7 +135,7 @@ class ProjectListSerializer(serializers.ModelSerializer):
         model = Project
         fields = [
             'id', 'name', 'slug', 'short_description', 'program', 'category',
-            'location', 'status', 'progress_percentage', 'progress_status',
+            'location', 'district', 'province', 'status', 'progress_percentage', 'progress_status',
             'current_beneficiaries', 'target_beneficiaries', 'featured_image',
             'budget', 'raised_amount', 'funding_percentage',
             'is_featured', 'is_public', 'start_date', 'created_at'

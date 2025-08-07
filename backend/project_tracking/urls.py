@@ -20,6 +20,9 @@ urlpatterns = [
     # Include router URLs (will be available at /api/v1/tracking/)
     path('', include(router.urls)),
     
+    # Endpoint de teste
+    path('test/<slug:slug>/', views.test_project_data, name='test-project-data'),
+    
     # URLs específicas para projetos por slug
     path('projects/<slug:project_slug>/metrics/', 
          views.ProjectMetricsViewSet.as_view({'get': 'list', 'post': 'create'}), 

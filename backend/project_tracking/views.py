@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Q, Count, Sum, Avg
+from django.http import JsonResponse
 from datetime import datetime, timedelta
 
 from .models import (
@@ -16,7 +17,30 @@ from .serializers import (
     ProjectEvidenceSerializer, ProjectGalleryImageSerializer, 
     ProjectMetricsEntrySerializer, ProjectTrackingDataSerializer
 )
+from .test_serializers import NewProjectTrackingDataSerializer
 from core.models import Project
+
+# View de teste
+def test_project_data(request, slug):
+    """View simples para testar o serializer"""
+    try:
+        project = Project.objects.select_related('program', 'category').get(slug=slug)
+        serializer = ProjectTrackingDataSerializer(project)
+        
+        return JsonResponse({
+            'success': True,
+            'data': serializer.data
+        })
+    except Project.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Project not found'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
 
 class ProjectTrackingViewSet(viewsets.ModelViewSet):
     """ViewSet principal para dados consolidados de tracking de projetos"""
@@ -29,7 +53,7 @@ class ProjectTrackingViewSet(viewsets.ModelViewSet):
         queryset = Project.objects.prefetch_related(
             'tracking_updates', 'tracking_milestones', 'tracking_gallery_images', 
             'tracking_evidence', 'tracking_metrics_entries'
-        ).select_related('metrics')
+        ).select_related('metrics', 'program', 'category')
         
         # Filtros opcionais
         status_filter = self.request.query_params.get('status', None)
@@ -210,7 +234,7 @@ class ProjectGalleryImageViewSet(viewsets.ModelViewSet):
         project_slug = self.kwargs.get('project_slug')
         if project_slug:
             project = get_object_or_404(Project, slug=project_slug)
-            queryset = project.tracking_gallery_images.all().order_by('-uploaded_at')
+            queryset = project.tracking_gallery_images.all().order_by('-upload_date')
             
             # Filtros
             category_filter = self.request.query_params.get('category', None)
@@ -222,7 +246,7 @@ class ProjectGalleryImageViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(featured=True)
                 
             return queryset
-        return ProjectGalleryImage.objects.all().order_by('-uploaded_at')
+        return ProjectGalleryImage.objects.all()
     
     def perform_create(self, serializer):
         project_slug = self.kwargs.get('project_slug')
