@@ -37,7 +37,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { createProject, updateProject, fetchProjectDetail, fetchPrograms, fetchProjectManagers, isAuthenticated } from '@/lib/api';
+import { createProject, updateProject, fetchProjectDetail, fetchProjectDetailForEdit, fetchPrograms, fetchProjectManagers, fetchCategories, isAuthenticated } from '@/lib/api';
 
 // Interfaces
 interface FormData {
@@ -46,7 +46,6 @@ interface FormData {
   short_description: string;
   description: string;
   content: string;
-  excerpt: string;
   program_id: string;
   category_id: string;
   status: 'planning' | 'active' | 'completed' | 'suspended';
@@ -57,19 +56,20 @@ interface FormData {
   start_date: Date | undefined;
   end_date: Date | undefined;
   target_beneficiaries: number;
-  target_budget: number;
-  manager_id: string;
-  team_members: string[];
-  tags: string[];
+  budget: number;
   is_featured: boolean;
   is_public: boolean;
-  featured_on_homepage: boolean;
   featured_image?: File | string;
-  project_document?: File | string;
   meta_description: string;
+  meta_keywords: string;
 }
 
 interface Program {
+  id: number;
+  name: string;
+}
+
+interface CategoryOption {
   id: number;
   name: string;
 }
@@ -126,8 +126,8 @@ const validateForm = (formData: FormData): ValidationErrors => {
     errors.target_beneficiaries = 'Número de beneficiários deve ser maior que zero';
   }
 
-  if (formData.target_budget <= 0) {
-    errors.target_budget = 'Orçamento deve ser maior que zero';
+  if (formData.budget <= 0) {
+    errors.budget = 'Orçamento deve ser maior que zero';
   }
 
   if (formData.start_date && formData.end_date && formData.start_date >= formData.end_date) {
@@ -145,33 +145,15 @@ const CreateProject: React.FC = () => {
   // Estados
   const [activeTab, setActiveTab] = useState('basic');
   const [formData, setFormData] = useState<FormData>({
-    name: '',
-    slug: '',
-    short_description: '',
-    description: '',
-    content: '',
-    excerpt: '',
-    program_id: '',
-    category_id: '',
-    status: 'planning',
-    priority: 'medium',
-    location: '',
-    district: '',
-    province: 'Cabo Delgado',
-    start_date: undefined,
-    end_date: undefined,
-    target_beneficiaries: 0,
-    target_budget: 0,
-    manager_id: '',
-    team_members: [],
-    tags: [],
-    is_featured: false,
-    is_public: true,
-    featured_on_homepage: false,
-    meta_description: ''
+    name: '', slug: '', short_description: '', description: '', content: '',
+    program_id: '', category_id: '', status: 'planning', priority: 'medium',
+    location: '', district: '', province: 'Cabo Delgado', start_date: undefined,
+    end_date: undefined, target_beneficiaries: 0, budget: 0, is_featured: false,
+    is_public: true, meta_description: '', meta_keywords: ''
   });
   
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -196,13 +178,15 @@ const CreateProject: React.FC = () => {
       try {
         setLoadingData(true);
         
-        const [programsData, usersData] = await Promise.all([
+        const [programsData, usersData, categoriesData] = await Promise.all([
           fetchPrograms().catch(() => []),
-          fetchProjectManagers().catch(() => [])
+          fetchProjectManagers().catch(() => []),
+          fetchCategories().catch(() => [])
         ]);
         
         setPrograms(programsData);
         setUsers(usersData);
+        setCategories(categoriesData);
         
       } catch (error) {
         console.error('Erro ao carregar dados iniciais:', error);
@@ -215,6 +199,12 @@ const CreateProject: React.FC = () => {
           { id: 3, name: 'Formação Juvenil' },
           { id: 4, name: 'Saúde Pública' },
           { id: 5, name: 'Infraestrutura' }
+        ]);
+        setCategories([
+          { id: 1, name: 'Educação' },
+          { id: 2, name: 'Saúde' },
+          { id: 3, name: 'Infraestrutura' },
+          { id: 4, name: 'Assistência Social' }
         ]);
         setUsers([
           { id: 1, username: 'admin', full_name: 'Administrador Principal' },
@@ -235,17 +225,18 @@ const CreateProject: React.FC = () => {
       const loadProjectData = async () => {
         try {
           setLoadingData(true);
-          const projectData = await fetchProjectDetail(slug);
+          console.log('🔄 Carregando dados do projeto para edição:', slug);
+          const projectData = await fetchProjectDetailForEdit(slug);
+          console.log('📊 Dados do projeto recebidos:', projectData);
           
           setProjectId(projectData.id);
           
-          setFormData({
+          const formDataToSet = {
             name: projectData.name || '',
             slug: projectData.slug || '',
             short_description: projectData.short_description || '',
             description: projectData.description || '',
             content: projectData.content || '',
-            excerpt: projectData.excerpt || '',
             program_id: projectData.program?.id?.toString() || '',
             category_id: projectData.category?.id?.toString() || '',
             status: projectData.status || 'planning',
@@ -256,15 +247,15 @@ const CreateProject: React.FC = () => {
             start_date: projectData.start_date ? new Date(projectData.start_date) : undefined,
             end_date: projectData.end_date ? new Date(projectData.end_date) : undefined,
             target_beneficiaries: projectData.target_beneficiaries || 0,
-            target_budget: projectData.target_budget || 0,
-            manager_id: projectData.manager?.id?.toString() || '',
-            team_members: projectData.team_members || [],
-            tags: projectData.tags || [],
+            budget: projectData.budget ? parseFloat(projectData.budget) : 0,
             is_featured: projectData.is_featured || false,
             is_public: projectData.is_public !== undefined ? projectData.is_public : true,
-            featured_on_homepage: projectData.featured_on_homepage || false,
-            meta_description: projectData.meta_description || ''
-          });
+            meta_description: projectData.meta_description || '',
+            meta_keywords: projectData.meta_keywords || ''
+          };
+          
+          console.log('📝 Dados do formulário que serão definidos:', formDataToSet);
+          setFormData(formDataToSet);
           
           toast.success('Dados do projeto carregados com sucesso!');
         } catch (error) {
@@ -332,40 +323,40 @@ const CreateProject: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const hasFiles = formData.featured_image instanceof File || formData.project_document instanceof File;
+      const hasFiles = formData.featured_image instanceof File;
       let submitData: any;
-      
+      const basePayload: any = {
+        name: formData.name,
+        description: formData.description,
+        short_description: formData.short_description,
+        content: formData.content,
+        program_id: formData.program_id ? parseInt(formData.program_id) : undefined,
+        category_id: formData.category_id ? parseInt(formData.category_id) : undefined,
+        location: formData.location,
+        district: formData.district,
+        province: formData.province,
+        status: formData.status,
+        priority: formData.priority,
+        start_date: formData.start_date ? formData.start_date.toISOString().split('T')[0] : undefined,
+        end_date: formData.end_date ? formData.end_date.toISOString().split('T')[0] : undefined,
+        target_beneficiaries: formData.target_beneficiaries,
+        budget: formData.budget,
+        meta_description: formData.meta_description,
+        meta_keywords: formData.meta_keywords,
+        is_featured: formData.is_featured,
+        is_public: formData.is_public,
+        accepts_donations: true
+      };
       if (hasFiles) {
         submitData = new FormData();
-        Object.entries(formData).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            if (key === 'start_date' || key === 'end_date') {
-              if (value instanceof Date) {
-                submitData.append(key, value.toISOString().split('T')[0]);
-              }
-            } else if (key === 'team_members' || key === 'tags') {
-              submitData.append(key, JSON.stringify(value));
-            } else if (value instanceof File) {
-              submitData.append(key, value);
-            } else {
-              submitData.append(key, value.toString());
-            }
-          }
-        });
+        Object.entries(basePayload).forEach(([k,v]) => { if (v!==undefined && v!==null) submitData.append(k, String(v)); });
+        submitData.append('featured_image', formData.featured_image as File);
       } else {
-        submitData = {
-          ...formData,
-          start_date: formData.start_date?.toISOString().split('T')[0],
-          end_date: formData.end_date?.toISOString().split('T')[0]
-        };
+        submitData = basePayload;
       }
 
       if (isDraft) {
-        if (submitData instanceof FormData) {
-          submitData.set('status', 'planning');
-        } else {
-          submitData.status = 'planning';
-        }
+        if (submitData instanceof FormData) submitData.set('status','planning'); else submitData.status='planning';
       }
 
       let response;
@@ -401,7 +392,7 @@ const CreateProject: React.FC = () => {
   };
 
   // Handle file changes
-  const handleFileChange = (field: 'featured_image' | 'project_document') => (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (field: 'featured_image') => (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       // Validar tamanho do arquivo (máx 10MB)
@@ -412,27 +403,21 @@ const CreateProject: React.FC = () => {
       }
 
       // Validar tipo de arquivo
-      const allowedTypes = field === 'featured_image' 
-        ? ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-        : ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-      
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
-        const typeMessage = field === 'featured_image' 
-          ? 'Use apenas JPG, PNG ou WebP para imagens'
-          : 'Use apenas PDF ou DOC para documentos';
-        toast.error(typeMessage);
+        toast.error('Use apenas JPG, PNG ou WebP para imagens');
         return;
       }
 
       updateField(field, file);
-      toast.success(`${field === 'featured_image' ? 'Imagem' : 'Documento'} carregado com sucesso!`);
+      toast.success('Imagem carregada com sucesso!');
     }
   };
 
-  // Remover arquivo
-  const removeFile = (field: 'featured_image' | 'project_document') => {
+  // Remover imagem
+  const removeFile = (field: 'featured_image') => {
     updateField(field, undefined);
-    toast.info(`${field === 'featured_image' ? 'Imagem' : 'Documento'} removido`);
+    toast.info('Imagem removida');
   };
 
   // Componente de campo com validação
@@ -632,6 +617,25 @@ const CreateProject: React.FC = () => {
                         </Select>
                       </FormField>
 
+                      <FormField error={validationErrors.category_id}>
+                        <Label htmlFor="category_id">Categoria</Label>
+                        <Select
+                          value={formData.category_id}
+                          onValueChange={(value) => updateField('category_id', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma categoria" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.map(cat => (
+                              <SelectItem key={cat.id} value={cat.id.toString()}>
+                                {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormField>
+
                       <FormField error={validationErrors.status}>
                         <Label htmlFor="status">Status</Label>
                         <Select
@@ -683,6 +687,28 @@ const CreateProject: React.FC = () => {
                     <div className="text-xs text-muted-foreground">
                       {formData.description.length} caracteres • {formData.description.split(/\s+/).filter(word => word.length > 0).length} palavras
                     </div>
+                  </FormField>
+
+                  <FormField>
+                    <Label htmlFor="content">Conteúdo / Detalhes Adicionais</Label>
+                    <Textarea
+                      id="content"
+                      value={formData.content}
+                      onChange={(e) => updateField('content', e.target.value)}
+                      placeholder="Texto detalhado, metodologia, parceiros, etc."
+                      rows={6}
+                    />
+                  </FormField>
+
+                  <FormField>
+                    <Label htmlFor="meta_keywords">Meta Keywords (SEO) - separadas por vírgula</Label>
+                    <Input
+                      id="meta_keywords"
+                      value={formData.meta_keywords}
+                      onChange={(e) => updateField('meta_keywords', e.target.value)}
+                      placeholder="educação, saúde, crianças"
+                    />
+                    <div className="text-xs text-muted-foreground">Palavras-chave para SEO (opcional)</div>
                   </FormField>
                 </CardContent>
               </Card>
@@ -831,45 +857,27 @@ const CreateProject: React.FC = () => {
                           </div>
                         </FormField>
 
-                        <FormField error={validationErrors.target_budget}>
-                          <Label htmlFor="target_budget">Orçamento (MZN) *</Label>
+                        <FormField error={validationErrors.budget}>
+                          <Label htmlFor="budget">Orçamento (MZN) *</Label>
                           <div className="relative">
                             <Target className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                             <Input
-                              id="target_budget"
+                              id="budget"
                               type="number"
                               min="0"
                               step="0.01"
-                              value={formData.target_budget}
-                              onChange={(e) => updateField('target_budget', parseFloat(e.target.value) || 0)}
+                              value={formData.budget}
+                              onChange={(e) => updateField('budget', parseFloat(e.target.value) || 0)}
                               placeholder="50000"
                               className={cn(
-                                'pl-10',
-                                validationErrors.target_budget && 'border-destructive'
+                                'pl-10', validationErrors.budget && 'border-destructive'
                               )}
                             />
                           </div>
                         </FormField>
                       </div>
 
-                      <FormField error={validationErrors.manager_id}>
-                        <Label htmlFor="manager_id">Gestor do Projeto</Label>
-                        <Select
-                          value={formData.manager_id}
-                          onValueChange={(value) => updateField('manager_id', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um gestor" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {users.map((user) => (
-                              <SelectItem key={user.id} value={user.id.toString()}>
-                                {user.full_name || user.username}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormField>
+                      {/* Campo gestor removido (não existe no modelo Project) */}
                     </div>
                   </div>
                 </CardContent>
@@ -914,6 +922,13 @@ const CreateProject: React.FC = () => {
                                     {(formData.featured_image.size / 1024 / 1024).toFixed(2)} MB
                                   </p>
                                 )}
+                                {typeof formData.featured_image === 'string' && (
+                                  <img
+                                    src={formData.featured_image}
+                                    alt="Imagem atual"
+                                    className="mt-2 h-32 w-full object-cover rounded"
+                                  />
+                                )}
                               </div>
                             </div>
                             <Button
@@ -951,66 +966,7 @@ const CreateProject: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Documento do Projeto */}
-                    <div className="space-y-4">
-                      <Label>Documento do Projeto</Label>
-                      <div className="text-sm text-muted-foreground mb-2">
-                        PDF, DOC - máximo 10MB
-                      </div>
-                      
-                      {formData.project_document ? (
-                        <div className="p-4 border rounded-lg">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <FileText className="h-5 w-5 text-blue-600" />
-                              <div>
-                                <p className="font-medium">
-                                  {formData.project_document instanceof File 
-                                    ? formData.project_document.name 
-                                    : 'Documento atual'
-                                  }
-                                </p>
-                                {formData.project_document instanceof File && (
-                                  <p className="text-sm text-muted-foreground">
-                                    {(formData.project_document.size / 1024 / 1024).toFixed(2)} MB
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeFile('project_document')}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                          <p className="text-sm text-muted-foreground mb-4">
-                            Clique para selecionar um documento
-                          </p>
-                          <input
-                            type="file"
-                            accept=".pdf,.doc,.docx"
-                            onChange={handleFileChange('project_document')}
-                            className="hidden"
-                            id="project_document"
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => document.getElementById('project_document')?.click()}
-                          >
-                            <Upload className="h-4 w-4 mr-2" />
-                            Selecionar Documento
-                          </Button>
-                        </div>
-                      )}
-                    </div>
+                    {/* Campo de documento removido (não suportado pelo modelo Project) */}
                   </div>
                 </CardContent>
               </Card>
@@ -1058,18 +1014,7 @@ const CreateProject: React.FC = () => {
                           />
                         </div>
 
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-0.5">
-                            <Label>Destaque na Homepage</Label>
-                            <p className="text-xs text-muted-foreground">
-                              Aparece na página inicial do site
-                            </p>
-                          </div>
-                          <Switch
-                            checked={formData.featured_on_homepage}
-                            onCheckedChange={(checked) => updateField('featured_on_homepage', checked)}
-                          />
-                        </div>
+                        {/* Destaque na homepage removido: não existe no modelo */}
                       </div>
                     </div>
 
@@ -1088,19 +1033,7 @@ const CreateProject: React.FC = () => {
                         </div>
                       </FormField>
 
-                      <FormField error={validationErrors.excerpt}>
-                        <Label htmlFor="excerpt">Resumo Executivo</Label>
-                        <Textarea
-                          id="excerpt"
-                          value={formData.excerpt}
-                          onChange={(e) => updateField('excerpt', e.target.value)}
-                          placeholder="Resumo para exibição em listas"
-                          rows={4}
-                        />
-                        <div className="text-xs text-muted-foreground">
-                          Resumo opcional para cards e listas
-                        </div>
-                      </FormField>
+                      {/* Campo excerpt removido: não existe no modelo */}
                     </div>
                   </div>
                 </CardContent>

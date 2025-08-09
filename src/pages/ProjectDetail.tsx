@@ -147,9 +147,13 @@ interface Project {
     id: number;
     title: string;
     description: string;
-    file_url: string;
-    file_type: 'pdf' | 'image' | 'document';
-    upload_date: string;
+  // Suporte a ambos formatos (tracking vs público)
+  file_url?: string;
+  file?: string;
+  file_type?: 'pdf' | 'image' | 'document' | 'video' | 'report' | 'certificate' | 'other';
+  type?: 'pdf' | 'image' | 'document' | 'video' | 'report' | 'certificate' | 'other';
+  upload_date?: string;
+  created_at?: string;
   }[];
   
   metrics?: {
@@ -261,9 +265,11 @@ const formatDate = (date: string | Date | null | undefined) => {
 };
 
 const formatCurrency = (amount: number) => {
+  // Forçar exibição do código da moeda "MZN" (evitar símbolo antigo MTn)
   return new Intl.NumberFormat('pt-MZ', {
     style: 'currency',
     currency: 'MZN',
+    currencyDisplay: 'code',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
   }).format(amount);
@@ -368,9 +374,9 @@ const ProjectDetail: React.FC = () => {
       return Math.min(project.progress_percentage, 100);
     }
 
-    // Calcular baseado em marcos se disponível
+    // Calcular baseado em marcos se disponível (suporta ambos formatos)
     if (project?.milestones && project.milestones.length > 0) {
-      const completed = project.milestones.filter(m => m.is_completed).length;
+      const completed = project.milestones.filter((m: any) => m.is_completed === true || m.status === 'completed').length;
       return Math.min((completed / project.milestones.length) * 100, 100);
     }
 
@@ -393,9 +399,10 @@ const ProjectDetail: React.FC = () => {
     }
     
     // Fallback para dados básicos do projeto
-    if (!project?.target_budget || project.target_budget <= 0) return 0;
+    const total = (project as any).budget ?? project?.target_budget;
+    if (!total || total <= 0) return 0;
     const used = project.current_spending || 0;
-    return Math.min((used / project.target_budget) * 100, 100);
+    return Math.min((used / total) * 100, 100);
   };
 
   const getCurrentBeneficiaries = () => {
@@ -415,8 +422,9 @@ const ProjectDetail: React.FC = () => {
   };
 
   const getTotalBudget = () => {
-    // Priorizar budgetTotal do ProjectTracker, senão usar target_budget do CreateProject
-    return project?.metrics?.budgetTotal ?? project?.target_budget ?? 0;
+    // Priorizar budgetTotal do ProjectTracker, depois Project.budget, fallback target_budget legado
+    const basic = (project as any).budget ?? project?.target_budget ?? 0;
+    return project?.metrics?.budgetTotal ?? basic;
   };
 
   const getCompletedMilestones = () => {
@@ -424,7 +432,7 @@ const ProjectDetail: React.FC = () => {
     if (project?.metrics?.completedMilestones !== undefined) {
       result = project.metrics.completedMilestones;
     } else if (project?.milestones && Array.isArray(project.milestones)) {
-      result = project.milestones.filter(m => m.is_completed).length;
+  result = project.milestones.filter((m: any) => m.is_completed === true || m.status === 'completed').length;
     } else {
       result = 0;
     }
@@ -534,14 +542,7 @@ const ProjectDetail: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Debug temporário - remover depois */}
-      {project && (
-        <div className="bg-yellow-100 p-2 text-xs">
-          <strong>DEBUG:</strong> Location: "{project.location}", District: "{project.district}", Province: "{project.province}"
-        </div>
-      )}
-      
+    <div className="min-h-screen bg-background">      
       <SEOHead 
         title={`${project.name} - Moz Solidária Hub`}
         description={project.description}
@@ -605,7 +606,7 @@ const ProjectDetail: React.FC = () => {
                 </div>
 
                 {/* Métricas Rápidas */}
-                <div className="grid grid-cols-3 gap-4 pt-4">
+                          <div className="grid grid-cols-3 md:grid-cols-4 gap-4 pt-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-primary">
                       {getCurrentBeneficiaries().toLocaleString()}
@@ -618,7 +619,7 @@ const ProjectDetail: React.FC = () => {
                     </div>
                     <div className="text-xs text-muted-foreground">Progresso</div>
                   </div>
-                  {getTotalBudget() > 0 && (
+                            {getTotalBudget() > 0 && (
                     <div className="text-center">
                       <div className="text-2xl font-bold text-primary">
                         {calculateBudgetProgress().toFixed(0)}%
@@ -626,14 +627,14 @@ const ProjectDetail: React.FC = () => {
                       <div className="text-xs text-muted-foreground">Orçamento</div>
                     </div>
                   )}
-                  {getTotalBudget() === 0 && (
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-primary">
-                        {getCompletedMilestones()}/{getTotalMilestones()}
-                      </div>
-                      <div className="text-xs text-muted-foreground">Marcos</div>
-                    </div>
-                  )}
+                            {getTotalMilestones() > 0 && (
+                              <div className="text-center">
+                                <div className="text-2xl font-bold text-primary">
+                                  {getCompletedMilestones()}/{getTotalMilestones()}
+                                </div>
+                                <div className="text-xs text-muted-foreground">Marcos</div>
+                              </div>
+                            )}
                 </div>
               </div>
 
@@ -702,6 +703,15 @@ const ProjectDetail: React.FC = () => {
                       <CardTitle>Sobre o Projeto</CardTitle>
                     </CardHeader>
                     <CardContent>
+                      {/* Resumo curto destacado, quando disponível */}
+                      {project.short_description && (
+                        <div className="mb-4 p-4 bg-muted/40 border rounded-lg">
+                          <p className="text-base text-muted-foreground leading-relaxed">
+                            {project.short_description}
+                          </p>
+                        </div>
+                      )}
+                      
                       <div className="prose prose-slate max-w-none">
                         {project.content ? (
                           <div dangerouslySetInnerHTML={{ __html: project.content }} />
@@ -924,20 +934,7 @@ const ProjectDetail: React.FC = () => {
                       )}
 
                       {/* Marcos */}
-                      {project.milestones && project.milestones.length > 0 && (
-                        <div>
-                          <div className="flex justify-between items-center mb-2">
-                            <Label className="text-sm font-medium">Marcos</Label>
-                            <span className="text-sm text-muted-foreground">
-                              {project.milestones.filter(m => m.is_completed).length} / {project.milestones.length}
-                            </span>
-                          </div>
-                          <Progress 
-                            value={(project.milestones.filter(m => m.is_completed).length / project.milestones.length) * 100} 
-                            className="h-2" 
-                          />
-                        </div>
-                      )}
+                      {/* (Removido bloco duplicado de marcos baseado diretamente em project.milestones) */}
                     </CardContent>
                   </Card>
 
@@ -989,57 +986,6 @@ const ProjectDetail: React.FC = () => {
             {/* Detalhes Completos */}
             <TabsContent value="details" className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Informações Técnicas */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Settings className="h-5 w-5" />
-                      Informações Técnicas
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-sm font-medium">ID do Projeto</Label>
-                        <p className="text-muted-foreground font-mono">{project.id}</p>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium">Slug</Label>
-                        <p className="text-muted-foreground font-mono">{project.slug}</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label className="text-sm font-medium">Criado em</Label>
-                      <p className="text-muted-foreground">
-                        {formatDate(project.created_at)}
-                      </p>
-                    </div>
-
-                    {project.updated_at && (
-                      <div>
-                        <Label className="text-sm font-medium">Última atualização</Label>
-                        <p className="text-muted-foreground">
-                          {formatDate(project.updated_at)}
-                        </p>
-                      </div>
-                    )}
-
-                    {project.seo_keywords && project.seo_keywords.length > 0 && (
-                      <div>
-                        <Label className="text-sm font-medium">Palavras-chave SEO</Label>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {project.seo_keywords.map((keyword, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {keyword}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
                 {/* Orçamento Detalhado */}
                 <Card>
                   <CardHeader>
@@ -1049,34 +995,25 @@ const ProjectDetail: React.FC = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {project.target_budget && (
+                    {getTotalBudget() > 0 && (
                       <div>
                         <Label className="text-sm font-medium">Orçamento Total</Label>
                         <p className="text-2xl font-bold text-primary">
-                          {formatCurrency(project.target_budget)}
+                          {formatCurrency(getTotalBudget())}
                         </p>
                       </div>
                     )}
 
-                    {project.current_spending && (
-                      <div>
-                        <Label className="text-sm font-medium">Gasto Atual</Label>
-                        <p className="text-lg font-semibold text-orange-600">
-                          {formatCurrency(project.current_spending)}
-                        </p>
-                      </div>
-                    )}
-
-                    {project.metrics?.budgetUsed && (
+                    {getCurrentBudgetUsed() > 0 && (
                       <div>
                         <Label className="text-sm font-medium">Orçamento Utilizado</Label>
                         <p className="text-lg font-semibold text-green-600">
-                          {formatCurrency(project.metrics.budgetUsed)}
+                          {formatCurrency(getCurrentBudgetUsed())}
                         </p>
                       </div>
                     )}
 
-                    {project.target_budget && (project.current_spending || project.metrics?.budgetUsed) && (
+                    {getTotalBudget() > 0 && (
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
                           <Label className="text-sm font-medium">Execução Orçamentária</Label>
@@ -1668,62 +1605,74 @@ const ProjectDetail: React.FC = () => {
               )}
             </TabsContent>
 
-            {/* Evidências e Documentação */}
+            {/* Evidências e Documentação - visual minimalista (estilo documentos) */}
             <TabsContent value="evidence" className="space-y-8">
-              {project.evidences && project.evidences.filter(evidence => evidence.file_type === 'pdf').length > 0 ? (
-                <div>
-                  <div className="mb-6">
-                    <h3 className="text-xl font-bold mb-2">Evidências e Documentação</h3>
-                    <p className="text-muted-foreground">
-                      Documentos PDF, relatórios e evidências do projeto
-                    </p>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {project.evidences.filter(evidence => evidence.file_type === 'pdf').map((evidence) => (
-                      <Card key={evidence.id} className="group hover:shadow-md transition-shadow">
-                        <CardContent className="p-6">
-                          <div className="flex items-start gap-4">
-                            <div className="p-3 bg-primary/10 rounded-lg">
-                              <FileText className="h-6 w-6 text-primary" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium mb-1">{evidence.title}</h4>
-                              <p className="text-sm text-muted-foreground mb-3">{evidence.description}</p>
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-muted-foreground">
-                                  {formatDate(evidence.upload_date)}
-                                </span>
-                                <div className="flex gap-2">
-                                  <Button size="sm" variant="outline" asChild>
-                                    <a href={evidence.file_url} target="_blank" rel="noopener noreferrer">
-                                      <Eye className="h-4 w-4 mr-1" />
-                                      Ver
-                                    </a>
-                                  </Button>
-                                  <Button size="sm" variant="outline" asChild>
-                                    <a href={evidence.file_url} download>
-                                      <Download className="h-4 w-4 mr-1" />
-                                      Baixar
-                                    </a>
-                                  </Button>
+              {project.evidences && project.evidences.length > 0 ? (
+                <div className="space-y-8">
+                  {/* Lista única de evidências (todas como documentos) */}
+                  {(() => {
+                    const items = project.evidences!
+                      .map(e => ({
+                        id: e.id,
+                        title: e.title,
+                        description: e.description,
+                        file: e.file_url || e.file || '',
+                        date: e.upload_date || e.created_at || '',
+                      }))
+                      .filter(e => e.file);
+
+                    return (
+                      <div>
+                        <div className="mb-6">
+                          <h3 className="text-xl font-bold mb-2">Evidências e Documentos</h3>
+                          <p className="text-muted-foreground">Arquivos e registros oficiais relacionados ao projeto</p>
+                        </div>
+                        <div className="space-y-3">
+                          {items.map(item => (
+                            <Card key={item.id} className="group hover:shadow-md transition-shadow">
+                              <CardContent className="p-6">
+                                <div className="flex items-start gap-4">
+                                  <div className="p-3 bg-primary/10 rounded-lg">
+                                    <FileText className="h-6 w-6 text-primary" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="font-medium mb-1">{item.title}</h4>
+                                    {item.description && (
+                                      <p className="text-sm text-muted-foreground mb-3">{item.description}</p>
+                                    )}
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-xs text-muted-foreground">{formatDate(item.date)}</span>
+                                      <div className="flex gap-2">
+                                        <Button size="sm" variant="outline" asChild>
+                                          <a href={item.file} target="_blank" rel="noopener noreferrer">
+                                            <Eye className="h-4 w-4 mr-1" />
+                                            Ver
+                                          </a>
+                                        </Button>
+                                        <Button size="sm" variant="outline" asChild>
+                                          <a href={item.file} download>
+                                            <Download className="h-4 w-4 mr-1" />
+                                            Baixar
+                                          </a>
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               ) : (
                 <Card>
                   <CardContent className="p-8 text-center">
-                    <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Documentos PDF em Breve</h3>
-                    <p className="text-muted-foreground">
-                      Os documentos PDF e evidências do projeto serão adicionados em breve
-                    </p>
+                    <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium mb-2">Sem Evidências</h3>
+                    <p className="text-muted-foreground">Ainda não há evidências ou documentos anexados a este projeto.</p>
                   </CardContent>
                 </Card>
               )}
@@ -1754,47 +1703,51 @@ const ProjectDetail: React.FC = () => {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <DollarSign className="h-5 w-5" />
-                      Orçamento Utilizado
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-primary mb-2">
-                      {calculateBudgetProgress().toFixed(0)}%
-                    </div>
-                    <p className="text-muted-foreground mb-3">
-                      {formatCurrency(getCurrentBudgetUsed())} de {formatCurrency(getTotalBudget())}
-                    </p>
-                    <Progress 
-                      value={calculateBudgetProgress()} 
-                      className="h-2"
-                    />
-                  </CardContent>
-                </Card>
+                {getTotalBudget() > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <DollarSign className="h-5 w-5" />
+                        Orçamento Utilizado
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-primary mb-2">
+                        {calculateBudgetProgress().toFixed(0)}%
+                      </div>
+                      <p className="text-muted-foreground mb-3">
+                        {formatCurrency(getCurrentBudgetUsed())} de {formatCurrency(getTotalBudget())}
+                      </p>
+                      <Progress 
+                        value={calculateBudgetProgress()} 
+                        className="h-2"
+                      />
+                    </CardContent>
+                  </Card>
+                )}
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Target className="h-5 w-5" />
-                      Marcos Concluídos
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-primary mb-2">
-                      {getCompletedMilestones()}
-                    </div>
-                    <p className="text-muted-foreground mb-3">
-                      De {getTotalMilestones()} marcos planejados
-                    </p>
-                    <Progress 
-                      value={getTotalMilestones() > 0 ? (getCompletedMilestones() / getTotalMilestones()) * 100 : 0} 
-                      className="h-2"
-                    />
-                  </CardContent>
-                </Card>
+                {getTotalMilestones() > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <Target className="h-5 w-5" />
+                        Marcos Concluídos
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-primary mb-2">
+                        {getCompletedMilestones()}
+                      </div>
+                      <p className="text-muted-foreground mb-3">
+                        De {getTotalMilestones()} marcos planejados
+                      </p>
+                      <Progress 
+                        value={getTotalMilestones() > 0 ? (getCompletedMilestones() / getTotalMilestones()) * 100 : 0} 
+                        className="h-2"
+                      />
+                    </CardContent>
+                  </Card>
+                )}
 
                 <Card>
                   <CardHeader>
@@ -1891,8 +1844,8 @@ const ProjectDetail: React.FC = () => {
                         <li>• Melhoria na qualidade de vida da comunidade</li>
                         <li>• Fortalecimento das estruturas locais</li>
                         <li>• Criação de oportunidades de desenvolvimento</li>
-                        {project.milestones && project.milestones.filter(m => m.is_completed).length > 0 && (
-                          <li>• {project.milestones.filter(m => m.is_completed).length} marcos importantes concluídos</li>
+                        {getCompletedMilestones() > 0 && (
+                          <li>• {getCompletedMilestones()} marcos importantes concluídos</li>
                         )}
                         {project.metrics?.communitiesReached && (
                           <li>• {project.metrics.communitiesReached} comunidades alcançadas</li>

@@ -2,6 +2,7 @@
 // Serviço centralizado para requisições ao backend Django
 
 import axios from 'axios';
+import { a } from 'vitest/dist/chunks/suite.d.FvehnV49.js';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -221,6 +222,60 @@ function getAuthHeaders(includeContentType: boolean = true) {
   return headers;
 }
 
+// Helper centralizado para requisições autenticadas com refresh automático
+async function authFetch(url: string, options: RequestInit = {}, allowRefresh: boolean = true): Promise<Response> {
+  const token = localStorage.getItem('authToken');
+  const refresh = localStorage.getItem('refreshToken');
+
+  const headers = new Headers(options.headers || {});
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+  // Não sobrescrever Content-Type se for FormData
+  const isFormData = options.body instanceof FormData;
+  if (!isFormData && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  let response = await fetch(url, { ...options, headers });
+
+  // Se não autorizado e temos refresh token, tentar renovar
+  if (response.status === 401 && allowRefresh && refresh) {
+    try {
+      const refreshRes = await fetch(`${API_BASE}/auth/token/refresh/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh })
+      });
+      if (refreshRes.ok) {
+        const data = await refreshRes.json();
+        if (data.access) {
+          localStorage.setItem('authToken', data.access);
+          // Tentar novamente a requisição original com novo token
+          const retryHeaders = new Headers(headers);
+            retryHeaders.set('Authorization', `Bearer ${data.access}`);
+          response = await fetch(url, { ...options, headers: retryHeaders });
+        }
+      } else {
+        // Refresh falhou => limpar session
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('refreshToken');
+      }
+    } catch (e) {
+      console.warn('Falha ao renovar token:', e);
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('refreshToken');
+    }
+  }
+
+  // Se ainda 401 após tentativa de refresh, redirecionar para login (fluxo dashboard)
+  if (response.status === 401) {
+    console.warn('Usuário não autorizado (401) para', url);
+  }
+
+  return response;
+}
+
 // Função utilitária para verificar se o usuário está autenticado
 export function isAuthenticated(): boolean {
   const token = localStorage.getItem('authToken');
@@ -337,9 +392,7 @@ export async function deleteCategory(id: number) {
 
 // Buscar todos os projetos (admin - requer autenticação)
 export async function fetchAdminProjects() {
-  const res = await fetch(`${API_BASE}/projects/admin/projects/`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await authFetch(`${API_BASE}/projects/admin/projects/`);
   if (!res.ok) throw new Error('Erro ao buscar projetos administrativos');
   const data = await res.json();
   return data.results || data;
@@ -611,40 +664,34 @@ export async function deleteProject(id: number) {
 // Buscar programas disponíveis
 export async function fetchPrograms() {
   try {
-    const res = await fetch(`${API_BASE}/core/programs/`);
-    if (!res.ok) throw new Error('Endpoint não encontrado');
-    const data = await res.json();
-    return data.results || data;
+    // Extrair programas dos projetos públicos
+    const projects = await fetchPublicProjects();
+    const programsMap = new Map();
+    projects.forEach(p => {
+      if (p.program && p.program.id) {
+        programsMap.set(p.program.id, p.program);
+      }
+    });
+    return Array.from(programsMap.values());
   } catch (error) {
-    // Fallback para dados mock se endpoint não existir
     console.warn('Usando dados mock para programas:', error);
-    return [
-      { id: 1, name: 'Educação' },
-      { id: 2, name: 'Apoio Humanitário' },
-      { id: 3, name: 'Formação Juvenil' },
-      { id: 4, name: 'Saúde Pública' },
-      { id: 5, name: 'Infraestrutura' }
-    ];
+    return [];
   }
 }
 
 // Buscar usuários/responsáveis disponíveis (requer autenticação)
 export async function fetchProjectManagers() {
   try {
-    const res = await fetch(`${API_BASE}/auth/users/`, {
-      headers: getAuthHeaders(),
-    });
-    if (!res.ok) throw new Error('Endpoint não encontrado');
-    const data = await res.json();
-    return data.results || data;
+    // Usar usuário autenticado como gestor
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('Token não encontrado');
+  const response = await authFetch(`${API_BASE}/auth/user/`);
+    if (!response.ok) throw new Error('Endpoint não encontrado');
+    const user = await response.json();
+    return user ? [user] : [];
   } catch (error) {
-    // Fallback para dados mock se endpoint não existir
     console.warn('Usando dados mock para gestores:', error);
-    return [
-      { id: 1, username: 'admin', full_name: 'Administrador Principal' },
-      { id: 2, username: 'coordinator', full_name: 'Coordenador de Projetos' },
-      { id: 3, username: 'manager', full_name: 'Gestor de Campo' }
-    ];
+    return [];
   }
 }
 
@@ -990,47 +1037,77 @@ export async function fetchCompleteProjectData(slug: string) {
           // Buscar dados básicos para completar campos que podem estar faltando no tracking
           console.log('📋 Buscando dados básicos para complementar...');
           const basicProject = await fetchProjectDetail(slug);
-          
-          // Se tracking tem dados completos, usar diretamente mas complementar com dados básicos
-          const completeData = {
+
+          // Base: mesclar dados básicos e de tracking (tracking pode sobrepor onde fizer sentido)
+          let completeData: any = {
+            ...basicProject,
             ...trackingData,
-            // Mapear evidências do tracking (singular) para o formato esperado pelo frontend (plural)
-            evidences: trackingData.evidence || [],
-            // Mapear datas das métricas para o nível raiz 
-            start_date: trackingData.metrics.start_date || basicProject.start_date,
-            end_date: trackingData.metrics.end_date || basicProject.end_date,
-            created_at: basicProject.created_at, // Usar dados básicos para created_at
-            updated_at: basicProject.updated_at, // Usar dados básicos para updated_at
-            // Preservar campos importantes dos dados básicos que podem não estar no tracking
-            target_beneficiaries: trackingData.target_beneficiaries || basicProject.target_beneficiaries,
-            budget: trackingData.budget || basicProject.budget,
-            raised_amount: trackingData.raised_amount || basicProject.raised_amount,
-            funding_percentage: trackingData.funding_percentage || basicProject.funding_percentage,
-            featured_image: trackingData.featured_image || basicProject.featured_image,
-            image: trackingData.image || basicProject.image,
-            // CORREÇÃO: Garantir que status, priority, program e category sempre venham dos dados básicos
-            status: basicProject.status || trackingData.status,
-            priority: basicProject.priority || trackingData.priority,
-            program: basicProject.program || trackingData.program,
-            category: basicProject.category || trackingData.category,
-            // CORREÇÃO: Garantir que campos de localização sejam preservados
-            location: basicProject.location || trackingData.location,
-            district: basicProject.district || trackingData.district,
-            province: basicProject.province || trackingData.province,
-            // Normalizar métricas para o formato esperado pelo frontend
-            metrics: {
-              peopleImpacted: trackingData.metrics.people_impacted,
-              budgetUsed: parseFloat(trackingData.metrics.budget_used || '0'),
-              budgetTotal: parseFloat(trackingData.metrics.budget_total || '0'),
-              progressPercentage: trackingData.metrics.progress_percentage,
-              completedMilestones: trackingData.metrics.completed_milestones,
-              totalMilestones: trackingData.metrics.total_milestones,
-              lastUpdate: trackingData.metrics.last_updated
-            },
-            // Atualizar campos do projeto com dados do tracking
-            current_beneficiaries: trackingData.metrics.people_impacted,
-            progress_percentage: trackingData.metrics.progress_percentage
           };
+
+          // Evidências: aceitar singular do tracking e manter as existentes
+          completeData.evidences = trackingData.evidence || trackingData.evidences || completeData.evidences || [];
+
+          // Datas principais: priorizar métricas do tracking se existirem
+          completeData.start_date = trackingData.metrics.start_date || basicProject.start_date;
+          completeData.end_date = trackingData.metrics.end_date || basicProject.end_date;
+          completeData.created_at = basicProject.created_at || completeData.created_at;
+          completeData.updated_at = basicProject.updated_at || completeData.updated_at;
+
+          // Beneficiários
+          completeData.target_beneficiaries = trackingData.target_beneficiaries ?? basicProject.target_beneficiaries ?? completeData.target_beneficiaries;
+
+          // Orçamento: manter ambos campos para compatibilidade
+          // budget (tracking) e target_budget (modelo público/admin)
+          if (trackingData.budget !== undefined) {
+            completeData.budget = trackingData.budget;
+          }
+          // Preservar target_budget e current_spending do básico se existirem
+          if (basicProject.target_budget !== undefined) completeData.target_budget = basicProject.target_budget;
+          if (basicProject.current_spending !== undefined) completeData.current_spending = basicProject.current_spending;
+
+          // Imagens
+          completeData.featured_image = trackingData.featured_image || basicProject.featured_image || completeData.featured_image;
+          completeData.image = trackingData.image || basicProject.image || completeData.image;
+
+          // Forçar status/priority/program/category a virem dos dados básicos, caso existam
+          completeData.status = basicProject.status || trackingData.status || completeData.status;
+          completeData.priority = basicProject.priority || trackingData.priority || completeData.priority;
+          completeData.program = basicProject.program || trackingData.program || completeData.program;
+          completeData.category = basicProject.category || trackingData.category || completeData.category;
+
+          // Localização
+          completeData.location = basicProject.location || trackingData.location || completeData.location;
+          completeData.district = basicProject.district || trackingData.district || completeData.district;
+          completeData.province = basicProject.province || trackingData.province || completeData.province;
+
+          // Milestones: preferir lista do tracking se houver, senão manter as existentes
+          completeData.milestones = trackingData.milestones || completeData.milestones || [];
+
+          // Normalizar métricas com fallbacks sólidos
+          const metricsFromTracking = trackingData.metrics || {};
+          const budgetUsed = parseFloat(metricsFromTracking.budget_used ?? '0') || (basicProject.current_spending ?? 0) || (completeData.current_spending ?? 0) || 0;
+          const budgetTotal = parseFloat(metricsFromTracking.budget_total ?? '0') || (completeData.budget ?? 0) || (basicProject.target_budget ?? 0) || (completeData.target_budget ?? 0) || 0;
+
+          // Calcular marcos a partir da lista se métricas não informarem
+          const milestonesArray = completeData.milestones || [];
+          const milestonesCompletedFromList = Array.isArray(milestonesArray)
+            ? milestonesArray.filter((m: any) => m?.is_completed === true || m?.status === 'completed').length
+            : 0;
+          const milestonesTotalFromList = Array.isArray(milestonesArray) ? milestonesArray.length : 0;
+
+          completeData.metrics = {
+            peopleImpacted: metricsFromTracking.people_impacted ?? basicProject.current_beneficiaries ?? completeData.current_beneficiaries ?? 0,
+            budgetUsed,
+            budgetTotal,
+            progressPercentage: metricsFromTracking.progress_percentage ?? basicProject.progress_percentage ?? completeData.progress_percentage ?? 0,
+            completedMilestones: metricsFromTracking.completed_milestones ?? milestonesCompletedFromList,
+            totalMilestones: metricsFromTracking.total_milestones ?? milestonesTotalFromList,
+            lastUpdate: metricsFromTracking.last_updated ?? basicProject.updated_at ?? completeData.updated_at ?? null,
+          };
+
+          // Atualizar campos de atalho derivados
+          completeData.current_beneficiaries = completeData.metrics.peopleImpacted;
+          completeData.progress_percentage = completeData.metrics.progressPercentage;
           
           console.log('✅ Dados completos processados do tracking:', {
             project: completeData.name,
@@ -1043,6 +1120,21 @@ export async function fetchCompleteProjectData(slug: string) {
             totalMilestones: completeData.metrics.totalMilestones
           });
           
+          // Se ainda não houver milestones mas o projeto básico tem ID, tentar buscar via endpoints específicos
+          if ((!completeData.milestones || completeData.milestones.length === 0) && basicProject?.id) {
+            try {
+              const fallbackMilestones = await fetchProjectMilestones(basicProject.id);
+              if (Array.isArray(fallbackMilestones) && fallbackMilestones.length > 0) {
+                completeData.milestones = fallbackMilestones;
+                // Recalcular contagem de marcos
+                completeData.metrics.totalMilestones = fallbackMilestones.length;
+                completeData.metrics.completedMilestones = fallbackMilestones.filter((m: any) => m?.is_completed === true || m?.status === 'completed').length;
+              }
+            } catch (e) {
+              console.warn('⚠️ Falha ao buscar milestones fallback:', e);
+            }
+          }
+
           return completeData;
         } else {
           console.warn('⚠️ TrackingData existe mas sem métricas:', Object.keys(trackingData || {}));
@@ -1106,3 +1198,50 @@ export async function fetchCompleteProjectData(slug: string) {
     throw error;
   }
 }
+
+// Função para buscar detalhes do projeto com autenticação (para dashboard)
+export async function fetchProjectDetailForEdit(slug: string) {
+  const authToken = localStorage.getItem('authToken');
+  try {
+    console.log('🔍 API - Buscando projeto para edição com slug:', slug);
+    const token = localStorage.getItem('authToken');
+    
+    if (!token) {
+      throw new Error('Token de acesso não encontrado');
+    }
+
+    // Tentar buscar via API administrativa
+  const response = await authFetch(`${API_BASE}/projects/admin/projects/?slug=${slug}`);
+
+    if (!response.ok) {
+      throw new Error(`Erro HTTP: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const results = data.results || data;
+    
+    if (Array.isArray(results) && results.length > 0) {
+      console.log('✅ API - Projeto encontrado para edição:', results[0]);
+      return results[0];
+    } else if (!Array.isArray(results) && results.id) {
+      console.log('✅ API - Projeto encontrado para edição:', results);
+      return results;
+    }
+
+    throw new Error('Projeto não encontrado');
+    
+  } catch (error) {
+    console.error('❌ Erro ao buscar projeto para edição:', error);
+    // Fallback: tentar buscar como público para pelo menos preencher parte dos campos
+    try {
+      const publicProject = await fetchProjectDetail(slug);
+      if (publicProject) {
+        console.warn('Usando dados públicos como fallback para edição (campos limitados)');
+        return publicProject;
+      }
+    } catch {}
+    throw error;
+  }
+}
+
+

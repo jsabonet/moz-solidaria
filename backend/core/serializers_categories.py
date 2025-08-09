@@ -151,7 +151,7 @@ class ProjectCreateUpdateSerializer(serializers.ModelSerializer):
         model = Project
         fields = [
             'name', 'description', 'short_description', 'content',
-            'program_id', 'category_id', 'location', 'status', 'priority',
+            'program_id', 'category_id', 'location', 'district', 'province', 'status', 'priority',
             'start_date', 'end_date', 'progress_percentage',
             'current_beneficiaries', 'target_beneficiaries',
             'featured_image', 'budget', 'raised_amount',

@@ -276,7 +276,7 @@ class PublicProjectCategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 class PublicProjectViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet público para projetos (apenas leitura)"""
-    queryset = Project.objects.filter(is_public=True, status__in=['active', 'completed']).select_related(
+    queryset = Project.objects.filter(is_public=True, status__in=['planning', 'active', 'completed']).select_related(
         'program', 'category'
     )
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]

@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X, ExternalLink, MapPin, Users, Calendar } from "lucide-react";
 import { Link } from 'react-router-dom';
-import { fetchPublicProjects } from '@/lib/api';
+import { fetchPublicProjects, fetchProjectMetrics } from '@/lib/api';
 
 interface Project {
   id: number;
@@ -37,6 +37,21 @@ interface Project {
   is_public: boolean;
   created_at?: string;
   updated_at?: string;
+  // Métricas opcionais (quando enriquecidas via API)
+  metrics?: {
+    progressPercentage?: number;
+    progress_percentage?: number | string;
+    completedMilestones?: number;
+    totalMilestones?: number;
+  };
+  // Suporte a cálculo baseado em marcos (caso a API inclua)
+  milestones?: Array<{
+    id?: number;
+    title?: string;
+    is_completed?: boolean;
+    status?: string;
+    progress_percentage?: number | string;
+  }>;
 }
 
 const ProjectGallery = () => {
@@ -57,122 +72,79 @@ const ProjectGallery = () => {
       const apiProjects = await fetchPublicProjects();
       setProjects(apiProjects);
       
+      // Enriquecer com métricas (para habilitar barra de progresso dinâmica)
+      try {
+        const metricsResults = await Promise.allSettled(
+          apiProjects.map((p: Project) => fetchProjectMetrics(p.id))
+        );
+        const enriched = apiProjects.map((p: Project, idx: number) => {
+          const r = metricsResults[idx];
+          if (r.status === 'fulfilled' && r.value) {
+            return { ...p, metrics: r.value } as Project;
+          }
+          return p;
+        });
+        setProjects(enriched);
+      } catch (e) {
+        // Se falhar, manter lista básica
+        console.warn('Falha ao enriquecer projetos com métricas:', e);
+      }
+      
     } catch (error) {
       console.error('Erro ao carregar projetos:', error);
       
-      // Fallback para dados mock em caso de erro
-      const mockProjects: Project[] = [
-        {
-          id: 1,
-          name: "Reconstrução da Escola Primária de Nangade",
-          slug: "reconstrucao-escola-nangade",
-          short_description: "Reconstrução completa da escola primária beneficiando 300+ crianças com novas salas, biblioteca e laboratório.",
-          featured_image: "https://images.unsplash.com/photo-1661345665867-63e6b12b774a?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-          program: { id: 1, name: "Educação", color: "blue" },
-          location: "Nangade, Cabo Delgado",
-          target_beneficiaries: 300,
-          current_beneficiaries: 200,
-          progress_percentage: 75,
-          status: "active",
-          start_date: "2025-01-15",
-          is_featured: true,
-          is_public: true
-        },
-        {
-          id: 2,
-          name: "Distribuição de Cestas Básicas",
-          slug: "distribuicao-cestas-basicas",
-          short_description: "Apoio alimentar mensal para 150 famílias deslocadas em situação de vulnerabilidade social.",
-          featured_image: "https://images.unsplash.com/photo-1694286080449-8b142ef76d6d?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-          program: { id: 2, name: "Apoio Humanitário", color: "red" },
-          location: "Mocímboa da Praia",
-          target_beneficiaries: 150,
-          current_beneficiaries: 60,
-          progress_percentage: 40,
-          status: "active",
-          start_date: "2025-02-01",
-          is_featured: false,
-          is_public: true
-        },
-        {
-          id: 3,
-          name: "Formação Profissional em Marcenaria",
-          slug: "formacao-marcenaria",
-          short_description: "Curso de capacitação profissional em marcenaria para 25 jovens da comunidade local.",
-          featured_image: "https://images.unsplash.com/photo-1617720356637-6264c1c0b4bb?q=80&w=1168&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-          program: { id: 3, name: "Formação Juvenil", color: "green" },
-          location: "Cabo Delgado",
-          target_beneficiaries: 25,
-          current_beneficiaries: 25,
-          progress_percentage: 100,
-          status: "completed",
-          start_date: "2025-03-01",
-          is_featured: false,
-          is_public: true
-        },
-        {
-          id: 4,
-          name: "Campanha de Vacinação",
-          slug: "campanha-vacinacao",
-          short_description: "Campanha de vacinação contra doenças tropicais em comunidades rurais remotas.",
-          featured_image: "https://images.unsplash.com/photo-1666887360870-fab16552365f?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-          program: { id: 4, name: "Saúde Pública", color: "purple" },
-          location: "Comunidades Rurais",
-          target_beneficiaries: 1000,
-          current_beneficiaries: 800,
-          progress_percentage: 85,
-          status: "active",
-          start_date: "2025-04-01",
-          is_featured: true,
-          is_public: true
-        },
-        {
-          id: 5,
-          name: "Construção de Poço de Água",
-          slug: "construcao-poco-agua",
-          short_description: "Perfuração e construção de poço artesiano para garantir acesso à água potável.",
-          featured_image: "https://images.unsplash.com/photo-1710093072216-1fdf6eef8cb3?q=80&w=764&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-          program: { id: 5, name: "Infraestrutura", color: "orange" },
-          location: "Quissanga",
-          target_beneficiaries: 500,
-          current_beneficiaries: 150,
-          progress_percentage: 90,
-          status: "active",
-          start_date: "2025-03-01",
-          is_featured: false,
-          is_public: true
-        },
-        {
-          id: 6,
-          name: "Apoio Psicológico a Mulheres",
-          slug: "apoio-psicologico-mulheres",
-          short_description: "Sessões de apoio psicológico e empoderamento para mulheres vítimas de violência.",
-          featured_image: "https://images.unsplash.com/photo-1568286642685-9888a5d02108?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-          program: { id: 6, name: "Apoio Psicossocial", color: "pink" },
-          location: "Mocímboa da Praia",
-          target_beneficiaries: 100,
-          current_beneficiaries: 80,
-          progress_percentage: 60,
-          status: "active",
-          start_date: "2025-02-01",
-          is_featured: false,
-          is_public: true
-        }
-      ];
-
-      setProjects(mockProjects);
     } finally {
       setLoading(false);
     }
   };
 
+  // Utilitários de normalização
+  const clamp = (n: number, min = 0, max = 100) => Math.min(Math.max(n, min), max);
+  const normalizeNumber = (raw: unknown): number => {
+    if (typeof raw === 'number') return raw;
+    if (typeof raw === 'string') {
+      const cleaned = raw.replace(/%/g, '').trim();
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? 0 : num;
+    }
+    return 0;
+  };
+
+  // Progresso: seguir mesma lógica de ProjectDetail.tsx
+  const getProjectProgress = (p: Project): number => {
+    // 1) Métricas do tracker: progressPercentage (camel/snake)
+    const metricsProgress = normalizeNumber((p.metrics as any)?.progressPercentage ?? (p.metrics as any)?.progress_percentage);
+    if (metricsProgress > 0) return clamp(metricsProgress);
+
+    // 2) Campo básico do projeto: progress_percentage (string ou número)
+    const projectProgress = normalizeNumber((p as any).progress_percentage);
+    if (projectProgress > 0) return clamp(projectProgress);
+
+    // 3) Cálculo por métricas de marcos (completed/total)
+    const cm = (p.metrics as any)?.completedMilestones;
+    const tm = (p.metrics as any)?.totalMilestones;
+    if (typeof cm !== 'undefined' && typeof tm !== 'undefined' && tm > 0) {
+      return clamp((Number(cm) / Number(tm)) * 100);
+    }
+
+    // 4) Cálculo baseado na lista de milestones (se disponível)
+    if (Array.isArray(p.milestones) && p.milestones.length > 0) {
+      const completed = p.milestones.filter((m: any) => m?.is_completed === true || m?.status === 'completed').length;
+      if (completed > 0) return clamp((completed / p.milestones.length) * 100);
+    }
+
+    return 0;
+  };
+
   const categories = [...new Set(projects.map(p => p.program?.name || p.category?.name).filter(Boolean))];
   
+  const isVisibleStatus = (status: Project['status']) => status === 'active' || status === 'completed';
+
   const filteredProjects = selectedCategory === "Todos" 
-    ? projects.filter(p => p.status !== 'planning' && p.is_public) // Só projetos ativos/concluídos e públicos
+    ? projects.filter(p => isVisibleStatus(p.status) && p.is_public)
     : projects.filter(p => 
         (p.program?.name === selectedCategory || p.category?.name === selectedCategory) && 
-        p.status !== 'planning' && 
+        isVisibleStatus(p.status) && 
         p.is_public
       );
 
@@ -258,7 +230,7 @@ const ProjectGallery = () => {
             >
               {category} ({projects.filter(p => 
                 (p.program?.name === category || p.category?.name === category) && 
-                p.status !== 'planning' && 
+                isVisibleStatus(p.status) && 
                 p.is_public
               ).length})
             </Button>
@@ -287,11 +259,6 @@ const ProjectGallery = () => {
                         {project.program?.name || project.category?.name}
                       </Badge>
                     )}
-                    {project.is_featured && (
-                      <Badge variant="default" className="bg-primary/90">
-                        Destaque
-                      </Badge>
-                    )}
                   </div>
                   <div className="absolute top-3 right-3">
                     <Badge className={getStatusColor(project.status)}>
@@ -302,12 +269,12 @@ const ProjectGallery = () => {
                   <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-3">
                     <div className="flex justify-between items-center text-white text-xs mb-1">
                       <span>Progresso</span>
-                      <span>{project.progress_percentage || 0}%</span>
+                      <span>{getProjectProgress(project).toFixed(0)}%</span>
                     </div>
                     <div className="w-full bg-white/20 rounded-full h-1">
                       <div 
                         className="bg-white rounded-full h-1 transition-all duration-500"
-                        style={{ width: `${project.progress_percentage || 0}%` }}
+                        style={{ width: `${getProjectProgress(project)}%` }}
                       />
                     </div>
                   </div>
@@ -393,12 +360,12 @@ const ProjectGallery = () => {
                 <div className="absolute bottom-4 left-4 right-4 bg-black/50 p-3 rounded">
                   <div className="flex justify-between items-center text-white text-sm mb-2">
                     <span>Progresso do Projeto</span>
-                    <span className="font-bold">{selectedProject.progress_percentage || 0}%</span>
+                    <span className="font-bold">{getProjectProgress(selectedProject).toFixed(0)}%</span>
                   </div>
                   <div className="w-full bg-white/20 rounded-full h-2">
                     <div 
                       className="bg-white rounded-full h-2 transition-all duration-500"
-                      style={{ width: `${selectedProject.progress_percentage || 0}%` }}
+                      style={{ width: `${getProjectProgress(selectedProject)}%` }}
                     />
                   </div>
                 </div>
