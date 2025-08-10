@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { DashboardStats } from '@/types/clientArea';
 import { fetchCauses } from '@/lib/clientAreaApi';
-import { Cause, Donation } from '@/types/clientArea';
+import { Cause } from '@/types/clientArea';
 import { fetchDashboardStatsWithDonorInfo, DonorStats, refreshDonorStats } from '@/lib/donorApi';
 import CreateDonation from '@/components/CreateDonation';
 import MyDonations from '@/components/MyDonations';
@@ -38,7 +38,7 @@ const DonorDashboard: React.FC<DonorDashboardProps> = ({ stats: initialStats }) 
   const [causes, setCauses] = useState<Cause[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  const [selectedDonation, setSelectedDonation] = useState<Donation | null>(null);
+  const [selectedDonation, setSelectedDonation] = useState<any | null>(null); // TODO: definir tipo Donation
   const [stats, setStats] = useState<DashboardStats | null>(initialStats);
   const [donorStats, setDonorStats] = useState<DonorStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
@@ -99,7 +99,7 @@ const DonorDashboard: React.FC<DonorDashboardProps> = ({ stats: initialStats }) 
     }
   };
 
-  const handleViewDonationDetails = (donation: Donation) => {
+  const handleViewDonationDetails = (donation: any) => {
     setSelectedDonation(donation);
     setActiveTab('details');
   };
@@ -206,13 +206,16 @@ const DonorOverview: React.FC<{
 }> = ({ stats, donorStats, statsLoading, causes, loading, onTabChange, onFeatureClick }) => {
   const donorStatsData = donorStats || stats?.stats || {};
 
+  // Forçar símbolo 'MZN' (Intl para pt-MZ pode renderizar 'MTn')
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('pt-MZ', {
-      style: 'currency',
-      currency: 'MZN',
+    if (amount == null || isNaN(amount as any)) return 'MZN 0';
+    const negative = amount < 0;
+    const abs = Math.abs(amount);
+    const formatted = new Intl.NumberFormat('pt-MZ', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(amount);
+    }).format(abs);
+    return `${negative ? '-' : ''}MZN ${formatted}`;
   };
 
   const formatNumber = (num: number) => {

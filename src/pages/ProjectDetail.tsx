@@ -640,9 +640,11 @@ const ProjectDetail: React.FC = () => {
 
               {/* Ações */}
               <div className="flex items-center gap-4">
-                <Button size="lg" className="gap-2">
-                  <Heart className="h-4 w-4" />
-                  Apoiar Projeto
+                <Button asChild size="lg" className="gap-2">
+                  <Link to={`/doacao`}>
+                    <Heart className="h-4 w-4" />
+                    Apoiar Projeto
+                  </Link>
                 </Button>
                 <Button variant="outline" size="lg" className="gap-2">
                   <Share2 className="h-4 w-4" />

@@ -44,15 +44,43 @@ const ClientArea: React.FC = () => {
         // Pequeno delay para garantir que o token seja persistido
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        const [profileData, statsData] = await Promise.all([
+        const [profileDataRaw, statsData] = await Promise.all([
           fetchUserProfile(),
           fetchDashboardStats()
         ]);
+        // Tentar extrair user_type de várias fontes (API /auth/user pode não trazer)
+        const localUserRaw = localStorage.getItem('userData');
+        let localUser: any = null;
+        try { if (localUserRaw) localUser = JSON.parse(localUserRaw); } catch {}
+        const derivedUserType = (profileDataRaw as any)?.user_type
+          || (profileDataRaw as any)?.profile?.user_type
+          || (statsData as any)?.user_type
+          || localUser?.user_type
+          || localUser?.profile?.user_type
+          || 'donor'; // fallback padrão
+
+        const fullName = (profileDataRaw as any)?.full_name
+          || (profileDataRaw as any)?.username
+          || (profileDataRaw as any)?.email
+          || localUser?.full_name
+          || localUser?.username
+          || 'Usuário';
+
+        const profileData = {
+          ...profileDataRaw,
+          user_type: derivedUserType,
+          full_name: fullName
+        } as UserProfile;
+
+        if (!['donor','beneficiary','volunteer','partner'].includes(profileData.user_type as any)) {
+          console.warn('[ClientArea] user_type desconhecido recebido:', profileDataRaw);
+        }
+
         setUserProfile(profileData);
         setDashboardStats(statsData);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
-        toast.error('Erro ao carregar dados da área do cliente');
+        toast.error('Erro ao carregar dados Portal da Comunidade');
       } finally {
         setLoading(false);
       }
@@ -72,7 +100,7 @@ const ClientArea: React.FC = () => {
         <div className="container mx-auto px-4 py-16 text-center">
           <div className="flex flex-col items-center space-y-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            <span className="text-muted-foreground">Carregando área do cliente...</span>
+            <span className="text-muted-foreground">Carregando portal de comunidade..</span>
           </div>
         </div>
         <Footer />
@@ -105,7 +133,7 @@ const ClientArea: React.FC = () => {
   }
 
   const renderDashboard = () => {
-    switch (userProfile.user_type) {
+  switch (userProfile.user_type) {
       case 'donor':
         return (
           <Suspense fallback={<ComponentLoader />}>
@@ -174,7 +202,10 @@ const ClientArea: React.FC = () => {
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center text-white text-xl font-bold">
-                  {userProfile.full_name.charAt(0).toUpperCase()}
+                  {(() => {
+                    const base = (userProfile.full_name || (userProfile as any).username || (userProfile as any).email || '?').toString();
+                    return base.trim().charAt(0).toUpperCase() || '?';
+                  })()}
                 </div>
                 <Badge 
                   className={`absolute -bottom-1 -right-1 text-white ${getUserTypeColor(userProfile.user_type)}`}

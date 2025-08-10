@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X, ExternalLink, MapPin, Users, Calendar } from "lucide-react";
 import { Link } from 'react-router-dom';
-import { fetchPublicProjects, fetchProjectMetrics } from '@/lib/api';
+import { fetchPublicProjects, fetchProjectMetrics, fetchCompleteProjectData } from '@/lib/api';
 
 interface Project {
   id: number;
@@ -72,22 +72,69 @@ const ProjectGallery = () => {
       const apiProjects = await fetchPublicProjects();
       setProjects(apiProjects);
       
-      // Enriquecer com métricas (para habilitar barra de progresso dinâmica)
+      // Enriquecer com métricas avançadas / tracking (para habilitar barra de progresso dinâmica real)
       try {
-        const metricsResults = await Promise.allSettled(
-          apiProjects.map((p: Project) => fetchProjectMetrics(p.id))
-        );
-        const enriched = apiProjects.map((p: Project, idx: number) => {
-          const r = metricsResults[idx];
-          if (r.status === 'fulfilled' && r.value) {
-            return { ...p, metrics: r.value } as Project;
+        // Passo 1: tentar métricas rápidas por ID
+        const enrichedPre = await Promise.all(apiProjects.map(async (p: Project) => {
+          try {
+            const metrics = await fetchProjectMetrics(p.id);
+            return { ...p, metrics } as Project;
+          } catch {
+            return p;
           }
-          return p;
+        }));
+
+        // Passo 2: identificar quais projetos ainda estão com progresso 0 para tentar tracking completo por slug
+        const needsTracking = enrichedPre.filter(p => {
+          const m = (p.metrics as any) || {};
+            const progress = m.progressPercentage ?? m.progress_percentage ?? p.progress_percentage ?? 0;
+            return !progress || Number(progress) === 0;
         });
-        setProjects(enriched);
+
+        // Concurrency control (limitar requisições simultâneas) para tracking detalhado
+        const limit = 4; // pode ajustar conforme performance
+        const resultsTracking: Record<string, any> = {}; // slug -> data
+        for (let i = 0; i < needsTracking.length; i += limit) {
+          const slice = needsTracking.slice(i, i + limit);
+          const batch = await Promise.allSettled(slice.map(p => fetchCompleteProjectData(p.slug)));
+          batch.forEach((res, idx) => {
+            const slug = slice[idx].slug;
+            if (res.status === 'fulfilled' && res.value) {
+              resultsTracking[slug] = res.value;
+            }
+          });
+        }
+
+        const finalEnriched = enrichedPre.map(p => {
+          const full = resultsTracking[p.slug];
+          if (!full) return p; // manter como está
+          const fullMetrics = (full.metrics || {}) as any;
+          const progress = fullMetrics.progressPercentage ?? fullMetrics.progress_percentage ?? full.progress_percentage;
+          return {
+            ...p,
+            progress_percentage: progress ?? p.progress_percentage,
+            metrics: {
+              ...p.metrics,
+              ...full.metrics,
+              progressPercentage: progress ?? (p.metrics as any)?.progressPercentage ?? (p.metrics as any)?.progress_percentage
+            },
+            milestones: full.milestones || p.milestones
+          } as Project;
+        });
+
+        // Debug (remover em produção se quiser)
+        if (typeof window !== 'undefined') {
+          // eslint-disable-next-line no-console
+          console.log('[ProjectGallery] Progresso calculado pós-enriquecimento:', finalEnriched.map(p => ({
+            id: p.id,
+            slug: p.slug,
+            progress: (p.metrics as any)?.progressPercentage ?? (p.metrics as any)?.progress_percentage ?? p.progress_percentage ?? 0
+          })));
+        }
+
+        setProjects(finalEnriched);
       } catch (e) {
-        // Se falhar, manter lista básica
-        console.warn('Falha ao enriquecer projetos com métricas:', e);
+        console.warn('Falha ao enriquecer projetos com métricas/tracking:', e);
       }
       
     } catch (error) {

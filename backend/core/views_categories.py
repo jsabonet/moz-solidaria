@@ -127,6 +127,15 @@ class ProjectViewSet(viewsets.ModelViewSet):
         active_only = self.request.query_params.get('active')
         if active_only and active_only.lower() == 'true':
             queryset = queryset.filter(status__in=['active', 'completed'])
+
+        # Projetos atribuídos ao parceiro autenticado (assignments aceites)
+        assigned_flag = self.request.query_params.get('assigned_to_partner')
+        if assigned_flag and assigned_flag in ['1', 'true', 'True'] and self.request.user.is_authenticated:
+            from partnerships.models import PartnerProjectAssignment
+            accepted_assignments = PartnerProjectAssignment.objects.filter(
+                partner=self.request.user, status='accepted'
+            ).values_list('project_id', flat=True)
+            queryset = queryset.filter(id__in=accepted_assignments)
         
         return queryset
     
@@ -276,7 +285,7 @@ class PublicProjectCategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 class PublicProjectViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet público para projetos (apenas leitura)"""
-    queryset = Project.objects.filter(is_public=True, status__in=['planning', 'active', 'completed']).select_related(
+    queryset = Project.objects.filter(is_public=True, status__in=['active', 'completed']).select_related(
         'program', 'category'
     )
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]

@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 from decouple import config
 import dj_database_url
+from corsheaders.defaults import default_headers
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -57,6 +58,7 @@ INSTALLED_APPS = [
     'notifications',
     'project_tracking',
     'reports',
+    'partnerships',
 ]
 
 MIDDLEWARE = [
@@ -214,14 +216,7 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Only in development
 
 # Additional CORS headers
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
+# Allow default headers plus cache-control explicitly (needed for some browsers / SW fetches)
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'cache-control',
 ]

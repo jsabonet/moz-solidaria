@@ -114,6 +114,13 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [stats, setStats] = useState<DonationStats | null>(null);
   const [loading, setLoading] = useState(true);
+  // Estatísticas agregadas diretamente do banco (paginando todas as doações)
+  const [aggregateStats, setAggregateStats] = useState({
+    totalDonations: 0,
+    approvedCount: 0,
+    pendingCount: 0,
+    approvedAmount: 0
+  });
   const [filters, setFilters] = useState({
     status: '',
     search: '',
@@ -126,12 +133,20 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
   const [rejectingDonation, setRejectingDonation] = useState<number | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
 
+  // Carrega lista filtrada (UI) e estatísticas básicas do endpoint quando filtros mudam
   useEffect(() => {
     if (user?.is_staff) {
       fetchDonations();
       fetchStats();
     }
   }, [user, filters]);
+
+  // Carrega agregados completos (independente de filtros) apenas quando usuário vira staff ou após ações
+  useEffect(() => {
+    if (user?.is_staff) {
+      fetchAllDonationsAggregate();
+    }
+  }, [user?.is_staff]);
 
   const fetchDonations = async () => {
     try {
@@ -147,6 +162,47 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
       console.error('Erro ao carregar doações:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Busca todas as páginas de doações para calcular estatísticas reais (ignora filtros da UI)
+  const fetchAllDonationsAggregate = async () => {
+    try {
+      let nextUrl: string | null = '/donations/';
+      let totalDonations = 0;
+      let approvedCount = 0; // approved + completed
+      let pendingCount = 0;  // pending + submitted + under_review
+      let approvedAmount = 0;
+      const safetyPageLimit = 100; // limite de segurança
+      let page = 0;
+
+      while (nextUrl) {
+        page++;
+        if (page > safetyPageLimit) {
+          console.warn('Limite de páginas atingido na agregação de doações.');
+          break;
+        }
+        const { data } = await api.get(nextUrl);
+        const results = data.results || data;
+        if (!Array.isArray(results)) break;
+
+        for (const d of results) {
+          totalDonations++;
+          const status = d.status;
+          if (status === 'approved' || status === 'completed') {
+            approvedCount++;
+            const val = parseFloat(d.amount || '0');
+            if (!isNaN(val)) approvedAmount += val;
+          } else if (status === 'pending' || status === 'submitted' || status === 'under_review') {
+            pendingCount++;
+          }
+        }
+        nextUrl = data.next || null; // DRF 'next'
+      }
+
+      setAggregateStats({ totalDonations, approvedCount, pendingCount, approvedAmount });
+    } catch (error) {
+      console.error('Erro ao agregar estatísticas completas de doações:', error);
     }
   };
 
@@ -169,8 +225,9 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
       };
       
       await api.patch(`/donations/${donationId}/`, requestData);
-      fetchDonations();
-      fetchStats();
+  fetchDonations();
+  fetchStats();
+  fetchAllDonationsAggregate();
       
       alert('Doação rejeitada com sucesso!');
     } catch (error: any) {
@@ -213,8 +270,9 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
       });
       
       await api.patch(`/donations/${donationId}/`, requestData);
-      fetchDonations();
-      fetchStats();
+  fetchDonations();
+  fetchStats();
+  fetchAllDonationsAggregate();
       setActionComment('');
       
       alert(`Doação ${statusInfo?.label.toLowerCase() || 'atualizada'} com sucesso!`);
@@ -270,8 +328,9 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
       setSelectedDonations([]);
       setBulkAction('');
       setActionComment('');
-      fetchDonations();
-      fetchStats();
+  fetchDonations();
+  fetchStats();
+  fetchAllDonationsAggregate();
     } catch (error: any) {
       console.error('Erro na ação em massa:', error);
       
@@ -352,7 +411,16 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
                 <TrendingUp className="h-8 w-8 text-blue-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Arrecadado</p>
-                  <p className="text-2xl font-bold">{formatAmount(stats.total_amount)}</p>
+                  <p className="text-2xl font-bold">
+                    {aggregateStats.approvedAmount > 0
+                      ? formatAmount(String(aggregateStats.approvedAmount))
+                      : stats?.total_amount
+                        ? formatAmount(stats.total_amount)
+                        : formatAmount('0')}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {aggregateStats.approvedAmount > 0 ? 'Aprovadas / Completadas (agregado real)' : 'Fallback estatística API'}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -363,7 +431,7 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
                 <Users className="h-8 w-8 text-green-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Doações</p>
-                  <p className="text-2xl font-bold">{stats.total_donations}</p>
+                  <p className="text-2xl font-bold">{aggregateStats.totalDonations || stats?.total_donations || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -374,7 +442,7 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
                 <Clock className="h-8 w-8 text-yellow-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Pendentes</p>
-                  <p className="text-2xl font-bold">{stats.pending_count}</p>
+                  <p className="text-2xl font-bold">{aggregateStats.pendingCount || stats?.pending_count || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -385,7 +453,7 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
                 <CheckCircle className="h-8 w-8 text-emerald-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Aprovadas</p>
-                  <p className="text-2xl font-bold">{stats.approved_count}</p>
+                  <p className="text-2xl font-bold">{aggregateStats.approvedCount || stats?.approved_count || 0}</p>
                 </div>
               </div>
             </CardContent>

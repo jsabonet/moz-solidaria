@@ -30,7 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { fetchProjects, deleteProject, isAuthenticated } from '@/lib/api';
+import { fetchProjects, deleteProject, isAuthenticated, fetchProjectMetrics, fetchCompleteProjectData } from '@/lib/api';
 import ProjectUpdates from '@/components/ProjectUpdates';
 import ProjectAnalytics from '@/components/ProjectAnalytics';
 import ProjectNotifications from '@/components/ProjectNotifications';
@@ -52,7 +52,7 @@ interface Project {
     name: string;
   };
   status: 'planning' | 'active' | 'completed' | 'suspended';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
   progress_percentage?: number;
   manager?: {
     id: number;
@@ -71,6 +71,19 @@ interface Project {
   is_public: boolean;
   created_at: string;
   updated_at: string;
+  metrics?: {
+    peopleImpacted?: number;
+    budgetUsed?: number;
+    budgetTotal?: number;
+    progressPercentage?: number;
+    completedMilestones?: number;
+    totalMilestones?: number;
+  };
+  milestones?: Array<{
+    id?: number;
+    is_completed?: boolean;
+    status?: string;
+  }>;
 }
 
 interface ProjectStats {
@@ -137,27 +150,100 @@ const ProjectManagement: React.FC = () => {
     };
   };
 
-  // Carregar projetos da API
+  const clamp = (n: number, min = 0, max = 100) => Math.min(Math.max(n, min), max);
+  const getProjectProgress = (p: Project): number => {
+    const mp = p.metrics?.progressPercentage;
+    if (mp && mp > 0) return clamp(mp);
+    if (p.progress_percentage && p.progress_percentage > 0) return clamp(p.progress_percentage);
+    if (p.metrics?.completedMilestones !== undefined && p.metrics?.totalMilestones) {
+      const t = p.metrics.totalMilestones || 0;
+      if (t > 0) return clamp(((p.metrics.completedMilestones || 0) / t) * 100);
+    }
+    if (Array.isArray(p.milestones) && p.milestones.length > 0) {
+      const done = p.milestones.filter(m => m.is_completed || m.status === 'completed').length;
+      if (done > 0) return clamp(done / p.milestones.length * 100);
+    }
+    return 0;
+  };
+  const getCurrentBeneficiaries = (p: Project) => p.metrics?.peopleImpacted ?? p.current_beneficiaries ?? 0;
+
+  // Carregar projetos da API + enriquecer com métricas
   useEffect(() => {
     const loadProjects = async () => {
       try {
         setLoading(true);
-        
-        // Buscar projetos usando lógica centralizada na API
-        const projectsData = await fetchProjects();
-        setProjects(projectsData);
-        
-        // Calcular e definir estatísticas
-        setStats(calculateStats(projectsData));
+
+        const baseProjects: Project[] = await fetchProjects();
+        // Enriquecer sequencialmente com métricas (pode ser paralelizado)
+        // Fase 1: métricas rápidas
+        const enrichedPhase1 = await Promise.all(baseProjects.map(async (p) => {
+          try {
+            const metrics = await fetchProjectMetrics(p.id);
+            const effectiveProgress = metrics.progressPercentage ?? (metrics as any)?.progress_percentage ?? p.progress_percentage;
+            return { ...p, metrics, progress_percentage: effectiveProgress ?? p.progress_percentage } as Project;
+          } catch {
+            return p;
+          }
+        }));
+
+        // Identificar projetos com progresso 0 ou sem prioridade para buscar dados completos
+        const needsFull = enrichedPhase1.filter(p => getProjectProgress(p) === 0 || !p.priority);
+        const fullDataMap: Record<string, any> = {};
+        if (needsFull.length) {
+          const limit = 4;
+            for (let i = 0; i < needsFull.length; i += limit) {
+              const slice = needsFull.slice(i, i + limit);
+              const batch = await Promise.allSettled(slice.map(pr => fetchCompleteProjectData(pr.slug)));
+              batch.forEach((res, idx) => {
+                const slug = slice[idx].slug;
+                if (res.status === 'fulfilled' && res.value) fullDataMap[slug] = res.value;
+              });
+            }
+        }
+
+        const enrichedFinal = enrichedPhase1.map(p => {
+          const full = fullDataMap[p.slug];
+          if (!full) return p;
+          const fullMetrics = (full.metrics || {}) as any;
+          const progress = fullMetrics.progressPercentage ?? fullMetrics.progress_percentage ?? full.progress_percentage ?? p.progress_percentage;
+          return {
+            ...p,
+            ...full,
+            priority: p.priority || full.priority,
+            progress_percentage: progress ?? p.progress_percentage,
+            metrics: {
+              ...p.metrics,
+              ...full.metrics,
+              progressPercentage: progress ?? (p.metrics as any)?.progressPercentage
+            },
+            milestones: full.milestones || p.milestones
+          } as Project;
+        });
+
+        setProjects(enrichedFinal);
+
+        // Estatísticas usando dados finais
+        const totalProjects = enrichedFinal.length;
+        const activeProjects = enrichedFinal.filter(p => p.status === 'active').length;
+        const completedProjects = enrichedFinal.filter(p => p.status === 'completed').length;
+        const totalBeneficiaries = enrichedFinal.reduce((s, p) => s + getCurrentBeneficiaries(p), 0);
+  const totalBudget = enrichedFinal.reduce((s, p) => s + (p.metrics?.budgetTotal || p.target_budget || 0), 0);
+        const averageProgress = totalProjects > 0 ? enrichedFinal.reduce((s, p) => s + getProjectProgress(p), 0) / totalProjects : 0;
+        setStats({
+          total_projects: totalProjects,
+          active_projects: activeProjects,
+          completed_projects: completedProjects,
+          total_beneficiaries: totalBeneficiaries,
+          total_budget: totalBudget,
+          average_progress: averageProgress
+        });
 
       } catch (error) {
         console.error('Erro ao carregar projetos:', error);
-        // Mostrar toast de erro após um delay para evitar conflitos
         setTimeout(() => {
           toast.error('Erro ao carregar projetos. Usando dados de demonstração.');
         }, 100);
-        
-        // Fallback para dados mock em caso de erro
+
         const mockProjects: Project[] = [
           {
             id: 1,
@@ -231,14 +317,11 @@ const ProjectManagement: React.FC = () => {
         ];
 
         setProjects(mockProjects);
-        
-        // Calcular estatísticas do fallback
         setStats(calculateStats(mockProjects));
       } finally {
         setLoading(false);
       }
     };
-
     loadProjects();
   }, []);
 
@@ -270,6 +353,12 @@ const ProjectManagement: React.FC = () => {
       default:
         return 'secondary';
     }
+  };
+
+  // Normalização de prioridade já que agora é opcional
+  const normalizePriority = (priority?: string): 'low' | 'medium' | 'high' | 'urgent' => {
+    if (priority === 'low' || priority === 'medium' || priority === 'high' || priority === 'urgent') return priority;
+    return 'medium';
   };
 
   const getPriorityColor = (priority: string) => {
@@ -460,7 +549,12 @@ const ProjectManagement: React.FC = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Orçamento Total</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <span>Orçamento Total</span>
+              {/* <span className="text-[11px] font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                {stats.total_budget.toLocaleString('pt-PT')} MZN
+              </span> */}
+            </CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -566,15 +660,15 @@ const ProjectManagement: React.FC = () => {
                       <TableCell>
                         <div className="space-y-1">
                           <div className="flex items-center justify-between text-sm">
-                            <span>{project.progress_percentage || 0}%</span>
+                            <span>{getProjectProgress(project).toFixed(0)}%</span>
                           </div>
-                          <Progress value={project.progress_percentage || 0} className="w-20" />
+                          <Progress value={getProjectProgress(project)} className="w-20" />
                         </div>
                       </TableCell>
                       
                       <TableCell>
                         <div className="text-sm">
-                          <div className="font-medium">{project.current_beneficiaries || 0}</div>
+                          <div className="font-medium">{getCurrentBeneficiaries(project)}</div>
                           <div className="text-muted-foreground">
                             de {project.target_beneficiaries}
                           </div>
@@ -608,34 +702,6 @@ const ProjectManagement: React.FC = () => {
                                   <Edit className="h-4 w-4" />
                                 </Link>
                               </Button>
-                              
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => openProjectDetail(project, 'updates')}
-                                title="Gerenciar atualizações"
-                              >
-                                <MessageSquare className="h-4 w-4" />
-                              </Button>
-                              
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => openProjectDetail(project, 'analytics')}
-                                title="Ver análises"
-                              >
-                                <BarChart3 className="h-4 w-4" />
-                              </Button>
-                              
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => openProjectDetail(project, 'notifications')}
-                                title="Configurar notificações"
-                              >
-                                <Bell className="h-4 w-4" />
-                              </Button>
-                              
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
@@ -645,15 +711,6 @@ const ProjectManagement: React.FC = () => {
                                 <Target className="h-4 w-4" />
                               </Button>
                               
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => openProjectDetail(project, 'gallery')}
-                                title="Gerenciar galeria"
-                              >
-                                <Image className="h-4 w-4" />
-                              </Button>
-                                                      
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <Button variant="ghost" size="sm" title="Remover projeto">

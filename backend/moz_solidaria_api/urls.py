@@ -76,6 +76,7 @@ urlpatterns = [
         path('projects/', include('core.urls_categories')),
         path('tracking/', include('project_tracking.urls')),
         path('reports/', include('reports.urls')),
+        path('partnerships/', include('partnerships.urls')),
         # path('core/', include('core.urls')),  # Temporariamente desabilitado
     ])),
 ]
