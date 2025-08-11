@@ -3,8 +3,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import CommentManagement from '@/components/CommentManagement';
 import LoginForm from '@/components/LoginForm';
 
@@ -14,18 +12,15 @@ const CommentsPage: React.FC = () => {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header />
         <div className="max-w-md mx-auto pt-20">
           <LoginForm />
         </div>
-        <Footer />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-12">
         {/* Navegação */}
@@ -45,8 +40,6 @@ const CommentsPage: React.FC = () => {
         {/* Componente de gestão */}
         <CommentManagement />
       </div>
-
-      <Footer />
     </div>
   );
 };

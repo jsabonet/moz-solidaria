@@ -59,6 +59,8 @@ INSTALLED_APPS = [
     'project_tracking',
     'reports',
     'partnerships',
+    'volunteers',
+    'beneficiaries',
 ]
 
 MIDDLEWARE = [

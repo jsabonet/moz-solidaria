@@ -206,7 +206,7 @@ const DonorOverview: React.FC<{
 }> = ({ stats, donorStats, statsLoading, causes, loading, onTabChange, onFeatureClick }) => {
   const donorStatsData = donorStats || stats?.stats || {};
 
-  // Forçar símbolo 'MZN' (Intl para pt-MZ pode renderizar 'MTn')
+  // Forçar símbolo 'MZN' (substituir qualquer 'MTn' que possa aparecer)
   const formatCurrency = (amount: number) => {
     if (amount == null || isNaN(amount as any)) return 'MZN 0';
     const negative = amount < 0;
@@ -215,7 +215,8 @@ const DonorOverview: React.FC<{
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(abs);
-    return `${negative ? '-' : ''}MZN ${formatted}`;
+    // Garantir que sempre use MZN, não MTn
+    return `${negative ? '-' : ''}MZN ${formatted}`.replace(/MTn/g, 'MZN');
   };
 
   const formatNumber = (num: number) => {

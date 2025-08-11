@@ -77,6 +77,8 @@ urlpatterns = [
         path('tracking/', include('project_tracking.urls')),
         path('reports/', include('reports.urls')),
         path('partnerships/', include('partnerships.urls')),
+        path('volunteers/', include('volunteers.urls')),
+        path('beneficiaries/', include('beneficiaries.urls')),
         # path('core/', include('core.urls')),  # Temporariamente desabilitado
     ])),
 ]

@@ -94,10 +94,12 @@ const MyDonations: React.FC<MyDonationsProps> = ({ onViewDetails }) => {
   };
 
   const formatAmount = (amount: string) => {
-    return `${parseFloat(amount).toLocaleString('pt-PT', {
+    const formatted = parseFloat(amount).toLocaleString('pt-PT', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    })} MZN`;
+    });
+    // Garantir que sempre use MZN, não MTn
+    return `${formatted} MZN`.replace(/MTn/g, 'MZN');
   };
 
   if (loading) {

@@ -47,13 +47,14 @@ export const DonorLevelBadge: React.FC<DonorLevelBadgeProps> = ({
   nextLevelName,
   showProgress = false
 }) => {
+  // Forçar exibição do código oficial "MZN" (evitando símbolo antigo "MTn")
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('pt-MZ', {
-      style: 'currency',
-      currency: 'MZN',
+    if (amount == null || isNaN(amount as any)) return 'MZN 0';
+    const formatted = new Intl.NumberFormat('pt-MZ', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(amount);
+    return `MZN ${formatted}`; // nunca exibirá MTn
   };
 
   if (!showProgress) {

@@ -265,14 +265,13 @@ const formatDate = (date: string | Date | null | undefined) => {
 };
 
 const formatCurrency = (amount: number) => {
-  // Forçar exibição do código da moeda "MZN" (evitar símbolo antigo MTn)
-  return new Intl.NumberFormat('pt-MZ', {
-    style: 'currency',
-    currency: 'MZN',
-    currencyDisplay: 'code',
+  // Forçar exibição do código da moeda "MZN" (evitar símbolo antigo MTn ou símbolo local)
+  if (amount == null || isNaN(amount as any)) return 'MZN 0';
+  const formatted = new Intl.NumberFormat('pt-MZ', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
   }).format(amount);
+  return `MZN ${formatted}`;
 };
 
 const ProjectDetail: React.FC = () => {
