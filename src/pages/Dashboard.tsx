@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useParams, useNavigate } from 'react-router-dom';
 import { Plus, Edit, Tag, Trash2, Eye, Calendar, TrendingUp, Copy, MessageCircle, Heart, Settings, DollarSign, MapPin, Bell, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,9 @@ import ProjectCategoryManagement from '@/components/admin/ProjectCategoryManagem
 import PartnerCommunication from '@/components/PartnerCommunicationUpdated';
 import VolunteerManagement from '@/components/admin/VolunteerManagement';
 import BeneficiaryManagement from '@/components/admin/BeneficiaryManagement';
+import ReportsCenter from '@/components/reports/ReportsCenter';
+import AdvancedStats from '@/components/reports/AdvancedStats';
+import ExportButton from '@/components/reports/ExportButton';
 import {
   BarChart3,
   Users,
@@ -24,12 +27,14 @@ import {
   Filter,
   Search,
   MoreHorizontal,
+  PieChart,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +42,71 @@ const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [activeCommunityTab, setActiveCommunityTab] = useState('overview');
   const [selectedDonation, setSelectedDonation] = useState<any>(null);
+
+  // Detectar a rota e definir as abas ativas
+  useEffect(() => {
+    const path = location.pathname;
+    
+    // Rotas da comunidade
+    if (path.startsWith('/dashboard/community')) {
+      setActiveTab('community');
+      if (path === '/dashboard/community' || path === '/dashboard/community/') {
+        setActiveCommunityTab('overview');
+      } else {
+        const communitySection = path.split('/dashboard/community/')[1];
+        if (communitySection) {
+          setActiveCommunityTab(communitySection);
+        }
+      }
+    }
+    // Rotas das abas principais
+    else if (path === '/dashboard/overview') {
+      setActiveTab('overview');
+    }
+    else if (path === '/dashboard/blog') {
+      setActiveTab('blog');
+    }
+    else if (path === '/dashboard/projects') {
+      setActiveTab('projects');
+    }
+    else if (path === '/dashboard/reports') {
+      setActiveTab('reports');
+    }
+    else if (path === '/dashboard/settings') {
+      setActiveTab('settings');
+    }
+    else if (path === '/dashboard/project-categories') {
+      setActiveTab('project-categories');
+    }
+    // Rota principal do dashboard (redirecionar para overview)
+    else if (path === '/dashboard' || path === '/dashboard/') {
+      navigate('/dashboard/overview', { replace: true });
+    }
+  }, [location.pathname]);
+
+  // Função para navegar para sub-abas da comunidade
+  const navigateToCommunityTab = (tab: string) => {
+    if (tab === 'overview') {
+      navigate('/dashboard/community');
+    } else {
+      navigate(`/dashboard/community/${tab}`);
+    }
+  };
+
+  // Função para navegar entre as abas principais
+  const navigateToMainTab = (tab: string) => {
+    if (tab === 'overview') {
+      navigate('/dashboard/overview');
+    } else if (tab === 'community') {
+      navigate('/dashboard/community');
+    } else if (tab === 'project-categories') {
+      navigate('/dashboard/project-categories');
+    } else if (tab === 'reports') {
+      navigate('/dashboard/reports');
+    } else {
+      navigate(`/dashboard/${tab}`);
+    }
+  };
 
   // Mock data for stats
   const stats = {
@@ -163,8 +233,8 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="p-3 md:p-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-5 h-auto p-1">
+        <Tabs value={activeTab} onValueChange={navigateToMainTab} className="space-y-4 md:space-y-6">
+          <TabsList className="grid w-full grid-cols-6 h-auto p-1">
             <TabsTrigger value="overview" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
               <BarChart3 className="h-4 w-4 md:h-4 md:w-4" />
               <span className="hidden sm:block">Visão Geral</span>
@@ -183,6 +253,11 @@ const Dashboard: React.FC = () => {
               <Users className="h-4 w-4 md:h-4 md:w-4" />
               <span className="hidden sm:block">Comunidade</span>
               <span className="sm:hidden text-xs">Com</span>
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+              <PieChart className="h-4 w-4 md:h-4 md:w-4" />
+              <span className="hidden sm:block">Relatórios</span>
+              <span className="sm:hidden text-xs">Rel</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
               <Settings className="h-4 w-4 md:h-4 md:w-4" />
@@ -268,12 +343,21 @@ const Dashboard: React.FC = () => {
           <TabsContent value="blog" className="space-y-4 md:space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <h2 className="text-xl md:text-2xl font-bold">Gerenciar Blog</h2>
-              <Button size="sm" className="w-full sm:w-auto" asChild>
-                <Link to="/dashboard/posts/new">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Post
-                </Link>
-              </Button>
+              <div className="flex space-x-2">
+                <ExportButton 
+                  data={Array.isArray(posts) ? posts : []} 
+                  filename="blog-posts" 
+                  type="blog" 
+                  variant="outline" 
+                  size="sm"
+                />
+                <Button size="sm" className="w-full sm:w-auto" asChild>
+                  <Link to="/dashboard/posts/new">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Post
+                  </Link>
+                </Button>
+              </div>
             </div>
             {Array.isArray(posts) && posts.length > 0 ? (
               <Table>
@@ -403,7 +487,7 @@ const Dashboard: React.FC = () => {
             </div>
             
             {/* Sub-tabs for Community */}
-            <Tabs value={activeCommunityTab} onValueChange={setActiveCommunityTab} className="space-y-4">
+            <Tabs value={activeCommunityTab} onValueChange={navigateToCommunityTab} className="space-y-4">
               <TabsList className="grid w-full grid-cols-5 h-auto p-1">
                 <TabsTrigger value="overview" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
                   <BarChart3 className="h-4 w-4 md:h-4 md:w-4" />
@@ -516,7 +600,7 @@ const Dashboard: React.FC = () => {
                         <Button 
                           variant="outline" 
                           className="justify-start" 
-                          onClick={() => setActiveCommunityTab('donations')}
+                          onClick={() => navigateToCommunityTab('donations')}
                         >
                           <DollarSign className="h-4 w-4 mr-2" />
                           Doações
@@ -524,7 +608,7 @@ const Dashboard: React.FC = () => {
                         <Button 
                           variant="outline" 
                           className="justify-start"
-                          onClick={() => setActiveCommunityTab('volunteers')}
+                          onClick={() => navigateToCommunityTab('volunteers')}
                         >
                           <UserCheck className="h-4 w-4 mr-2" />
                           Voluntários
@@ -532,7 +616,7 @@ const Dashboard: React.FC = () => {
                         <Button 
                           variant="outline" 
                           className="justify-start"
-                          onClick={() => setActiveCommunityTab('beneficiaries')}
+                          onClick={() => navigateToCommunityTab('beneficiaries')}
                         >
                           <Heart className="h-4 w-4 mr-2" />
                           Beneficiários
@@ -540,7 +624,7 @@ const Dashboard: React.FC = () => {
                         <Button 
                           variant="outline" 
                           className="justify-start"
-                          onClick={() => setActiveCommunityTab('partners')}
+                          onClick={() => navigateToCommunityTab('partners')}
                         >
                           <Users className="h-4 w-4 mr-2" />
                           Parcerias
@@ -578,6 +662,13 @@ const Dashboard: React.FC = () => {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <h3 className="text-lg md:text-xl font-bold">Gestão de Doações</h3>
                   <div className="flex space-x-2">
+                    <ExportButton 
+                      data={[]} 
+                      filename="doacoes" 
+                      type="donations" 
+                      variant="outline" 
+                      size="sm"
+                    />
                     <Button variant="outline" size="sm">
                       <Filter className="h-4 w-4 mr-2" />
                       Filtros
@@ -605,9 +696,48 @@ const Dashboard: React.FC = () => {
 
               {/* Beneficiaries Sub-tab */}
               <TabsContent value="beneficiaries" className="space-y-4">
-                <h3 className="text-lg md:text-xl font-bold">Gestão de Beneficiários</h3>
+                {/* <h3 className="text-lg md:text-xl font-bold">Gestão de Beneficiários</h3> */}
                 <BeneficiaryManagement />
               </TabsContent>
+            </Tabs>
+          </TabsContent>
+
+          {/* Reports Tab - Centro de Relatórios */}
+          <TabsContent value="reports" className="space-y-4 md:space-y-6">
+            <div>
+              <h2 className="text-xl md:text-2xl font-bold mb-2">Centro de Relatórios e Analytics</h2>
+              <p className="text-muted-foreground">Sistema completo de relatórios, exportações e análises estatísticas</p>
+            </div>
+            
+            {/* Sub-tabs for Reports */}
+            <Tabs defaultValue="center" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-3 h-auto p-1">
+                <TabsTrigger value="area-exports" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+                  <FileText className="h-4 w-4 md:h-4 md:w-4" />
+                  <span className="hidden sm:block">Centro de Relatórios</span>
+                  <span className="sm:hidden text-xs">Centro</span>
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+                  <PieChart className="h-4 w-4 md:h-4 md:w-4" />
+                  <span className="hidden sm:block">Analytics Avançado</span>
+                  <span className="sm:hidden text-xs">Analytics</span>
+                </TabsTrigger>
+                <TabsTrigger value="exports" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+                  <Download className="h-4 w-4 md:h-4 md:w-4" />
+                  <span className="sm:hidden text-xs">Export</span>
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Centro de Relatórios */}
+              <TabsContent value="area-exports" className="space-y-4">
+                <ReportsCenter />
+              </TabsContent>
+
+              {/* Analytics Avançado */}
+              <TabsContent value="analytics" className="space-y-4">
+                <AdvancedStats />
+              </TabsContent>
+
             </Tabs>
           </TabsContent>
 
@@ -630,7 +760,7 @@ const Dashboard: React.FC = () => {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start"
-                    onClick={() => setActiveTab('project-categories')}
+                    onClick={() => navigateToMainTab('project-categories')}
                   >
                     <Tag className="h-4 w-4 mr-2" />
                     Gerenciar Categorias de Projetos
@@ -662,7 +792,7 @@ const Dashboard: React.FC = () => {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => setActiveTab('settings')}
+                onClick={() => navigateToMainTab('settings')}
               >
                 ← Voltar para Configurações
               </Button>

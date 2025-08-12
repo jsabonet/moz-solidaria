@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug de Autenticação - Moz Solidária</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .debug-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        .code {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 3px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+        
+        .token-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            padding: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>🔍 Debug de Autenticação</h1>
+        <p>Esta página ajuda a diagnosticar problemas de autenticação no sistema de exportações.</p>
+        
+        <div id="authStatus"></div>
+        
+        <h3>🛠️ Ações de Debug</h3>
+        <button onclick="checkAuthTokens()">Verificar Tokens</button>
+        <button onclick="testApiCall()">Testar Chamada API</button>
+        <button onclick="clearTokens()">Limpar Tokens</button>
+        <button onclick="openMainApp()">Abrir App Principal</button>
+        
+        <div id="results"></div>
+        
+        <h3>📝 Instruções</h3>
+        <div class="info status">
+            <strong>Para resolver o erro 401 nas exportações:</strong>
+            <ol>
+                <li>Verifique se você está logado no sistema principal</li>
+                <li>Se não estiver logado, acesse <code>http://localhost:8083</code> e faça login</li>
+                <li>Volte para a página de relatórios e tente exportar novamente</li>
+                <li>Se o problema persistir, limpe os tokens e faça login novamente</li>
+            </ol>
+        </div>
+        
+        <h3>🔧 Debug Manual via Console</h3>
+        <div class="code">
+// Cole este código no console do navegador (F12):
+console.log('authToken:', localStorage.getItem('authToken'));
+console.log('refreshToken:', localStorage.getItem('refreshToken'));
+console.log('userData:', localStorage.getItem('userData'));
+
+// Para testar se o token funciona:
+fetch('http://localhost:8000/api/v1/auth/user/', {
+  headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+}).then(r => r.json()).then(console.log);
+        </div>
+    </div>
+
+    <script>
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('authStatus');
+            statusDiv.innerHTML = `<div class="${type} status">${message}</div>`;
+        }
+        
+        function updateResults(content) {
+            document.getElementById('results').innerHTML = content;
+        }
+        
+        function checkAuthTokens() {
+            const authToken = localStorage.getItem('authToken');
+            const refreshToken = localStorage.getItem('refreshToken');
+            const userData = localStorage.getItem('userData');
+            
+            let html = '<h4>📋 Status dos Tokens</h4>';
+            
+            if (authToken) {
+                html += `<div class="success status">✅ <strong>authToken:</strong> Presente (${authToken.length} chars)</div>`;
+                html += `<div class="token-display">${authToken.substring(0, 50)}...</div>`;
+            } else {
+                html += '<div class="error status">❌ <strong>authToken:</strong> Ausente</div>';
+            }
+            
+            if (refreshToken) {
+                html += `<div class="success status">✅ <strong>refreshToken:</strong> Presente</div>`;
+            } else {
+                html += '<div class="error status">❌ <strong>refreshToken:</strong> Ausente</div>';
+            }
+            
+            if (userData) {
+                try {
+                    const user = JSON.parse(userData);
+                    html += `<div class="success status">✅ <strong>userData:</strong> ${user.username} (ID: ${user.id})</div>`;
+                } catch (e) {
+                    html += '<div class="warning status">⚠️ <strong>userData:</strong> Presente mas inválido</div>';
+                }
+            } else {
+                html += '<div class="error status">❌ <strong>userData:</strong> Ausente</div>';
+            }
+            
+            if (!authToken) {
+                html += '<div class="warning status">💡 <strong>Solução:</strong> Você precisa fazer login no sistema principal</div>';
+            }
+            
+            updateResults(html);
+        }
+        
+        async function testApiCall() {
+            const authToken = localStorage.getItem('authToken');
+            
+            if (!authToken) {
+                updateResults('<div class="error status">❌ Não é possível testar: nenhum token encontrado</div>');
+                return;
+            }
+            
+            updateResults('<div class="info status">🔄 Testando chamada para API...</div>');
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/v1/auth/user/', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                let html = `<h4>🧪 Resultado do Teste de API</h4>`;
+                html += `<div class="info status"><strong>Status:</strong> ${response.status} ${response.statusText}</div>`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    html += `<div class="success status">✅ <strong>Token válido!</strong> Usuário: ${data.username}</div>`;
+                    html += `<div class="code">${JSON.stringify(data, null, 2)}</div>`;
+                } else {
+                    html += '<div class="error status">❌ <strong>Token inválido ou expirado</strong></div>';
+                    html += '<div class="warning status">💡 <strong>Solução:</strong> Faça login novamente</div>';
+                }
+                
+                updateResults(html);
+                
+            } catch (error) {
+                updateResults(`<div class="error status">❌ <strong>Erro na chamada:</strong> ${error.message}</div>`);
+            }
+        }
+        
+        function clearTokens() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('userData');
+            localStorage.removeItem('access_token'); // fallback
+            
+            updateResults('<div class="warning status">🗑️ <strong>Tokens removidos!</strong> Faça login novamente.</div>');
+        }
+        
+        function openMainApp() {
+            window.open('http://localhost:8083', '_blank');
+        }
+        
+        // Verificação automática ao carregar a página
+        window.onload = function() {
+            checkAuthTokens();
+            
+            const authToken = localStorage.getItem('authToken');
+            if (authToken) {
+                updateStatus('🔍 Token encontrado. Testando validade...', 'info');
+                testApiCall();
+            } else {
+                updateStatus('❌ Nenhum token de autenticação encontrado. Você precisa fazer login.', 'error');
+            }
+        };
+    </script>
+</body>
+</html>

@@ -87,6 +87,68 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
+            
+            {/* Rotas das Abas do Dashboard */}
+            <Route 
+              path="/dashboard/overview" 
+              element={
+                <ProtectedRoute requireAuth={true} requireStaff={true}>
+                  <Suspense fallback={<ComponentLoader />}>
+                    <LazyDashboard />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/blog" 
+              element={
+                <ProtectedRoute requireAuth={true} requireStaff={true}>
+                  <Suspense fallback={<ComponentLoader />}>
+                    <LazyDashboard />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/projects" 
+              element={
+                <ProtectedRoute requireAuth={true} requireStaff={true}>
+                  <Suspense fallback={<ComponentLoader />}>
+                    <LazyDashboard />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/settings" 
+              element={
+                <ProtectedRoute requireAuth={true} requireStaff={true}>
+                  <Suspense fallback={<ComponentLoader />}>
+                    <LazyDashboard />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/reports" 
+              element={
+                <ProtectedRoute requireAuth={true} requireStaff={true}>
+                  <Suspense fallback={<ComponentLoader />}>
+                    <LazyDashboard />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/project-categories" 
+              element={
+                <ProtectedRoute requireAuth={true} requireStaff={true}>
+                  <Suspense fallback={<ComponentLoader />}>
+                    <LazyDashboard />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
             <Route 
               path="/dashboard/posts/new" 
               element={
@@ -150,6 +212,58 @@ const App = () => (
               element={
                 <ProtectedRoute requireAuth={true} requireStaff={true}>
                   <CommentsPage />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Rotas da Comunidade */}
+            <Route 
+              path="/dashboard/community" 
+              element={
+                <ProtectedRoute requireAuth={true} requireStaff={true}>
+                  <Suspense fallback={<ComponentLoader />}>
+                    <LazyDashboard />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/community/donations" 
+              element={
+                <ProtectedRoute requireAuth={true} requireStaff={true}>
+                  <Suspense fallback={<ComponentLoader />}>
+                    <LazyDashboard />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/community/partners" 
+              element={
+                <ProtectedRoute requireAuth={true} requireStaff={true}>
+                  <Suspense fallback={<ComponentLoader />}>
+                    <LazyDashboard />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/community/volunteers" 
+              element={
+                <ProtectedRoute requireAuth={true} requireStaff={true}>
+                  <Suspense fallback={<ComponentLoader />}>
+                    <LazyDashboard />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/community/beneficiaries" 
+              element={
+                <ProtectedRoute requireAuth={true} requireStaff={true}>
+                  <Suspense fallback={<ComponentLoader />}>
+                    <LazyDashboard />
+                  </Suspense>
                 </ProtectedRoute>
               } 
             />

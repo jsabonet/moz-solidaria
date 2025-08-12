@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Reports Authentication</title>
+</head>
+<body>
+    <h1>Test Reports API Authentication</h1>
+    <button id="testAuth">Test Auth Token</button>
+    <button id="testReports">Test Reports API</button>
+    <div id="results"></div>
+
+    <script>
+        // Simulate a login token (you can replace this with actual token from your app)
+        const testToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.test'; // Mock token for testing
+
+        document.getElementById('testAuth').addEventListener('click', () => {
+            // Set the token as the app would
+            localStorage.setItem('authToken', testToken);
+            document.getElementById('results').innerHTML += '<p>✅ Token set in localStorage as "authToken"</p>';
+            
+            // Show what's in localStorage
+            const storedToken = localStorage.getItem('authToken');
+            document.getElementById('results').innerHTML += `<p>📋 Stored token: ${storedToken}</p>`;
+        });
+
+        document.getElementById('testReports').addEventListener('click', async () => {
+            const API_BASE_URL = 'http://localhost:8000/api/v1/reports';
+            
+            try {
+                const token = localStorage.getItem('authToken');
+                document.getElementById('results').innerHTML += `<p>🔍 Retrieved token: ${token}</p>`;
+                
+                const headers = {
+                    'Content-Type': 'application/json',
+                    ...(token && {
+                        'Authorization': `Bearer ${token}`
+                    })
+                };
+                
+                document.getElementById('results').innerHTML += `<p>📤 Headers: ${JSON.stringify(headers, null, 2)}</p>`;
+                
+                const response = await fetch(`${API_BASE_URL}/reports/`, {
+                    method: 'GET',
+                    headers: headers
+                });
+                
+                document.getElementById('results').innerHTML += `<p>📥 Response status: ${response.status} ${response.statusText}</p>`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('results').innerHTML += `<p>✅ Success! Data: ${JSON.stringify(data, null, 2)}</p>`;
+                } else {
+                    const errorText = await response.text();
+                    document.getElementById('results').innerHTML += `<p>❌ Error: ${errorText}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('results').innerHTML += `<p>💥 Exception: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -40,9 +40,8 @@ class ReportDataService:
         metrics_data = ProjectMetrics.objects.filter(project__in=projects_qs).aggregate(
             total_budget=Sum('budget_total'),
             total_spent=Sum('budget_used'),
-            total_direct_beneficiaries=Sum('direct_beneficiaries'),
-            total_indirect_beneficiaries=Sum('indirect_beneficiaries'),
-            avg_success_rate=Avg('success_rate'),
+            total_people_impacted=Sum('people_impacted'),
+            avg_progress=Avg('progress_percentage'),
             total_milestones=Sum('total_milestones'),
             completed_milestones=Sum('completed_milestones')
         )
@@ -70,10 +69,9 @@ class ReportDataService:
                 'remaining_budget': (metrics_data['total_budget'] or 0) - (metrics_data['total_spent'] or 0)
             },
             'impact': {
-                'direct_beneficiaries': metrics_data['total_direct_beneficiaries'] or 0,
-                'indirect_beneficiaries': metrics_data['total_indirect_beneficiaries'] or 0,
-                'total_beneficiaries': (metrics_data['total_direct_beneficiaries'] or 0) + (metrics_data['total_indirect_beneficiaries'] or 0),
-                'average_success_rate': round(metrics_data['avg_success_rate'] or 0, 2)
+                'people_impacted': metrics_data['total_people_impacted'] or 0,
+                'total_beneficiaries': metrics_data['total_people_impacted'] or 0,
+                'average_progress': round(metrics_data['avg_progress'] or 0, 2)
             },
             'milestones': {
                 'total_milestones': metrics_data['total_milestones'] or 0,
@@ -104,8 +102,8 @@ class ReportDataService:
                     'status': project.status,
                     'budget_utilization': 0,
                     'milestone_completion': 0,
-                    'beneficiaries_reached': metrics.direct_beneficiaries + metrics.indirect_beneficiaries,
-                    'success_rate': metrics.success_rate,
+                    'beneficiaries_reached': metrics.people_impacted,
+                    'progress_percentage': metrics.progress_percentage,
                     'last_updated': metrics.last_updated.isoformat() if metrics.last_updated else None
                 }
                 
@@ -120,13 +118,13 @@ class ReportDataService:
                 continue
         
         # Projetos com melhor performance
-        top_performers = sorted(project_performance, key=lambda x: x['success_rate'], reverse=True)[:5]
+        top_performers = sorted(project_performance, key=lambda x: x['progress_percentage'], reverse=True)[:5]
         
         # Projetos que precisam de atenção
         attention_needed = []
         for project in project_performance:
             if (project['budget_utilization'] > 90 and project['milestone_completion'] < 80) or \
-               (project['success_rate'] < 70):
+               (project['progress_percentage'] < 70):
                 attention_needed.append(project)
         
         return {
@@ -206,7 +204,7 @@ class ReportDataService:
             'total_budget': overview['financial']['total_budget'],
             'budget_utilization': overview['financial']['budget_utilization_percentage'],
             'total_beneficiaries': overview['impact']['total_beneficiaries'],
-            'average_success_rate': overview['impact']['average_success_rate'],
+            'average_progress': overview['impact']['average_progress'],
             'milestone_completion': overview['milestones']['completion_percentage']
         }
         
@@ -264,12 +262,12 @@ class ReportDataService:
         }
         
         for project in project_performance:
-            success_rate = project['success_rate']
-            if success_rate >= 90:
+            progress_rate = project['progress_percentage']
+            if progress_rate >= 90:
                 distribution['excellent'] += 1
-            elif success_rate >= 70:
+            elif progress_rate >= 70:
                 distribution['good'] += 1
-            elif success_rate >= 50:
+            elif progress_rate >= 50:
                 distribution['average'] += 1
             else:
                 distribution['poor'] += 1
@@ -334,15 +332,29 @@ class ReportGenerationService:
         executive_summary = self.data_service.get_executive_summary(filters)
         timeline = self.data_service.get_timeline_data('monthly', filters)
         
-        return {
-            'title': 'Dashboard Executivo',
-            'type': 'executive',
-            'generated_at': timezone.now().isoformat(),
-            'summary': executive_summary,
+        # Aplainar dados para corresponder ao ExecutiveDashboardSerializer
+        flattened_data = {
+            # KPIs principais (retirados de executive_summary.kpis)
+            'total_projects': executive_summary['kpis']['total_projects'],
+            'active_projects': executive_summary['kpis']['active_projects'],
+            'completion_rate': executive_summary['kpis']['completion_rate'],
+            'total_budget': executive_summary['kpis']['total_budget'],
+            'budget_utilization': executive_summary['kpis']['budget_utilization'],
+            'total_beneficiaries': executive_summary['kpis']['total_beneficiaries'],
+            'average_success_rate': executive_summary['kpis']['average_progress'],
+            'milestone_completion': executive_summary['kpis']['milestone_completion'],
+            
+            # Outros dados estruturais
+            'alerts': executive_summary['alerts'],
+            'recommendations': executive_summary['recommendations'],
+            'trends': executive_summary['trends'],
+            'top_performers': executive_summary['top_performers'],
             'timeline_data': timeline,
-            'quick_stats': self._generate_quick_stats(executive_summary),
-            'action_items': self._generate_action_items(executive_summary)
+            'generated_at': timezone.now().isoformat(),
+            'period_description': self._get_period_description(filters)
         }
+        
+        return flattened_data
     
     def generate_financial_report(self, filters: Dict = None) -> Dict[str, Any]:
         """Gera relatório financeiro"""
@@ -401,7 +413,7 @@ class ReportGenerationService:
             highlights.append({
                 'title': 'Projeto Destaque',
                 'value': top_project['name'],
-                'description': f"Taxa de sucesso: {top_project['success_rate']:.1f}%"
+                'description': f"Progresso: {top_project['progress_percentage']:.1f}%"
             })
         
         return highlights
