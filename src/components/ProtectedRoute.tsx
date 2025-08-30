@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, ComponentType } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,17 +13,33 @@ interface ProtectedRouteProps {
   requireStaff?: boolean;
   blockStaff?: boolean; // Nova prop para bloquear administradores
   fallbackPath?: string;
+  // Novas props para RBAC
+  requiredPermission?: string;
+  requiredPermissions?: string[];
+  requiredRole?: string;
+  requireAll?: boolean;
+  fallbackComponent?: ComponentType;
 }
 
 const ProtectedRoute = ({ 
   children, 
   requireAuth = true, 
   requireStaff = false,
-  blockStaff = false, // Nova prop
-  fallbackPath = '/login'
+  blockStaff = false,
+  fallbackPath = '/login',
+  requiredPermission,
+  requiredPermissions,
+  requiredRole,
+  requireAll = false,
+  fallbackComponent: FallbackComponent
 }: ProtectedRouteProps) => {
   const { user, isAuthenticated, isStaff, loading } = useAuth();
   const location = useLocation();
+
+  // Verificar se o hook tem as funções RBAC
+  const hasPermission = (user as any)?.hasPermission || (() => false);
+  const hasAnyPermission = (user as any)?.hasAnyPermission || (() => false);
+  const hasRole = (user as any)?.hasRole || (() => false);
 
   // Mostrar loading enquanto verifica autenticação
   if (loading) {
@@ -87,6 +103,135 @@ const ProtectedRoute = ({
                     </Button>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // === VERIFICAÇÕES RBAC ===
+
+  // Verificar permissão específica
+  if (requiredPermission && !hasPermission(requiredPermission)) {
+    return FallbackComponent ? (
+      <FallbackComponent />
+    ) : (
+      <div className="min-h-screen">
+        <Header />
+        <div className="container mx-auto px-4 py-16">
+          <div className="max-w-md mx-auto">
+            <Card>
+              <CardHeader className="text-center">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+                  <Lock className="h-6 w-6 text-destructive" />
+                </div>
+                <CardTitle className="text-destructive">Permissão Insuficiente</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 text-center">
+                <p className="text-muted-foreground">
+                  Você não tem a permissão necessária para acessar esta página.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Permissão necessária: <code className="bg-muted px-2 py-1 rounded text-xs">{requiredPermission}</code>
+                </p>
+                <Button variant="outline" asChild>
+                  <a href="/dashboard">Voltar ao Dashboard</a>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Verificar lista de permissões
+  if (requiredPermissions && requiredPermissions.length > 0) {
+    let hasAccess = false;
+    
+    if (requireAll) {
+      hasAccess = requiredPermissions.every(perm => hasPermission(perm));
+    } else {
+      hasAccess = hasAnyPermission(requiredPermissions);
+    }
+
+    if (!hasAccess) {
+      return FallbackComponent ? (
+        <FallbackComponent />
+      ) : (
+        <div className="min-h-screen">
+          <Header />
+          <div className="container mx-auto px-4 py-16">
+            <div className="max-w-md mx-auto">
+              <Card>
+                <CardHeader className="text-center">
+                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+                    <Lock className="h-6 w-6 text-destructive" />
+                  </div>
+                  <CardTitle className="text-destructive">Permissões Insuficientes</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-muted-foreground text-center">
+                    Você não tem as permissões necessárias para acessar esta página.
+                  </p>
+                  <div className="text-sm text-muted-foreground">
+                    <p className="font-medium">Permissões necessárias:</p>
+                    <ul className="list-disc list-inside mt-2 space-y-1">
+                      {requiredPermissions.map(perm => (
+                        <li key={perm}>
+                          <code className="bg-muted px-2 py-1 rounded text-xs">{perm}</code>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-xs">
+                      {requireAll ? 'Todas as permissões são necessárias' : 'Pelo menos uma permissão é necessária'}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <Button variant="outline" asChild>
+                      <a href="/dashboard">Voltar ao Dashboard</a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+          <Footer />
+        </div>
+      );
+    }
+  }
+
+  // Verificar papel/grupo
+  if (requiredRole && !hasRole(requiredRole)) {
+    return FallbackComponent ? (
+      <FallbackComponent />
+    ) : (
+      <div className="min-h-screen">
+        <Header />
+        <div className="container mx-auto px-4 py-16">
+          <div className="max-w-md mx-auto">
+            <Card>
+              <CardHeader className="text-center">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+                  <UserX className="h-6 w-6 text-destructive" />
+                </div>
+                <CardTitle className="text-destructive">Papel Insuficiente</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 text-center">
+                <p className="text-muted-foreground">
+                  Você não tem o papel necessário para acessar esta página.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Papel necessário: <code className="bg-muted px-2 py-1 rounded text-xs">{requiredRole}</code>
+                </p>
+                <Button variant="outline" asChild>
+                  <a href="/dashboard">Voltar ao Dashboard</a>
+                </Button>
               </CardContent>
             </Card>
           </div>

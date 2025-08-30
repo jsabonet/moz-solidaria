@@ -15,16 +15,14 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
-    user_type_display = serializers.CharField(source='get_user_type_display', read_only=True)
     
     class Meta:
         model = UserProfile
         fields = [
-            'id', 'user', 'user_type', 'user_type_display', 'phone', 'address', 
-            'date_of_birth', 'profile_picture', 'is_verified', 'is_active', 
-            'created_at', 'updated_at', 'last_activity'
+            'id', 'user', 'phone', 'department', 'position', 'location', 
+            'is_active_admin', 'last_permission_change', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'last_permission_change']
 
 
 class CauseSerializer(serializers.ModelSerializer):
@@ -151,12 +149,13 @@ class PartnerSerializer(serializers.ModelSerializer):
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
-    user_type = serializers.ChoiceField(choices=UserProfile.USER_TYPES)
+    department = serializers.CharField(required=False, allow_blank=True)
+    position = serializers.CharField(required=False, allow_blank=True)
     phone = serializers.CharField(required=False, allow_blank=True)
     
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'password', 'password_confirm', 'user_type', 'phone']
+        fields = ['username', 'email', 'first_name', 'last_name', 'password', 'password_confirm', 'department', 'position', 'phone']
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
@@ -165,7 +164,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         # Remove campos que não pertencem ao modelo User
-        user_type = validated_data.pop('user_type')
+        department = validated_data.pop('department', '')
+        position = validated_data.pop('position', '')
         phone = validated_data.pop('phone', '')
         validated_data.pop('password_confirm')
         
@@ -175,31 +175,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         # Criar perfil
         user_profile = UserProfile.objects.create(
             user=user,
-            user_type=user_type,
+            department=department,
+            position=position,
             phone=phone
         )
-        
-        # Criar perfil específico baseado no tipo
-        if user_type == 'donor':
-            Donor.objects.create(user_profile=user_profile)
-        elif user_type == 'beneficiary':
-            Beneficiary.objects.create(
-                user_profile=user_profile,
-                family_size=1,  # Valor padrão, será atualizado posteriormente
-                community='',  # Será preenchido no formulário completo
-                district='',
-                province='Cabo Delgado'
-            )
-        elif user_type == 'volunteer':
-            Volunteer.objects.create(user_profile=user_profile)
-        elif user_type == 'partner':
-            Partner.objects.create(
-                user_profile=user_profile,
-                organization_name='',  # Será preenchido posteriormente
-                contact_person=f"{user.first_name} {user.last_name}",
-                contact_email=user.email,
-                contact_phone=phone
-            )
         
         return user
 

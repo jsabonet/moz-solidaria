@@ -49,6 +49,85 @@ class ExportViewSet(viewsets.ViewSet):
     """
     permission_classes = [permissions.IsAuthenticated]
 
+    @action(detail=False, methods=['post'])
+    def generate(self, request):
+        """
+        🚀 ENDPOINT UNIVERSAL DE EXPORTAÇÃO
+        ====================================
+        
+        Endpoint principal para exportações gerais. Redireciona para os métodos
+        específicos baseado no tipo de dados solicitado.
+        
+        Payload esperado:
+        {
+            "type": "blog|projects|donations|volunteers|beneficiaries",
+            "format": "pdf|excel|csv|json",
+            "filename": "nome_do_arquivo",
+            "options": {
+                "dateRange": {"start": "2024-01-01", "end": "2024-12-31"},
+                "selectedFields": ["campo1", "campo2"],
+                "emailRecipients": []
+            },
+            "data": [] // Dados opcionais já filtrados
+        }
+        """
+        try:
+            # Validar dados de entrada
+            export_type = request.data.get('type')
+            export_format = request.data.get('format', 'pdf')
+            filename = request.data.get('filename', f'export_{export_type}_{timezone.now().strftime("%Y%m%d_%H%M%S")}')
+            options = request.data.get('options', {})
+            provided_data = request.data.get('data', [])
+            
+            logger.info(f"📊 Iniciando exportação: type={export_type}, format={export_format}")
+            
+            # Validar tipo de exportação
+            if not export_type:
+                return Response({
+                    'error': 'Tipo de exportação é obrigatório',
+                    'available_types': ['blog', 'projects', 'donations', 'volunteers', 'beneficiaries']
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Usar dados fornecidos ou buscar no banco
+            if provided_data:
+                data = provided_data
+                logger.info(f"📄 Usando dados fornecidos: {len(data)} registros")
+            else:
+                # Buscar dados no banco baseado no tipo
+                data = self._get_data_by_type(export_type, options)
+                logger.info(f"🔍 Dados obtidos do banco: {len(data)} registros")
+            
+            if not data:
+                return Response({
+                    'error': 'Nenhum dado encontrado para exportação',
+                    'type': export_type,
+                    'options': options
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Gerar arquivo no formato solicitado
+            if export_format.lower() == 'pdf':
+                return self._generate_pdf(data, options, filename)
+            elif export_format.lower() == 'excel':
+                return self._generate_excel(data, options, filename)
+            elif export_format.lower() == 'csv':
+                return self._generate_csv(data, options, filename)
+            elif export_format.lower() == 'json':
+                return self._generate_json(data, options, filename)
+            else:
+                return Response({
+                    'error': 'Formato não suportado',
+                    'format': export_format,
+                    'available_formats': ['pdf', 'excel', 'csv', 'json']
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            logger.error(f"❌ Erro na exportação: {str(e)}")
+            return Response({
+                'error': 'Erro interno do servidor',
+                'details': str(e),
+                'type': 'generate_export_error'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     def _get_data_by_type(self, export_type, options):
         """Obter dados baseado no tipo de exportação"""
         date_range = options.get('dateRange', {})
@@ -360,110 +439,141 @@ class ExportViewSet(viewsets.ViewSet):
         return response
 
     def _generate_pdf(self, data, options, filename):
-        """Gerar arquivo PDF com formatação profissional e responsiva"""
+        """
+        📄 GERAÇÃO DE PDF PREMIUM COM TEMPLATE PERSONALIZADO MOZ SOLIDÁRIA
+        
+        Sistema de geração de PDF de classe corporativa com:
+        - Template visual neutro e profissional
+        - Cabeçalho com identidade Moz Solidária
+        - Seção de resumo executivo em português
+        - Tabela responsiva com paginação inteligente
+        - Rodapé corporativo com informações de contato
+        - Tratamento robusto de erros e fallbacks
+        """
         if not data:
             return Response({'error': 'Nenhum dado para exportar'}, status=status.HTTP_400_BAD_REQUEST)
 
-        buffer = io.BytesIO()
-        from reportlab.lib.pagesizes import A4, landscape
-        from reportlab.lib import colors
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.units import inch, cm
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
-        from reportlab.platypus.tableofcontents import TableOfContents
-        from django.utils import timezone
-        import textwrap
-
-        # === CONFIGURAÇÃO DE PÁGINA PREMIUM ===
-        # Sempre usar landscape para melhor aproveitamento do espaço premium
-        pagesize = landscape(A4)
-        doc = SimpleDocTemplate(buffer, pagesize=pagesize, 
-                              rightMargin=0.8*cm, leftMargin=0.8*cm, 
-                              topMargin=1.5*cm, bottomMargin=3*cm)  # Mais espaço para footer premium
-        
-        # Estilos
-        styles = getSampleStyleSheet()
-        
-        # === ESTILOS CORPORATIVOS NEUTROS ===
-        # Paleta de cores neutras e profissionais
-        primary_blue = colors.HexColor('#1E40AF')      # Azul profissional
-        accent_orange = colors.HexColor('#EA580C')     # Laranja do logo
-        neutral_gray = colors.HexColor('#374151')      # Cinza neutro
-        light_background = colors.HexColor('#F8F9FA')  # Fundo claro
-        
-        # Estilo para título executivo
-        title_style = ParagraphStyle(
-            'ExecutiveTitle',
-            parent=styles['Title'],
-            fontSize=32,
-            fontName='Helvetica-Bold',
-            textColor=primary_blue,
-            alignment=1,  # Centralizado
-            spaceBefore=1.5*cm,
-            spaceAfter=0.8*cm,
-            leftIndent=2*cm,
-            rightIndent=2*cm
-        )
-        
-        # Estilo para subtítulo corporativo
-        subtitle_style = ParagraphStyle(
-            'CorporateSubtitle',
-            parent=styles['Normal'],
-            fontSize=14,
-            fontName='Helvetica',
-            textColor=neutral_gray,
-            alignment=1,
-            spaceBefore=0.3*cm,
-            spaceAfter=1.2*cm
-        )
-        
-        # Estilo para metadados premium
-        meta_style = ParagraphStyle(
-            'PremiumMeta',
-            parent=styles['Normal'],
-            fontSize=11,
-            fontName='Helvetica-Oblique',
-            textColor=colors.HexColor('#6B7280'),
-            alignment=1,
-            spaceAfter=0.8*cm
-        )
-
-        # Lista de elementos do documento
-        story = []
-        
-        # === CABEÇALHO CORPORATIVO PREMIUM ===
-        header_elements = self._create_header()
-        for element in header_elements:
-            story.append(element)
-        
-        # === TÍTULO EXECUTIVO ===
-        title_text = self._format_title(filename)
-        title = Paragraph(title_text, title_style)
-        story.append(title)
-        
-        # Resumo executivo
-        summary = self._create_summary_section(data, filename)
-        story.extend(summary)
-        story.append(Spacer(1, 20))
-        
-        # Dados principais em tabela
-        if data and isinstance(data[0], dict):
+        try:
+            # === IMPORTAÇÕES REPORTLAB ===
+            from reportlab.lib.pagesizes import A4, landscape
+            from reportlab.lib import colors
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.units import cm
+            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+            from reportlab.platypus.tableofcontents import TableOfContents
+            
+            logger.info("📄 Bibliotecas PDF importadas com sucesso, iniciando geração premium...")
+            
+            # === CONFIGURAÇÃO DO DOCUMENTO ===
+            buffer = io.BytesIO()
+            pagesize = landscape(A4)
+            
+            # Documento com margens adequadas para design premium
+            doc = SimpleDocTemplate(
+                buffer, 
+                pagesize=pagesize,
+                rightMargin=1*cm, 
+                leftMargin=1*cm,
+                topMargin=2.5*cm,  # Espaço para cabeçalho premium
+                bottomMargin=3*cm  # Espaço para rodapé corporativo
+            )
+            
+            # === CONSTRUÇÃO DO STORY ===
+            story = []
+            
+            # 1. CABEÇALHO PREMIUM MOZ SOLIDÁRIA
+            logger.info("🎨 Gerando cabeçalho premium...")
+            header_elements = self._create_header()
+            story.extend(header_elements)
+            
+            # 2. TÍTULO PERSONALIZADO COM QUEBRA INTELIGENTE
+            logger.info("📝 Formatando título personalizado...")
+            formatted_title = self._format_title(filename)
+            
+            title_style = ParagraphStyle(
+                'CustomTitleStyle',
+                fontSize=20,
+                fontName='Helvetica-Bold',
+                textColor=colors.HexColor('#1E40AF'),
+                alignment=1,  # Centro
+                spaceAfter=1.2*cm,
+                leading=24
+            )
+            
+            story.append(Paragraph(formatted_title, title_style))
+            
+            # 3. SEÇÃO DE RESUMO EXECUTIVO
+            logger.info("📊 Gerando resumo executivo...")
+            summary_elements = self._create_summary_section(data, filename)
+            story.extend(summary_elements)
+            
+            # 4. TABELA DE DADOS RESPONSIVA
+            logger.info("📋 Preparando tabela de dados...")
+            
+            # Preparar dados com formatação inteligente
             table_data = self._prepare_table_data(data)
-            table = self._create_responsive_table(table_data, pagesize)
-            story.append(table)
+            
+            if table_data:
+                # Criar tabela premium com controle de layout
+                data_table = self._create_responsive_table(table_data, pagesize)
+                story.append(Spacer(1, 0.8*cm))
+                story.append(data_table)
+            
+            # 5. RODAPÉ CORPORATIVO
+            logger.info("🏢 Adicionando rodapé corporativo...")
+            footer_elements = self._create_footer_info(len(data))
+            story.extend(footer_elements)
+            
+            # === CONSTRUÇÃO DO PDF COM NUMERAÇÃO ===
+            logger.info("🔨 Construindo PDF final...")
+            
+            # Função de callback para numeração de páginas
+            def add_page_number(canvas, doc):
+                self._add_page_number(canvas, doc)
+            
+            # Construir documento com callback
+            doc.build(story, onFirstPage=add_page_number, onLaterPages=add_page_number)
+            
+            # === RESPOSTA HTTP ===
+            buffer.seek(0)
+            response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
+            response['X-Generated-By'] = 'Moz Solidária PDF Engine v2.0'
+            response['X-Template-Version'] = 'Premium Corporate Template'
+            
+            logger.info(f"✅ PDF Premium gerado com sucesso: {filename}.pdf ({len(buffer.getvalue())} bytes)")
+            return response
+            
+        except ImportError as e:
+            logger.warning(f"⚠️ ReportLab não disponível: {e}")
+            return self._generate_pdf_fallback(data, options, filename)
+        except Exception as e:
+            logger.error(f"❌ Erro ao gerar PDF premium: {e}")
+            return self._generate_pdf_fallback(data, options, filename)
+
+    def _generate_pdf_fallback(self, data, options, filename):
+        """Fallback quando PDF não pode ser gerado - retorna dados estruturados"""
+        logger.info("📄 Gerando fallback estruturado para PDF")
         
-        # Rodapé informativo
-        story.append(Spacer(1, 30))
-        footer_info = self._create_footer_info(len(data))
-        story.extend(footer_info)
+        pdf_data = {
+            'type': 'pdf_export_fallback',
+            'filename': f"{filename}.json",
+            'generated_at': timezone.now().isoformat(),
+            'total_records': len(data),
+            'format': 'json_fallback',
+            'message': 'PDF libraries not available, returning structured data',
+            'data': data,
+            'summary': {
+                'total_items': len(data),
+                'first_item': data[0] if data else None,
+                'columns': list(data[0].keys()) if data and isinstance(data[0], dict) else []
+            }
+        }
         
-        # Construir o PDF
-        doc.build(story, onFirstPage=self._add_page_number, 
-                 onLaterPages=self._add_page_number)
-        
-        buffer.seek(0)
-        response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
+        response = JsonResponse(pdf_data, json_dumps_params={'indent': 2, 'ensure_ascii': False})
+        response['Content-Disposition'] = f'attachment; filename="{filename}_fallback.json"'
+        response['X-Export-Status'] = 'fallback'
+        logger.info(f"✅ Fallback JSON gerado: {filename}_fallback.json")
         return response
 
     def _has_many_columns(self, data):
@@ -811,7 +921,7 @@ class ExportViewSet(viewsets.ViewSet):
             if key in filename.lower():
                 return intro
         
-        return f"This executive report provides a comprehensive analysis of {record_count:,} records, offering strategic insights and data-driven recommendations for organizational decision-making."
+        return f"Este relatório executivo fornece uma análise abrangente de {record_count:,} registros, oferecendo insights estratégicos e recomendações baseadas em dados para a tomada de decisões organizacionais."
 
     def _calculate_statistics_premium(self, data, filename):
         """Calcular estatísticas com insights em português"""
@@ -1059,7 +1169,12 @@ class ExportViewSet(viewsets.ViewSet):
         return friendly_name
 
     def _format_cell_value(self, value, header):
-        """Formatar valor da célula baseado no tipo com quebra inteligente AGRESSIVA"""
+        """
+        📝 FORMATAÇÃO OTIMIZADA PARA LAYOUT HORIZONTAL
+        
+        Formata valores com quebra inteligente otimizada para aproveitar
+        melhor o espaço horizontal disponível em landscape
+        """
         if not value or value == 'None':
             return 'N/A'
         
@@ -1074,45 +1189,80 @@ class ExportViewSet(viewsets.ViewSet):
             except:
                 pass
         
-        # === QUEBRA AGRESSIVA PARA EVITAR SOBREPOSIÇÃO ===
-        # Reduzir limite drasticamente baseado no número de colunas
-        max_length = 20  # Muito mais conservador
+        # === QUEBRA OTIMIZADA PARA LAYOUT HORIZONTAL ===
+        header_lower = header.lower()
         
-        # Para textos longos, usar quebra MUITO mais agressiva
-        if len(value) > max_length:
-            # Quebrar em palavras para melhor legibilidade
-            words = value.split()
-            lines = []
-            current_line = ""
-            max_line_length = 18  # Ainda mais conservador
-            
-            for word in words:
-                # Se uma palavra sozinha já é muito longa, cortá-la
-                if len(word) > max_line_length:
-                    if current_line:
-                        lines.append(current_line)
-                        current_line = ""
-                    # Quebrar palavra longa
-                    lines.append(word[:max_line_length-3] + "...")
-                    continue
-                
-                if len(current_line + " " + word) <= max_line_length:
-                    current_line += (" " + word) if current_line else word
-                else:
-                    if current_line:
-                        lines.append(current_line)
-                    current_line = word
-            
-            if current_line:
-                lines.append(current_line)
-            
-            # Limitar ESTRITAMENTE a 2 linhas para evitar células muito altas
-            if len(lines) > 2:
-                lines = lines[:1] + [lines[1][:15] + "..."]
-            
-            return "\n".join(lines)
+        # Determinar limite baseado no tipo de coluna
+        if any(keyword in header_lower for keyword in ['id', 'código', 'num']):
+            # IDs e códigos: sem quebra, manter compacto
+            max_length = 12
+            if len(value) > max_length:
+                return value[:max_length-3] + "..."
         
-        return value
+        elif any(keyword in header_lower for keyword in ['nome', 'title', 'titulo']):
+            # Nomes e títulos: quebra moderada
+            max_length = 35
+            max_line_length = 18
+        
+        elif any(keyword in header_lower for keyword in ['descri', 'observ', 'coment', 'habilidades']):
+            # Descrições: quebra mais permissiva para aproveitar espaço horizontal
+            max_length = 60
+            max_line_length = 30
+        
+        elif any(keyword in header_lower for keyword in ['email', 'endereço']):
+            # Emails e endereços: quebra inteligente por palavras
+            max_length = 45
+            max_line_length = 22
+        
+        else:
+            # Campos padrão: quebra equilibrada
+            max_length = 30
+            max_line_length = 15
+        
+        # === APLICAR QUEBRA INTELIGENTE ===
+        if len(value) <= max_length:
+            return value
+        
+        # Para textos longos, usar quebra otimizada para horizontal
+        words = value.split()
+        lines = []
+        current_line = ""
+        
+        for word in words:
+            # Se uma palavra sozinha já é muito longa, cortá-la
+            if len(word) > max_line_length:
+                if current_line:
+                    lines.append(current_line)
+                    current_line = ""
+                # Para layout horizontal, ser menos agressivo no corte
+                lines.append(word[:max_line_length-2] + "..")
+                continue
+            
+            if len(current_line + " " + word) <= max_line_length:
+                current_line += (" " + word) if current_line else word
+            else:
+                if current_line:
+                    lines.append(current_line)
+                current_line = word
+        
+        if current_line:
+            lines.append(current_line)
+        
+        # === OTIMIZAÇÃO PARA LAYOUT HORIZONTAL ===
+        # Em landscape, podemos permitir até 3 linhas em vez de 2
+        if len(lines) > 3:
+            # Combinar últimas linhas se necessário
+            first_two = lines[:2]
+            remaining = " ".join(lines[2:])
+            
+            if len(remaining) > max_line_length:
+                third_line = remaining[:max_line_length-2] + ".."
+            else:
+                third_line = remaining
+            
+            lines = first_two + [third_line]
+        
+        return "\n".join(lines)
 
     def _create_responsive_table(self, table_data, pagesize):
         """Criar tabela ultra-profissional digna de empresa multibilionária"""
@@ -1240,37 +1390,102 @@ class ExportViewSet(viewsets.ViewSet):
         return table
     
     def _calculate_column_widths_premium(self, table_data, page_width, num_cols):
-        """Calcular larguras premium ULTRA SEGURAS para evitar sobreposição"""
-        # === MARGEM DE SEGURANÇA MÁXIMA ===
-        safe_width = page_width * 0.88  # 12% de margem para garantir
+        """
+        📏 CÁLCULO DE LARGURAS OTIMIZADO PARA LAYOUT HORIZONTAL
         
-        if num_cols <= 2:
-            # === POUCAS COLUNAS: LAYOUT EXECUTIVO ===
-            return [safe_width * 0.3, safe_width * 0.7][:num_cols]
+        Otimiza aproveitamento máximo do espaço horizontal disponível em landscape
+        com distribuição inteligente baseada no tipo de conteúdo das colunas
+        """
+        # === APROVEITAMENTO MÁXIMO DO ESPAÇO HORIZONTAL ===
+        # Em landscape (A4), temos muito mais espaço horizontal - vamos usá-lo!
+        safe_width = page_width * 0.95  # Usar 95% da largura disponível
         
-        elif num_cols <= 3:
-            # === 3 COLUNAS: DISTRIBUIÇÃO EQUILIBRADA ===
-            return [safe_width * 0.25, safe_width * 0.45, safe_width * 0.3][:num_cols]
+        # === ANÁLISE INTELIGENTE DOS HEADERS PARA OTIMIZAR LARGURAS ===
+        headers = table_data[0] if table_data else []
+        smart_widths = []
         
-        elif num_cols <= 4:
-            # === 4 COLUNAS: COMPACTO MAS SEGURO ===
-            base_width = safe_width / num_cols * 0.95
-            return [base_width] * num_cols
+        # Categorizar colunas por tipo de conteúdo
+        for i, header in enumerate(headers):
+            header_text = str(header).lower() if hasattr(header, 'text') else str(header).lower()
             
-        elif num_cols <= 6:
-            # === 6 COLUNAS: LAYOUT COMPACTO ===
-            base_width = safe_width / num_cols * 0.9
-            return [base_width] * num_cols
+            # === COLUNAS ESTREITAS (IDs, Status, Códigos) ===
+            if any(keyword in header_text for keyword in ['id', 'código', 'status', 'ativo', 'num']):
+                smart_widths.append('narrow')  # 8-12% da largura
+            
+            # === COLUNAS MÉDIAS (Datas, Valores, Categorias) ===
+            elif any(keyword in header_text for keyword in ['data', 'valor', 'preço', 'categoria', 'tipo', 'método']):
+                smart_widths.append('medium')  # 12-18% da largura
+            
+            # === COLUNAS LARGAS (Nomes, Títulos) ===
+            elif any(keyword in header_text for keyword in ['nome', 'title', 'titulo', 'projeto', 'organização']):
+                smart_widths.append('wide')    # 18-25% da largura
+            
+            # === COLUNAS EXTRA LARGAS (Descrições, Comentários, Emails) ===
+            elif any(keyword in header_text for keyword in ['descri', 'observ', 'coment', 'email', 'endereço', 'habilidades']):
+                smart_widths.append('extra_wide')  # 25-35% da largura
+            
+            # === COLUNAS PADRÃO ===
+            else:
+                smart_widths.append('standard')  # 15% da largura
+        
+        # === CALCULAR LARGURAS BASEADAS NO LAYOUT HORIZONTAL ===
+        if num_cols <= 3:
+            # === POUCAS COLUNAS: APROVEITAR TODO O ESPAÇO HORIZONTAL ===
+            width_map = {
+                'narrow': safe_width * 0.15,      # 15%
+                'medium': safe_width * 0.25,      # 25%
+                'wide': safe_width * 0.35,        # 35%
+                'extra_wide': safe_width * 0.45,  # 45%
+                'standard': safe_width * 0.30     # 30%
+            }
+            
+        elif num_cols <= 5:
+            # === COLUNAS MÉDIAS: DISTRIBUIÇÃO INTELIGENTE ===
+            width_map = {
+                'narrow': safe_width * 0.10,      # 10%
+                'medium': safe_width * 0.18,      # 18%
+                'wide': safe_width * 0.25,        # 25%
+                'extra_wide': safe_width * 0.30,  # 30%
+                'standard': safe_width * 0.20     # 20%
+            }
             
         elif num_cols <= 8:
-            # === MUITAS COLUNAS: ULTRA COMPACTO ===
-            base_width = safe_width / num_cols * 0.85
-            return [base_width] * num_cols
-        
+            # === MUITAS COLUNAS: COMPACTO MAS LEGÍVEL ===
+            width_map = {
+                'narrow': safe_width * 0.08,      # 8%
+                'medium': safe_width * 0.12,      # 12%
+                'wide': safe_width * 0.18,        # 18%
+                'extra_wide': safe_width * 0.22,  # 22%
+                'standard': safe_width * 0.15     # 15%
+            }
+            
         else:
-            # === MUITAS COLUNAS (>8): SUPER COMPACTO ===
-            base_width = safe_width / num_cols * 0.78
-            return [base_width] * num_cols
+            # === MUITAS COLUNAS (>8): ULTRA COMPACTO ===
+            width_map = {
+                'narrow': safe_width * 0.06,      # 6%
+                'medium': safe_width * 0.10,      # 10%
+                'wide': safe_width * 0.14,        # 14%
+                'extra_wide': safe_width * 0.18,  # 18%
+                'standard': safe_width * 0.12     # 12%
+            }
+        
+        # === APLICAR LARGURAS INTELIGENTES ===
+        calculated_widths = []
+        for width_type in smart_widths:
+            calculated_widths.append(width_map[width_type])
+        
+        # === NORMALIZAR PARA NÃO EXCEDER LARGURA TOTAL ===
+        total_calculated = sum(calculated_widths)
+        if total_calculated > safe_width:
+            # Reduzir proporcionalmente
+            scale_factor = safe_width / total_calculated
+            calculated_widths = [w * scale_factor for w in calculated_widths]
+        elif total_calculated < safe_width * 0.85:
+            # Se sobrar muito espaço, distribuir proporcionalmente
+            scale_factor = (safe_width * 0.95) / total_calculated
+            calculated_widths = [w * scale_factor for w in calculated_widths]
+        
+        return calculated_widths
 
     def _calculate_column_widths(self, table_data, page_width, num_cols):
         """Calcular larguras otimizadas baseadas no conteúdo das colunas"""
@@ -1873,6 +2088,8 @@ class ExportViewSet(viewsets.ViewSet):
             ]
 
     # === MANTER FUNÇÕES DE DADOS EXISTENTES ===
+    
+    def _get_projects_data_detailed(self, export_type='all'):
         """Buscar dados de projetos"""
         try:
             projects = Project.objects.all()

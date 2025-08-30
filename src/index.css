@@ -244,6 +244,43 @@ All colors MUST be HSL.
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   }
 
+  /* Responsive gradient text improvements */
+  .gradient-text-responsive {
+    background: linear-gradient(to right, hsl(var(--solidarity-orange)), hsl(var(--mozambique-yellow)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    display: block;
+    word-break: break-word;
+    hyphens: auto;
+    line-height: 1.4;
+    padding: 0.2em;
+    /* margin-bottom: 0.1em; */
+    /* min-height: 1em; */
+    box-sizing: content-box;
+    overflow: visible !important;
+  }
+
+  /* Ensure gradient text is visible on all devices */
+  @supports not (-webkit-background-clip: text) {
+    .gradient-text-responsive {
+      color: hsl(var(--solidarity-orange));
+    }
+  }
+
+  /* Hero section responsive improvements */
+  .hero-title-responsive {
+    word-break: break-word;
+    hyphens: auto;
+    overflow-wrap: break-word;
+    line-height: 1.3;
+    overflow: visible !important;
+    padding: 0.1em 0;
+    position: relative;
+    z-index: 1;
+  }
+
   /* Truncate text utilities */
   .line-clamp-2 {
     display: -webkit-box;

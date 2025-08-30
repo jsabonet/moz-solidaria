@@ -21,6 +21,8 @@ import {
 // Pages que são carregadas imediatamente (críticas)
 import Index from "@/pages/Index";
 import Sobre from "@/pages/Sobre";
+import Programas from "@/pages/Programas";
+import ProgramaDetail from "@/pages/ProgramaDetail";
 import Doacao from "@/pages/Doacao";
 import Contacto from "@/pages/Contacto";
 import Categories from "@/pages/Categories";
@@ -28,12 +30,14 @@ import CommentsPage from "@/pages/CommentsPage";
 import AuthPage from "@/pages/AuthPage";
 import DonationProofPage from "@/pages/DonationProofPage";
 import ProjectDetail from "@/pages/ProjectDetail";
+import AuthCacheManager from "@/components/auth/AuthCacheManager";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <AuthCacheManager />
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -42,6 +46,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/sobre" element={<Sobre />} />
+            <Route path="/programas" element={<Programas />} />
+            <Route path="/programas/:id" element={<ProgramaDetail />} />
             <Route 
               path="/blog" 
               element={
@@ -121,6 +127,16 @@ const App = () => (
             />
             <Route 
               path="/dashboard/settings" 
+              element={
+                <ProtectedRoute requireAuth={true} requireStaff={true}>
+                  <Suspense fallback={<ComponentLoader />}>
+                    <LazyDashboard />
+                  </Suspense>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/users" 
               element={
                 <ProtectedRoute requireAuth={true} requireStaff={true}>
                   <Suspense fallback={<ComponentLoader />}>

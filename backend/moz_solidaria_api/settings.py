@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     
     # Local apps
     'core',
+    'apps.authentication',
     'blog',
     'client_area',
     'donations',
@@ -70,6 +71,12 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    
+    # RBAC Middlewares - Sistema de Permissões e Auditoria
+    'core.middleware.SecurityMiddleware',
+    'core.middleware.AuditMiddleware',
+    'core.middleware.PermissionLoggingMiddleware',
+    
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -216,6 +223,115 @@ CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Only in development
+
+
+# ========== CONFIGURAÇÕES DO SISTEMA RBAC ==========
+
+# Configurações de segurança e sessão
+SESSION_COOKIE_AGE = 8 * 60 * 60  # 8 horas
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST = True
+
+# Configurações de cookies seguros (desabilitado em desenvolvimento)
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Strict'
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Strict'
+
+# Configurações customizadas do RBAC
+RBAC_SETTINGS = {
+    'MAX_LOGIN_ATTEMPTS': 5,
+    'LOCKOUT_TIME_MINUTES': 30,
+    'SESSION_TIMEOUT_HOURS': 8,
+    'ENABLE_AUDIT_LOGGING': True,
+    'ENABLE_SECURITY_LOGGING': True,
+    'SENSITIVE_FIELDS': [
+        'password', 'token', 'secret', 'key', 'api_key',
+        'access_token', 'refresh_token', 'auth_token'
+    ],
+    'AUDIT_MODULES': [
+        'blog', 'projects', 'community', 'admin', 'reports', 'users'
+    ],
+    'AUDIT_ACTIONS': [
+        'CREATE', 'UPDATE', 'DELETE', 'VIEW', 'APPROVE', 'REJECT',
+        'LOGIN', 'LOGOUT', 'EXPORT', 'IMPORT'
+    ],
+}
+
+# Configuração de logging para RBAC
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'audit_formatter': {
+            'format': '[{levelname}] {asctime} | {name} | {message}',
+            'style': '{',
+        },
+        'security_formatter': {
+            'format': '[SECURITY] {asctime} | {name} | {message}',
+            'style': '{',
+        },
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'audit_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR.parent / 'logs' / 'audit.log',
+            'formatter': 'audit_formatter',
+        },
+        'security_file': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR.parent / 'logs' / 'security.log',
+            'formatter': 'security_formatter',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose' if DEBUG else 'simple',
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR.parent / 'logs' / 'django.log',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'core.middleware': {
+            'handlers': ['audit_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'security': {
+            'handlers': ['security_file', 'console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    },
+}
 
 # Additional CORS headers
 # Allow default headers plus cache-control explicitly (needed for some browsers / SW fetches)

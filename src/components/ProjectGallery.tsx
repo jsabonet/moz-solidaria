@@ -266,7 +266,7 @@ const ProjectGallery = () => {
             onClick={() => setSelectedCategory("Todos")}
             size="sm"
           >
-            Todos ({filteredProjects.length})
+            Todos 
           </Button>
           {categories.map((category) => (
             <Button
@@ -275,11 +275,14 @@ const ProjectGallery = () => {
               onClick={() => setSelectedCategory(category)}
               size="sm"
             >
-              {category} ({projects.filter(p => 
-                (p.program?.name === category || p.category?.name === category) && 
-                isVisibleStatus(p.status) && 
-                p.is_public
-              ).length})
+                  {category} 
+                  
+                  {/* ({projects.filter(p => 
+                    (p.program?.name === category || p.category?.name === category) && 
+                    isVisibleStatus(p.status) && 
+                    p.is_public
+                  ).length}) */}
+                  
             </Button>
           ))}
         </div>

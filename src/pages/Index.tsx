@@ -71,44 +71,45 @@ const Index = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary via-solidarity-blue to-mozambique-red text-white overflow-hidden">
+      <section className="relative bg-gradient-to-br from-primary via-solidarity-blue to-mozambique-red text-white min-h-[70vh] sm:min-h-[80vh] lg:min-h-screen flex items-center">
         {/* Elementos decorativos de fundo */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-32 h-32 rounded-full bg-white/20 animate-pulse"></div>
-          <div className="absolute top-32 right-20 w-16 h-16 rounded-full bg-white/10 animate-bounce" style={{animationDelay: '1s'}}></div>
-          <div className="absolute bottom-20 left-32 w-24 h-24 rounded-full bg-white/15 animate-pulse" style={{animationDelay: '2s'}}></div>
+        <div className="absolute inset-0 opacity-10 overflow-hidden">
+          <div className="absolute top-10 left-10 w-20 h-20 sm:w-32 sm:h-32 rounded-full bg-white/20 animate-pulse"></div>
+          <div className="absolute top-32 right-10 sm:right-20 w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/10 animate-bounce" style={{animationDelay: '1s'}}></div>
+          <div className="absolute bottom-20 left-20 sm:left-32 w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-white/15 animate-pulse" style={{animationDelay: '2s'}}></div>
         </div>
         
-        <div className="container mx-auto px-4 lg:px-8 py-20 lg:py-32 relative z-10">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight fade-in-up">
-              Transformando Vidas em
-              <span className="block bg-gradient-to-r from-solidarity-orange to-yellow-300 bg-clip-text text-transparent">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-32 relative z-10">
+          <div className="max-w-5xl mx-auto text-center space-y-6 sm:space-y-8 overflow-visible">
+            <h1 className="hero-title-responsive text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-relaxed fade-in-up overflow-visible">
+              <span className="block mb-3 sm:mb-4 lg:mb-5">Transformando Vidas em</span>
+              <span className="gradient-text-responsive block text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl py-3">
                 Cabo Delgado
               </span>
             </h1>
-            <p className="text-xl md:text-2xl opacity-90 max-w-3xl mx-auto leading-relaxed fade-in-up" style={{animationDelay: '0.2s'}}>
+            <p className="text-lg sm:text-xl md:text-2xl opacity-90 max-w-4xl mx-auto leading-relaxed fade-in-up px-4" style={{animationDelay: '0.2s'}}>
               Unidos pela mesma causa - movidos pelo princípio do amor ao próximo
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center fade-in-up" style={{animationDelay: '0.4s'}}>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center fade-in-up px-4" style={{animationDelay: '0.4s'}}>
               <Link to="/programas">
                 <Button 
                   size="lg" 
-                  className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-3 transform hover:scale-105 transition-all duration-300"
+                  className="bg-white text-primary hover:bg-white/90 text-base sm:text-lg px-6 sm:px-8 py-3 transform hover:scale-105 transition-all duration-300 w-full sm:w-auto"
                 >
-                  Conhecer Nossas Áreas de Atuação
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <span className="hidden sm:inline">Conhecer Nossas Áreas de Atuação</span>
+                  <span className="sm:hidden">Nossas Áreas de Atuação</span>
+                  <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
               </Link>
               <Link to="/doacao">
                 <Button 
                   size="lg" 
                   variant="outline"
-                  className="border-white text-primary hover:bg-white hover:text-primary text-lg px-8 py-3 pulse-animation font-semibold button-text-visible"
+                  className="border-white text-primary hover:bg-white hover:text-primary text-base sm:text-lg px-6 sm:px-8 py-3 pulse-animation font-semibold button-text-visible w-full sm:w-auto"
                   style={{ borderWidth: '2px' }}
                 >
                   💝 Fazer Doação
-                  <Heart className="ml-2 h-5 w-5" />
+                  <Heart className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
               </Link>
             </div>
@@ -211,13 +212,25 @@ const Index = () => {
                   <p className="text-muted-foreground leading-relaxed">
                     {program.description}
                   </p>
-                  <Button variant="ghost" className="group/btn mt-4">
-                    Saiba Mais
-                    <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
-                  </Button>
+                  <Link to="/programas">
+                    <Button variant="ghost" className="group/btn mt-4">
+                      Saiba Mais
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
             ))}
+          </div>
+          
+          {/* Call to Action para ver todos os programas */}
+          <div className="text-center mt-12 fade-in-up" style={{animationDelay: '0.8s'}}>
+            <Link to="/programas">
+              <Button size="lg" className="group">
+                Ver Todas as Nossas Áreas de Atuação
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -226,7 +239,7 @@ const Index = () => {
       <ProjectGallery />
 
       {/* Quick Access Section */}
-      <QuickAccessSection />
+      {/* <QuickAccessSection /> */}
 
       {/* Testimonials */}
       <TestimonialsSection />

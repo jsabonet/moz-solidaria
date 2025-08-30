@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/hooks/use-auth';
+import { PermissionGate } from '@/components/PermissionGate';
 import { BlogPost, Category, fetchPosts, fetchCategories, deletePost, duplicatePost } from '@/lib/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminDonations from '@/components/AdminDonations';
@@ -16,6 +17,7 @@ import ProjectCategoryManagement from '@/components/admin/ProjectCategoryManagem
 import PartnerCommunication from '@/components/PartnerCommunicationUpdated';
 import VolunteerManagement from '@/components/admin/VolunteerManagement';
 import BeneficiaryManagement from '@/components/admin/BeneficiaryManagement';
+import UserManagement from '@/components/admin/UserManagement';
 import ReportsCenter from '@/components/reports/ReportsCenter';
 import AdvancedStats from '@/components/reports/AdvancedStats';
 import ExportButton from '@/components/reports/ExportButton';
@@ -71,6 +73,9 @@ const Dashboard: React.FC = () => {
     }
     else if (path === '/dashboard/reports') {
       setActiveTab('reports');
+    }
+    else if (path === '/dashboard/users') {
+      setActiveTab('users');
     }
     else if (path === '/dashboard/settings') {
       setActiveTab('settings');
@@ -187,6 +192,34 @@ const Dashboard: React.FC = () => {
     setActiveTab('donations');
   };
 
+  // Função para navegar para o site principal
+  const handleViewSite = () => {
+    try {
+      // URL do site principal - pode ser configurada via variável de ambiente
+      const siteUrl = import.meta.env.VITE_SITE_URL || 'https://mozsolidaria.com' || 'http://localhost:3000';
+      
+      // Validar se é uma URL válida
+      new URL(siteUrl);
+      
+      // Abrir em nova aba
+      window.open(siteUrl, '_blank', 'noopener,noreferrer');
+      
+      // Feedback visual
+      toast.success(`🌐 Abrindo site principal: ${siteUrl}`, {
+        duration: 2000,
+      });
+      
+      // Log para debug
+      console.log('🌐 Navegando para o site principal:', siteUrl);
+      
+    } catch (error) {
+      console.error('❌ Erro ao abrir site principal:', error);
+      toast.error('❌ Erro ao abrir o site principal. Verifique a configuração da URL.', {
+        duration: 4000,
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -214,19 +247,46 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           <div className="ml-auto flex items-center space-x-2 md:space-x-4">
-            <Button variant="outline" size="sm" className="hidden md:flex">
+            {/* User Info */}
+            <div className="hidden md:flex items-center space-x-2 text-sm text-muted-foreground">
+              <span>Olá, {user?.username || 'Admin'}</span>
+              <Badge variant="secondary" className="text-xs">
+                {user?.groups?.[0] || 'Usuário'}
+              </Badge>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="hidden md:flex"
+              onClick={handleViewSite}
+              title="Abrir site principal em nova aba"
+            >
               <Eye className="h-4 w-4 mr-2" />
               Ver Site
             </Button>
-            <Button variant="outline" size="sm" className="md:hidden px-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="md:hidden px-2"
+              onClick={handleViewSite}
+              title="Abrir site principal em nova aba"
+            >
               <Eye className="h-4 w-4" />
             </Button>
-            <Button size="sm" className="hidden md:flex">
-              <Settings className="h-4 w-4 mr-2" />
-              Configurações
-            </Button>
-            <Button size="sm" className="md:hidden px-2">
-              <Settings className="h-4 w-4" />
+            
+            <PermissionGate permissions={['system.manage_settings']}>
+              {/* <Button size="sm" className="hidden md:flex">
+                <Settings className="h-4 w-4 mr-2" />
+                Configurações
+              </Button> */}
+              <Button size="sm" className="md:hidden px-2">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </PermissionGate>
+            
+            <Button variant="destructive" size="sm" onClick={logout} className="hidden md:flex">
+              Sair
             </Button>
           </div>
         </div>
@@ -234,42 +294,70 @@ const Dashboard: React.FC = () => {
 
       <div className="p-3 md:p-6">
         <Tabs value={activeTab} onValueChange={navigateToMainTab} className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-6 h-auto p-1">
-            <TabsTrigger value="overview" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
-              <BarChart3 className="h-4 w-4 md:h-4 md:w-4" />
-              <span className="hidden sm:block">Visão Geral</span>
-              <span className="sm:hidden text-xs">Geral</span>
-            </TabsTrigger>
-            <TabsTrigger value="blog" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
-              <FileText className="h-4 w-4 md:h-4 md:w-4" />
-              <span>Blog</span>
-            </TabsTrigger>
-            <TabsTrigger value="projects" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
-              <MapPin className="h-4 w-4 md:h-4 md:w-4" />
-              <span className="hidden sm:block">Projetos</span>
-              <span className="sm:hidden text-xs">Proj</span>
-            </TabsTrigger>
-            <TabsTrigger value="community" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
-              <Users className="h-4 w-4 md:h-4 md:w-4" />
-              <span className="hidden sm:block">Comunidade</span>
-              <span className="sm:hidden text-xs">Com</span>
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
-              <PieChart className="h-4 w-4 md:h-4 md:w-4" />
-              <span className="hidden sm:block">Relatórios</span>
-              <span className="sm:hidden text-xs">Rel</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
-              <Settings className="h-4 w-4 md:h-4 md:w-4" />
-              <span className="hidden sm:block">Configurações</span>
-              <span className="sm:hidden text-xs">Config</span>
-            </TabsTrigger>
-            {activeTab === 'project-categories' && (
-              <TabsTrigger value="project-categories" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
-                <Tag className="h-4 w-4 md:h-4 md:w-4" />
-                <span className="hidden sm:block">Cat. Projetos</span>
-                <span className="sm:hidden text-xs">Cat</span>
+          <TabsList className="grid w-full grid-cols-7 h-auto p-1">
+            <PermissionGate permissions={['view.all']}>
+              <TabsTrigger value="overview" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+                <BarChart3 className="h-4 w-4 md:h-4 md:w-4" />
+                <span className="hidden sm:block">Visão Geral</span>
+                <span className="sm:hidden text-xs">Geral</span>
               </TabsTrigger>
+            </PermissionGate>
+            
+            <PermissionGate permissions={['blog.view', 'blog.create']}>
+              <TabsTrigger value="blog" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+                <FileText className="h-4 w-4 md:h-4 md:w-4" />
+                <span>Blog</span>
+              </TabsTrigger>
+            </PermissionGate>
+            
+            <PermissionGate permissions={['projects.view', 'projects.create']}>
+              <TabsTrigger value="projects" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+                <MapPin className="h-4 w-4 md:h-4 md:w-4" />
+                <span className="hidden sm:block">Projetos</span>
+                <span className="sm:hidden text-xs">Proj</span>
+              </TabsTrigger>
+            </PermissionGate>
+            
+            <PermissionGate permissions={['community.view', 'volunteers.view', 'beneficiaries.view']}>
+              <TabsTrigger value="community" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+                <Users className="h-4 w-4 md:h-4 md:w-4" />
+                <span className="hidden sm:block">Comunidade</span>
+                <span className="sm:hidden text-xs">Com</span>
+              </TabsTrigger>
+            </PermissionGate>
+
+            <PermissionGate role="super_admin" fallback={null}>
+              <TabsTrigger value="users" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+                <UserCheck className="h-4 w-4 md:h-4 md:w-4" />
+                <span className="hidden sm:block">Usuários</span>
+                <span className="sm:hidden text-xs">Users</span>
+              </TabsTrigger>
+            </PermissionGate>
+            
+            <PermissionGate permissions={['view.all']}>
+              <TabsTrigger value="reports" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+                <PieChart className="h-4 w-4 md:h-4 md:w-4" />
+                <span className="hidden sm:block">Relatórios</span>
+                <span className="sm:hidden text-xs">Rel</span>
+              </TabsTrigger>
+            </PermissionGate>
+            
+            <PermissionGate role="super_admin">
+              <TabsTrigger value="settings" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+                <Settings className="h-4 w-4 md:h-4 md:w-4" />
+                <span className="hidden sm:block">Configurações</span>
+                <span className="sm:hidden text-xs">Config</span>
+              </TabsTrigger>
+            </PermissionGate>
+            
+            {activeTab === 'project-categories' && (
+              <PermissionGate permissions={['project-categories.view']}>
+                <TabsTrigger value="project-categories" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+                  <Tag className="h-4 w-4 md:h-4 md:w-4" />
+                  <span className="hidden sm:block">Cat. Projetos</span>
+                  <span className="sm:hidden text-xs">Cat</span>
+                </TabsTrigger>
+              </PermissionGate>
             )}
             {selectedDonation && (
               <TabsTrigger value="donation-details" className="text-xs md:text-sm py-2 md:py-3 flex flex-col md:flex-row items-center gap-1 md:gap-2">
@@ -282,57 +370,106 @@ const Dashboard: React.FC = () => {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-4 md:space-y-6">
+            {/* User Info Card */}
+            <Card className="bg-gradient-to-r from-primary/10 to-secondary/10">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserCheck className="h-5 w-5" />
+                  Informações do Usuário
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Nome do Usuário</p>
+                    <p className="font-medium">{user?.username || 'Administrador'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Grupos</p>
+                    <div className="flex flex-wrap gap-1">
+                      {user?.groups?.map((group: string) => (
+                        <Badge key={group} variant="secondary" className="text-xs">
+                          {group}
+                        </Badge>
+                      )) || <Badge variant="outline">Nenhum grupo</Badge>}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total de Permissões</p>
+                    <p className="font-medium">{user?.permissions?.length || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">Total de Visitantes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalVisitors}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">Posts no Blog</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.blogPosts}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">Doações Recebidas</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.donations}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">Projetos Ativos</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.projects}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">Voluntários</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.volunteers}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">Comunidades</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.communities}</div>
-                </CardContent>
-              </Card>
-            </div>
+            {/* <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
+              <PermissionGate permissions={['system.view_dashboard']}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium">Total de Visitantes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.totalVisitors}</div>
+                  </CardContent>
+                </Card>
+              </PermissionGate>
+              
+              <PermissionGate permissions={['blog.view_posts']}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium">Posts no Blog</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.blogPosts}</div>
+                  </CardContent>
+                </Card>
+              </PermissionGate>
+              
+              <PermissionGate permissions={['donations.view_all']}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium">Doações Recebidas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.donations}</div>
+                  </CardContent>
+                </Card>
+              </PermissionGate>
+              
+              <PermissionGate permissions={['projects.view_all']}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium">Projetos Ativos</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.projects}</div>
+                  </CardContent>
+                </Card>
+              </PermissionGate>
+              
+              <PermissionGate permissions={['community.view_volunteer_list']}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium">Voluntários</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.volunteers}</div>
+                  </CardContent>
+                </Card>
+              </PermissionGate>
+              
+              <PermissionGate permissions={['community.view_community_list']}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium">Comunidades</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.communities}</div>
+                  </CardContent>
+                </Card>
+              </PermissionGate>
+            </div> */}
             {/* Charts and Recent Activity */}
             <div className="grid lg:grid-cols-2 gap-4 md:gap-6">
               {/* ...existing code for charts and recent activity... */}
@@ -702,6 +839,23 @@ const Dashboard: React.FC = () => {
             </Tabs>
           </TabsContent>
 
+          {/* Users Tab - Gerenciamento de Usuários */}
+          <PermissionGate permissions={['user.manage_all']} fallback={
+            <TabsContent value="users" className="space-y-4 md:space-y-6">
+              <Card>
+                <CardContent className="p-6">
+                  <p className="text-center text-gray-600">
+                    Você não tem permissão para acessar o gerenciamento de usuários.
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          }>
+            <TabsContent value="users" className="space-y-4 md:space-y-6">
+              <UserManagement />
+            </TabsContent>
+          </PermissionGate>
+
           {/* Reports Tab - Centro de Relatórios */}
           <TabsContent value="reports" className="space-y-4 md:space-y-6">
             <div>
@@ -771,14 +925,14 @@ const Dashboard: React.FC = () => {
                       Gerenciar Comentários
                     </Button>
                   </Link>
-                  <Button variant="outline" className="w-full justify-start" disabled>
+                  {/* <Button variant="outline" className="w-full justify-start" disabled>
                     <FileText className="h-4 w-4 mr-2" />
                     Gerenciar Tags
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start" disabled>
+                  </Button> */}
+                  {/* <Button variant="outline" className="w-full justify-start" disabled>
                     <Users className="h-4 w-4 mr-2" />
                     Gerenciar Usuários
-                  </Button>
+                  </Button> */}
                 </CardContent>
               </Card>
 

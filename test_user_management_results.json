@@ -1,0 +1,75 @@
+{
+  "timestamp": "2025-08-13T12:35:05.976008",
+  "total_tests": 7,
+  "results": [
+    {
+      "test": "Backend Connectivity",
+      "status": "SUCCESS",
+      "message": "Backend Django está respondendo",
+      "timestamp": "2025-08-13T12:34:52.651490",
+      "details": {
+        "url": "http://localhost:8000/",
+        "status_code": 404
+      }
+    },
+    {
+      "test": "API Connectivity",
+      "status": "WARNING",
+      "message": "API respondeu com status 404",
+      "timestamp": "2025-08-13T12:34:54.733760",
+      "details": {
+        "url": "http://localhost:8000/api/v1/",
+        "status_code": 404
+      }
+    },
+    {
+      "test": "Frontend Connectivity",
+      "status": "SUCCESS",
+      "message": "Frontend Vite está respondendo",
+      "timestamp": "2025-08-13T12:34:54.773325",
+      "details": {
+        "url": "http://localhost:8080/",
+        "status_code": 200
+      }
+    },
+    {
+      "test": "Authentication",
+      "status": "SUCCESS",
+      "message": "Autenticação bem-sucedida para admin",
+      "timestamp": "2025-08-13T12:34:58.467735",
+      "details": {
+        "username": "admin",
+        "token_length": 228
+      }
+    },
+    {
+      "test": "Users List",
+      "status": "SUCCESS",
+      "message": "Lista de usuários obtida com sucesso",
+      "timestamp": "2025-08-13T12:35:01.302745",
+      "details": {
+        "total_users": 62,
+        "users_in_page": 20,
+        "first_user": "test_user"
+      }
+    },
+    {
+      "test": "User Statistics",
+      "status": "ERROR",
+      "message": "Falha ao obter estatísticas: 404",
+      "timestamp": "2025-08-13T12:35:03.654298",
+      "details": {
+        "status_code": 404
+      }
+    },
+    {
+      "test": "Permissions List",
+      "status": "ERROR",
+      "message": "Falha ao obter permissões: 404",
+      "timestamp": "2025-08-13T12:35:05.969753",
+      "details": {
+        "status_code": 404
+      }
+    }
+  ]
+}

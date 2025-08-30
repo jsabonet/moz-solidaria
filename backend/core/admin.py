@@ -29,20 +29,28 @@ admin.site.register(User, UserAdmin)
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ['user', 'user_type', 'phone', 'is_verified', 'is_active', 'created_at']
-    list_filter = ['user_type', 'is_verified', 'is_active', 'created_at']
+    list_display = ['user', 'phone', 'get_groups', 'last_activity', 'created_at']
+    list_filter = ['created_at', 'last_activity']
     search_fields = ['user__username', 'user__first_name', 'user__last_name', 'user__email', 'phone']
     readonly_fields = ['created_at', 'updated_at']
     
+    def get_groups(self, obj):
+        """Display user groups"""
+        groups = obj.user.groups.all()
+        if groups:
+            return ", ".join([group.name for group in groups])
+        return "Sem grupos"
+    get_groups.short_description = 'Grupos'
+    
     fieldsets = (
         ('Informações do Usuário', {
-            'fields': ('user', 'user_type')
+            'fields': ('user',)
         }),
         ('Informações Pessoais', {
             'fields': ('phone', 'address', 'date_of_birth', 'profile_picture')
         }),
-        ('Status', {
-            'fields': ('is_verified', 'is_active', 'last_activity')
+        ('Admin Settings', {
+            'fields': ('admin_notes', 'last_activity')
         }),
         ('Metadados', {
             'fields': ('created_at', 'updated_at'),

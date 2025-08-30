@@ -378,51 +378,6 @@ class SiteSettings(models.Model):
 # SISTEMA DE PERFIS DE USUÁRIO
 # =====================================
 
-class UserProfile(models.Model):
-    """
-    Perfil estendido do usuário com diferentes tipos
-    """
-    USER_TYPES = (
-        ('donor', 'Doador'),
-        ('beneficiary', 'Beneficiário'),
-        ('volunteer', 'Voluntário'),
-        ('partner', 'Parceiro'),
-        ('admin', 'Administrador'),
-    )
-    
-    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="Usuário")
-    user_type = models.CharField(max_length=20, choices=USER_TYPES, verbose_name="Tipo de Usuário")
-    phone = models.CharField(
-        max_length=20, 
-        blank=True, 
-        verbose_name="Telefone",
-        validators=[RegexValidator(
-            regex=r'^\+?258\d{9}$',
-            message="Formato: +258XXXXXXXXX"
-        )]
-    )
-    address = models.TextField(blank=True, verbose_name="Endereço")
-    date_of_birth = models.DateField(null=True, blank=True, verbose_name="Data de Nascimento")
-    profile_picture = models.ImageField(upload_to='profiles/', null=True, blank=True, verbose_name="Foto de Perfil")
-    
-    # Status
-    is_verified = models.BooleanField(default=False, verbose_name="Verificado")
-    is_active = models.BooleanField(default=True, verbose_name="Ativo")
-    
-    # Metadata
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
-    last_activity = models.DateTimeField(null=True, blank=True, verbose_name="Última Atividade")
-    
-    class Meta:
-        verbose_name = "Perfil de Usuário"
-        verbose_name_plural = "Perfis de Usuário"
-        ordering = ['-created_at']
-    
-    def __str__(self):
-        return f"{self.user.get_full_name() or self.user.username} ({self.get_user_type_display()})"
-
-
 class Cause(models.Model):
     """
     Causas/áreas de atuação para categorizar doações e projetos
@@ -497,7 +452,7 @@ class Donor(models.Model):
         ('annual', 'Anual'),
     )
     
-    user_profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE, verbose_name="Perfil")
+    user_profile = models.OneToOneField('UserProfile', on_delete=models.CASCADE, verbose_name="Perfil")
     total_donated = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Total Doado")
     first_donation_date = models.DateTimeField(null=True, blank=True, verbose_name="Primeira Doação")
     last_donation_date = models.DateTimeField(null=True, blank=True, verbose_name="Última Doação")
@@ -540,7 +495,7 @@ class Beneficiary(models.Model):
         ('review', 'Em Revisão'),
     )
     
-    user_profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE, verbose_name="Perfil")
+    user_profile = models.OneToOneField('UserProfile', on_delete=models.CASCADE, verbose_name="Perfil")
     family_size = models.PositiveIntegerField(verbose_name="Tamanho da Família")
     children_count = models.PositiveIntegerField(default=0, verbose_name="Número de Filhos")
     family_status = models.CharField(max_length=20, choices=FAMILY_STATUS, verbose_name="Estado Civil")
@@ -580,7 +535,7 @@ class Volunteer(models.Model):
         ('flexible', 'Flexível'),
     )
     
-    user_profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE, verbose_name="Perfil")
+    user_profile = models.OneToOneField('UserProfile', on_delete=models.CASCADE, verbose_name="Perfil")
     skills = models.ManyToManyField(Skill, blank=True, verbose_name="Habilidades")
     certifications = models.ManyToManyField(Certification, through='VolunteerCertification', blank=True, verbose_name="Certificações")
     
@@ -647,7 +602,7 @@ class Partner(models.Model):
         ('technical', 'Técnico'),
     )
     
-    user_profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE, verbose_name="Perfil")
+    user_profile = models.OneToOneField('UserProfile', on_delete=models.CASCADE, verbose_name="Perfil")
     organization_name = models.CharField(max_length=200, verbose_name="Nome da Organização")
     organization_type = models.CharField(max_length=20, choices=ORGANIZATION_TYPE, verbose_name="Tipo de Organização")
     partnership_level = models.CharField(max_length=20, choices=PARTNERSHIP_LEVEL, verbose_name="Nível de Parceria")
@@ -677,3 +632,175 @@ class Partner(models.Model):
     
     def __str__(self):
         return f"Parceiro: {self.organization_name}"
+
+
+# ========== MODELOS PARA SISTEMA DE PERMISSÕES E AUDITORIA ==========
+
+class AuditLog(models.Model):
+    """
+    Modelo para auditoria de ações no sistema
+    """
+    ACTION_CHOICES = [
+        ('CREATE', 'Criar'),
+        ('UPDATE', 'Atualizar'),
+        ('DELETE', 'Deletar'),
+        ('VIEW', 'Visualizar'),
+        ('APPROVE', 'Aprovar'),
+        ('REJECT', 'Rejeitar'),
+        ('LOGIN', 'Login'),
+        ('LOGOUT', 'Logout'),
+        ('EXPORT', 'Exportar'),
+        ('IMPORT', 'Importar'),
+    ]
+
+    MODULE_CHOICES = [
+        ('SYSTEM', 'Sistema'),
+        ('BLOG', 'Blog'),
+        ('PROJECTS', 'Projetos'),
+        ('COMMUNITY', 'Comunidade'),
+        ('USERS', 'Usuários'),
+        ('REPORTS', 'Relatórios'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='audit_logs')
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    module = models.CharField(max_length=20, choices=MODULE_CHOICES)
+    object_type = models.CharField(max_length=100, help_text="Tipo do objeto (model name)")
+    object_id = models.CharField(max_length=100, null=True, blank=True, help_text="ID do objeto afetado")
+    object_name = models.CharField(max_length=200, null=True, blank=True, help_text="Nome/título do objeto")
+    changes = models.JSONField(default=dict, help_text="Detalhes das mudanças")
+    ip_address = models.GenericIPAddressField()
+    user_agent = models.TextField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    success = models.BooleanField(default=True)
+    error_message = models.TextField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = "Log de Auditoria"
+        verbose_name_plural = "Logs de Auditoria"
+
+    def __str__(self):
+        return f"{self.user.username} - {self.action} - {self.module} - {self.timestamp}"
+
+    @classmethod
+    def log_action(cls, user, action, module, object_type=None, object_id=None, 
+                   object_name=None, changes=None, ip_address=None, user_agent=None,
+                   success=True, error_message=None):
+        """
+        Método de conveniência para criar logs de auditoria
+        """
+        return cls.objects.create(
+            user=user,
+            action=action,
+            module=module,
+            object_type=object_type or '',
+            object_id=str(object_id) if object_id else None,
+            object_name=object_name or '',
+            changes=changes or {},
+            ip_address=ip_address or '127.0.0.1',
+            user_agent=user_agent or '',
+            success=success,
+            error_message=error_message
+        )
+
+
+class UserProfile(models.Model):
+    """
+    Extensão do modelo de usuário para armazenar informações adicionais
+    """
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    phone = models.CharField(max_length=20, null=True, blank=True)
+    address = models.TextField(blank=True, null=True)
+    date_of_birth = models.DateField(null=True, blank=True)
+    profile_picture = models.ImageField(upload_to='profiles/', null=True, blank=True)
+    
+    # Admin fields
+    department = models.CharField(max_length=100, null=True, blank=True)
+    position = models.CharField(max_length=100, null=True, blank=True)
+    location = models.CharField(max_length=100, null=True, blank=True)
+    is_active_admin = models.BooleanField(default=False, help_text="Usuário ativo na administração")
+    last_permission_change = models.DateTimeField(null=True, blank=True)
+    admin_notes = models.TextField(blank=True, null=True)
+    
+    # Activity tracking
+    last_activity = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Perfil de Usuário"
+        verbose_name_plural = "Perfis de Usuários"
+
+    def __str__(self):
+        return f"Profile of {self.user.username}"
+
+    def get_user_groups(self):
+        """Retorna lista de grupos do usuário"""
+        return list(self.user.groups.values_list('name', flat=True))
+
+    def get_user_permissions(self):
+        """Retorna lista de permissões do usuário"""
+        return list(self.user.get_all_permissions())
+
+    def has_module_access(self, module):
+        """Verifica se o usuário tem acesso a um módulo específico"""
+        module_permissions = {
+            'blog': ['blog.view_posts', 'blog.create_post'],
+            'projects': ['projects.view_all', 'projects.create'],
+            'community': ['community.view_volunteer_list', 'community.approve_volunteers'],
+            'system': ['system.view_logs', 'system.manage_settings']
+        }
+        
+        required_perms = module_permissions.get(module.lower(), [])
+        return any(self.user.has_perm(perm) for perm in required_perms)
+
+
+class LoginAttempt(models.Model):
+    """
+    Modelo para rastrear tentativas de login
+    """
+    username = models.CharField(max_length=150)
+    ip_address = models.GenericIPAddressField()
+    user_agent = models.TextField(null=True, blank=True)
+    success = models.BooleanField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    failure_reason = models.CharField(max_length=100, null=True, blank=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = "Tentativa de Login"
+        verbose_name_plural = "Tentativas de Login"
+
+    def __str__(self):
+        status = "SUCCESS" if self.success else "FAILURE"
+        return f"{self.username} - {status} - {self.timestamp}"
+
+    @classmethod
+    def log_attempt(cls, username, ip_address, success, user_agent=None, failure_reason=None):
+        """
+        Método de conveniência para registrar tentativas de login
+        """
+        return cls.objects.create(
+            username=username,
+            ip_address=ip_address,
+            user_agent=user_agent or '',
+            success=success,
+            failure_reason=failure_reason
+        )
+
+    @classmethod
+    def get_failed_attempts(cls, username, ip_address, time_window_minutes=30):
+        """
+        Conta tentativas de login falhadas em uma janela de tempo
+        """
+        from datetime import timedelta
+        from django.utils import timezone
+        cutoff_time = timezone.now() - timedelta(minutes=time_window_minutes)
+        
+        return cls.objects.filter(
+            username=username,
+            ip_address=ip_address,
+            success=False,
+            timestamp__gte=cutoff_time
+        ).count()

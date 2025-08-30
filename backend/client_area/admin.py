@@ -5,7 +5,10 @@ from .models import UserProfile, Notification, MatchingRequest, DashboardStats, 
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ['full_name', 'user_type', 'user__email', 'created_at']
+    list_display = ['full_name', 'user_type', 'user_email', 'created_at']
+    def user_email(self, obj):
+        return obj.user.email
+    user_email.short_description = 'Email'
     list_filter = ['user_type', 'created_at', 'email_notifications']
     search_fields = ['user__username', 'user__email', 'user__first_name', 'user__last_name']
     readonly_fields = ['created_at', 'updated_at']
