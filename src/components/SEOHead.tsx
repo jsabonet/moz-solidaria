@@ -70,12 +70,47 @@ const SEOHead: React.FC<SEOHeadProps> = ({
       const robotsContent = robotsDirectives.join(', ');
       updateMetaTag('robots', robotsContent);
     };
+
+    // Função para configurar favicon e ícones relacionados
+    const updateFavicon = () => {
+      // Verificar se já existe favicon-96x96.png, caso contrário adicionar
+      const existingFaviconPng = document.querySelector('link[rel="icon"][href="/favicon-96x96.png"]');
+      if (!existingFaviconPng) {
+        const favicon = document.createElement('link');
+        favicon.rel = 'icon';
+        favicon.type = 'image/png';
+        favicon.sizes = '96x96';
+        favicon.href = '/favicon-96x96.png';
+        document.head.appendChild(favicon);
+      }
+
+      // Verificar se já existe shortcut icon, caso contrário adicionar
+      const existingShortcutIcon = document.querySelector('link[rel="shortcut icon"]');
+      if (!existingShortcutIcon) {
+        const shortcutIcon = document.createElement('link');
+        shortcutIcon.rel = 'shortcut icon';
+        shortcutIcon.href = '/favicon-96x96.png';
+        document.head.appendChild(shortcutIcon);
+      }
+
+      // Garantir que o manifest está linkado
+      const existingManifest = document.querySelector('link[rel="manifest"]');
+      if (!existingManifest) {
+        const manifestLink = document.createElement('link');
+        manifestLink.rel = 'manifest';
+        manifestLink.href = '/manifest.json';
+        document.head.appendChild(manifestLink);
+      }
+    };
     
     // Meta tags básicas
     updateMetaTag('description', pageDescription);
     
     // Atualizar robots meta tag
     updateRobotsTag();
+    
+    // Configurar favicon e ícones
+    updateFavicon();
     
     // Meta keywords - PRIORIZAR palavras-chave específicas do formulário
     let keywordsToUse = '';

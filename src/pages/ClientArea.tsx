@@ -237,10 +237,10 @@ const ClientArea: React.FC = () => {
               <BarChart3 className="h-4 w-4" />
               <span>Dashboard</span>
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center space-x-2">
+            {/* <TabsTrigger value="notifications" className="flex items-center space-x-2">
               <Bell className="h-4 w-4" />
               <span>Notificações</span>
-            </TabsTrigger>
+            </TabsTrigger> */}
             <TabsTrigger value="profile" className="flex items-center space-x-2">
               <User className="h-4 w-4" />
               <span>Perfil</span>

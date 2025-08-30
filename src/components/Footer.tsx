@@ -44,15 +44,15 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Áreas de Atuação */}
+          {/* Informações Legais */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">Áreas de Atuação</h3>
+            <h3 className="font-semibold text-lg mb-4">Informações Legais</h3>
             <ul className="space-y-2">
-              <li><span className="text-white/90">Apoio Humanitário</span></li>
-              <li><span className="text-white/90">Formação e Capacitação Juvenil</span></li>
-              <li><span className="text-white/90">Saúde Pública e Prevenção</span></li>
-              <li><span className="text-white/90">Apoio Psicológico e Social</span></li>
-              <li><span className="text-white/90">Direitos Humanos e Cidadania</span></li>
+              <li><Link to="/politica-privacidade" className="text-white/90 hover:text-white transition-colors">Política de Privacidade</Link></li>
+              <li><Link to="/termos-uso" className="text-white/90 hover:text-white transition-colors">Termos de Uso</Link></li>
+              <li><Link to="/transparencia" className="text-white/90 hover:text-white transition-colors">Transparência</Link></li>
+              <li><span className="text-white/90">Prestação de Contas</span></li>
+              <li><span className="text-white/90">Código de Conduta</span></li>
             </ul>
           </div>
 
@@ -78,10 +78,25 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-white/20 mt-8 pt-8 text-center">
-          <p className="text-white/80 text-sm flex items-center justify-center space-x-1">
-            <span>© 2025 Moz Solidária - "Unidos pela mesma causa"</span>
-          </p>
+        <div className="border-t border-white/20 mt-8 pt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            <p className="text-white/80 text-sm flex items-center space-x-1">
+              <span>© 2025 Moz Solidária - "Unidos pela mesma causa"</span>
+            </p>
+            <div className="flex items-center space-x-4 text-sm">
+              <Link to="/politica-privacidade" className="text-white/70 hover:text-white transition-colors">
+                Política de Privacidade
+              </Link>
+              <span className="text-white/50">•</span>
+              <Link to="/termos-uso" className="text-white/70 hover:text-white transition-colors">
+                Termos de Uso
+              </Link>
+              <span className="text-white/50">•</span>
+              <Link to="/transparencia" className="text-white/70 hover:text-white transition-colors">
+                Transparência
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </footer>

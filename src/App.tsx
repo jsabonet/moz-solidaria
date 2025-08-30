@@ -23,6 +23,9 @@ import Index from "@/pages/Index";
 import Sobre from "@/pages/Sobre";
 import Programas from "@/pages/Programas";
 import ProgramaDetail from "@/pages/ProgramaDetail";
+import PoliticaPrivacidade from "@/pages/PoliticaPrivacidade";
+import TermosUso from "@/pages/TermosUso";
+import Transparencia from "@/pages/Transparencia";
 import Doacao from "@/pages/Doacao";
 import Contacto from "@/pages/Contacto";
 import Categories from "@/pages/Categories";
@@ -48,6 +51,9 @@ const App = () => (
             <Route path="/sobre" element={<Sobre />} />
             <Route path="/programas" element={<Programas />} />
             <Route path="/programas/:id" element={<ProgramaDetail />} />
+            <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
+            <Route path="/termos-uso" element={<TermosUso />} />
+            <Route path="/transparencia" element={<Transparencia />} />
             <Route 
               path="/blog" 
               element={
