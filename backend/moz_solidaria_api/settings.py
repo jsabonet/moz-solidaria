@@ -286,6 +286,12 @@ RBAC_SETTINGS = {
 }
 
 # Configuração de logging para RBAC
+import os
+
+# Ensure logs directory exists
+LOGS_DIR = BASE_DIR.parent / 'logs'
+os.makedirs(LOGS_DIR, exist_ok=True)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -308,31 +314,58 @@ LOGGING = {
         },
     },
     'handlers': {
-        'audit_file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR.parent / 'logs' / 'audit.log',
-            'formatter': 'audit_formatter',
-        },
-        'security_file': {
-            'level': 'WARNING',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR.parent / 'logs' / 'security.log',
-            'formatter': 'security_formatter',
-        },
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'verbose' if DEBUG else 'simple',
         },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    },
+}
+
+# Add file handlers only if we can write to the logs directory
+try:
+    # Test if we can write to the logs directory
+    test_file = LOGS_DIR / 'test.log'
+    with open(test_file, 'w') as f:
+        f.write('test')
+    os.remove(test_file)
+    
+    # If successful, add file handlers
+    LOGGING['handlers'].update({
+        'audit_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': LOGS_DIR / 'audit.log',
+            'formatter': 'audit_formatter',
+        },
+        'security_file': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': LOGS_DIR / 'security.log',
+            'formatter': 'security_formatter',
+        },
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': BASE_DIR.parent / 'logs' / 'django.log',
+            'filename': LOGS_DIR / 'django.log',
             'formatter': 'verbose',
         },
-    },
-    'loggers': {
+    })
+    
+    # Update loggers to use file handlers
+    LOGGING['loggers'].update({
         'core.middleware': {
             'handlers': ['audit_file', 'console'],
             'level': 'INFO',
@@ -349,12 +382,16 @@ LOGGING = {
             'propagate': True,
         },
         'django.request': {
-            'handlers': ['file'],
+            'handlers': ['file', 'console'],
             'level': 'ERROR',
             'propagate': True,
         },
-    },
-}
+    })
+    
+except (OSError, PermissionError):
+    # If we can't write to files, fall back to console logging only
+    print("Warning: Unable to create log files, using console logging only")
+    pass
 
 # Additional CORS headers
 # Allow default headers plus cache-control explicitly (needed for some browsers / SW fetches)
@@ -382,11 +419,31 @@ if not DEBUG:
     MEDIA_ROOT = config('MEDIA_ROOT', default='/var/www/mozsolidaria/media/')
     
     # Production logging paths
-    import os
-    log_dir = '/var/log/mozsolidaria/'
-    if not os.path.exists(log_dir):
-        log_dir = BASE_DIR.parent / 'logs'
-    
-    LOGGING['handlers']['file']['filename'] = os.path.join(log_dir, 'django.log')
-    LOGGING['handlers']['audit_file']['filename'] = os.path.join(log_dir, 'audit.log')
-    LOGGING['handlers']['security_file']['filename'] = os.path.join(log_dir, 'security.log')
+    production_log_dir = '/var/log/mozsolidaria/'
+    try:
+        os.makedirs(production_log_dir, exist_ok=True)
+        # Test write access
+        test_file = os.path.join(production_log_dir, 'test.log')
+        with open(test_file, 'w') as f:
+            f.write('test')
+        os.remove(test_file)
+        
+        # Update logging paths for production
+        if 'file' in LOGGING['handlers']:
+            LOGGING['handlers']['file']['filename'] = os.path.join(production_log_dir, 'django.log')
+        if 'audit_file' in LOGGING['handlers']:
+            LOGGING['handlers']['audit_file']['filename'] = os.path.join(production_log_dir, 'audit.log')
+        if 'security_file' in LOGGING['handlers']:
+            LOGGING['handlers']['security_file']['filename'] = os.path.join(production_log_dir, 'security.log')
+            
+    except (OSError, PermissionError):
+        # Fallback to local logs directory in production if can't write to /var/log
+        fallback_log_dir = BASE_DIR.parent / 'logs'
+        os.makedirs(fallback_log_dir, exist_ok=True)
+        
+        if 'file' in LOGGING['handlers']:
+            LOGGING['handlers']['file']['filename'] = fallback_log_dir / 'django.log'
+        if 'audit_file' in LOGGING['handlers']:
+            LOGGING['handlers']['audit_file']['filename'] = fallback_log_dir / 'audit.log'
+        if 'security_file' in LOGGING['handlers']:
+            LOGGING['handlers']['security_file']['filename'] = fallback_log_dir / 'security.log'
