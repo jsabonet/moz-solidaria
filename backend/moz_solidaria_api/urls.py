@@ -27,10 +27,30 @@ from django.contrib.auth.models import User
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework import status
 from client_area.models import UserProfile
 from client_area.serializers import UserProfileSerializer
 from django.contrib.auth.models import Permission
 from django.utils import timezone
+
+@api_view(['GET'])
+def api_root(request):
+    """Root API endpoint with system information"""
+    return Response({
+        'message': 'MOZ SOLIDÁRIA API v1.0',
+        'status': 'operational',
+        'timestamp': timezone.now().isoformat(),
+        'endpoints': {
+            'admin': '/admin/',
+            'api': '/api/v1/',
+            'authentication': '/api/v1/auth/',
+            'blog': '/api/v1/blog/',
+            'client_area': '/api/v1/client-area/',
+            'donations': '/api/v1/donations/',
+            'projects': '/api/v1/projects/',
+            'reports': '/api/v1/reports/',
+        }
+    })
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -122,6 +142,7 @@ def get_user_data(request):
     return response
 
 urlpatterns = [
+    path('', api_root, name='api_root'),  # Root endpoint
     path('admin/', admin.site.urls),
     
     # API endpoints
