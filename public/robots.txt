@@ -12,3 +12,13 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /client-area/
+Disallow: /login/
+
+# Sitemap
+Sitemap: https://www.mozsolidaria.org/sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1

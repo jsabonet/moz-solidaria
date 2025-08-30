@@ -1,0 +1,23 @@
+# MOZ SOLIDÁRIA - DigitalOcean Deployment Requirements
+
+# Backend requirements
+gunicorn==21.2.0
+psycopg2-binary==2.9.7
+whitenoise==6.5.0
+django-cors-headers==4.3.1
+django-environ==0.11.2
+celery==5.3.4
+redis==5.0.1
+
+# Production monitoring and logging
+sentry-sdk[django]==1.38.0
+django-extensions==3.2.3
+
+# Database backup
+django-dbbackup==4.0.2
+
+# Performance
+django-redis==5.4.0
+django-compressor==4.4
+
+# Add these to your existing requirements.txt

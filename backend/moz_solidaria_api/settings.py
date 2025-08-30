@@ -28,7 +28,16 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-+zi#_#5j8w0tq4k1m9hpq
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
+# DigitalOcean and production hosts
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver').split(',')
+
+# Add your DigitalOcean droplet IP and domain when ready
+if not DEBUG:
+    ALLOWED_HOSTS.extend([
+        '10.106.0.2',  # Replace with actual DigitalOcean droplet IP
+        'mozsolidaria.org',  # Replace with your domain
+        'www.mozsolidaria.org',
+    ])
 
 
 # Application definition
@@ -116,11 +125,25 @@ WSGI_APPLICATION = 'moz_solidaria_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# DigitalOcean PostgreSQL Database Configuration
 DATABASES = {
     'default': dj_database_url.config(
-        default=config('DATABASE_URL', default=f'sqlite:///{BASE_DIR}/db.sqlite3')
+        default=config('DATABASE_URL', 
+                      default='postgresql://adamoabdala:Jeison2@@localhost:5432/moz_solidaria_db')
     )
 }
+
+# Alternative direct configuration for DigitalOcean
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': config('DB_NAME', default='moz_solidaria_db'),
+#         'USER': config('DB_USER', default='adamoabdala'),
+#         'PASSWORD': config('DB_PASSWORD', default='Jeison2@@'),
+#         'HOST': config('DB_HOST', default='localhost'),
+#         'PORT': config('DB_PORT', default='5432'),
+#     }
+# }
 
 
 # Password validation
@@ -338,3 +361,32 @@ LOGGING = {
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'cache-control',
 ]
+
+# DigitalOcean Production Security Settings
+if not DEBUG:
+    # Security Headers
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # HTTPS Settings (enable when SSL is configured)
+    # SECURE_SSL_REDIRECT = True
+    # SESSION_COOKIE_SECURE = True
+    # CSRF_COOKIE_SECURE = True
+    
+    # Static files served by Nginx in production
+    STATIC_ROOT = config('STATIC_ROOT', default='/var/www/mozsolidaria/staticfiles/')
+    MEDIA_ROOT = config('MEDIA_ROOT', default='/var/www/mozsolidaria/media/')
+    
+    # Production logging paths
+    import os
+    log_dir = '/var/log/mozsolidaria/'
+    if not os.path.exists(log_dir):
+        log_dir = BASE_DIR.parent / 'logs'
+    
+    LOGGING['handlers']['file']['filename'] = os.path.join(log_dir, 'django.log')
+    LOGGING['handlers']['audit_file']['filename'] = os.path.join(log_dir, 'audit.log')
+    LOGGING['handlers']['security_file']['filename'] = os.path.join(log_dir, 'security.log')

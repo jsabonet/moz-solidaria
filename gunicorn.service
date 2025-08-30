@@ -1,0 +1,29 @@
+[Unit]
+Description=MOZ SOLIDÁRIA Gunicorn daemon
+Requires=network.target
+After=network.target
+
+[Service]
+Type=notify
+User=mozsolidaria
+Group=mozsolidaria
+RuntimeDirectory=gunicorn
+WorkingDirectory=/var/www/mozsolidaria/app/backend
+Environment="PATH=/var/www/mozsolidaria/venv/bin"
+ExecStart=/var/www/mozsolidaria/venv/bin/gunicorn \
+    --access-logfile /var/log/mozsolidaria/gunicorn-access.log \
+    --error-logfile /var/log/mozsolidaria/gunicorn-error.log \
+    --workers 3 \
+    --bind 127.0.0.1:8000 \
+    --timeout 120 \
+    --max-requests 1000 \
+    --max-requests-jitter 100 \
+    --preload \
+    moz_solidaria_api.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
