@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const initializeAuth = async () => {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
     if (token) {
       await fetchUserProfile();
     } else {
@@ -55,7 +55,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const fetchUserProfile = async () => {
     try {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       if (!token) {
         setIsLoading(false);
         return;
@@ -107,7 +107,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const data = await response.json();
         
         // Salvar token
-        localStorage.setItem('token', data.access);
+        localStorage.setItem('authToken', data.access);
         localStorage.setItem('refresh_token', data.refresh);
 
         // Buscar dados do usuário
@@ -126,9 +126,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('authToken');
     localStorage.removeItem('refresh_token');
-    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('authToken');
     sessionStorage.removeItem('refresh_token');
     setUser(null);
   };

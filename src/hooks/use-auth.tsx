@@ -368,15 +368,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log('🔄 Iniciando atualização COMPLETA dos dados do usuário...');
       setLoading(true);
-      const token = localStorage.getItem('token');
       
+      const token = localStorage.getItem('authToken');
       if (!token) {
         console.error('❌ Token não encontrado, fazendo logout');
         logout();
         throw new Error('No token found');
-      }
-
-      // 🚀 NOVA ABORDAGEM: Buscar dados frescos direto do banco
+      }      // 🚀 NOVA ABORDAGEM: Buscar dados frescos direto do banco
       console.log('📡 Consultando banco de dados para dados atualizados...');
       
       const response = await fetch(`http://127.0.0.1:8000/api/v1/auth/user/`, {
@@ -438,7 +436,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log('🧹 FORÇA-TAREFA: Limpando cache completo + atualizando permissões...');
       
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken');
       if (!token) {
         console.error('❌ Token não encontrado');
         return null;

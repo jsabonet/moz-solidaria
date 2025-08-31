@@ -60,7 +60,7 @@ export async function registerUser(userData: {
     confirm_password: userData.password, // Add confirm_password field
   };
   
-  const res = await fetch(`${API_BASE}/client-area/register/`, {
+  const res = await fetch(`${API_BASE}/client-area/auth/register/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(requestData),
@@ -97,7 +97,7 @@ export async function loginUser(credentials: {
   username: string;
   password: string;
 }) {
-  const res = await fetch(`${API_BASE}/client-area/login/`, {
+  const res = await fetch(`${API_BASE}/client-area/auth/login/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(credentials),
