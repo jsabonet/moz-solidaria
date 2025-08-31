@@ -198,7 +198,8 @@ export const useNotifications = (): UseNotificationsReturn => {
     const token = localStorage.getItem('auth_token');
     if (!token) return;
 
-    fetch('/api/v1/client-area/notifications/mark-all-read/', {
+    const API_BASE = (import.meta as any).env.VITE_API_URL || 'http://localhost:8000/api/v1';
+    fetch(`${API_BASE}/client-area/notifications/mark-all-read/`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
