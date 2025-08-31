@@ -421,7 +421,9 @@ const Sobre = () => {
             <Button 
               size="lg" 
               variant="outline"
-              className="border-white text-white hover:text-solidarity-orange text-lg px-8"
+              className="
+                bg-white text-solidarity-orange hover:bg-white/90 text-lg px-8
+              "
             >
               Ser Voluntário
               <ArrowRight className="ml-2 h-5 w-5" />
