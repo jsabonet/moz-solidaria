@@ -92,7 +92,7 @@ const Blog = () => {
             Tentar Novamente
           </Button>
           <div className="mt-8 text-sm text-muted-foreground">
-            <p>Se o problema persistir, verifique se o backend está rodando em http://localhost:8000</p>
+            <p>Se o problema persistir, entre em contato com o suporte</p>
           </div>
         </div>
         <Footer />

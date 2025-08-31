@@ -1,0 +1,20 @@
+[Unit]
+Description=Gunicorn instance to serve MOZ SOLIDÁRIA
+After=network.target
+
+[Service]
+User=mozuser
+Group=mozuser
+WorkingDirectory=/home/ubuntu/moz-solidaria/backend
+Environment="PATH=/home/ubuntu/moz-solidaria/backend/venv/bin"
+Environment="DJANGO_SETTINGS_MODULE=moz_solidaria_api.settings"
+ExecStart=/home/ubuntu/moz-solidaria/backend/venv/bin/gunicorn --config /home/ubuntu/moz-solidaria/backend/gunicorn.conf.py moz_solidaria_api.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mozsolidaria
+
+[Install]
+WantedBy=multi-user.target

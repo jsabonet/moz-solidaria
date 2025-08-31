@@ -110,6 +110,8 @@ const BlogDetail = () => {
   const getImageUrl = (imageData: any, fallbackUrl?: string) => {
     console.log("🔍 getImageUrl - Processando:", { imageData, fallbackUrl, type: typeof imageData });
     
+    const API_BASE = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:8000';
+    
     // Se imageData é uma string (URL)
     if (typeof imageData === 'string') {
       // Se já é uma URL completa
@@ -119,12 +121,12 @@ const BlogDetail = () => {
       }
       // Se é um caminho relativo, construir URL completa
       if (imageData.startsWith('/')) {
-        const fullUrl = `http://localhost:8000${imageData}`;
+        const fullUrl = `${API_BASE}${imageData}`;
         console.log("🔗 Construindo URL completa:", fullUrl);
         return fullUrl;
       }
       // Se é apenas o nome do arquivo
-      const fullUrl = `http://localhost:8000/media/${imageData}`;
+      const fullUrl = `${API_BASE}/media/${imageData}`;
       console.log("📁 Construindo URL do media:", fullUrl);
       return fullUrl;
     }

@@ -50,9 +50,10 @@ const SocialInteractions: React.FC<SocialInteractionsProps> = ({
     }
 
     const token = getToken();
+    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/blog/posts/${post.slug}/like/`, {
+      const response = await fetch(`${API_BASE}/blog/posts/${post.slug}/like/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -92,9 +93,10 @@ const SocialInteractions: React.FC<SocialInteractionsProps> = ({
 
   const handleShare = async (shareType: string = 'other') => {
     const token = getToken();
+    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/blog/posts/${post.slug}/share/`, {
+      const response = await fetch(`${API_BASE}/blog/posts/${post.slug}/share/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -108,10 +108,11 @@ const ReportsCenter: React.FC = () => {
 
       // O backend tem um endpoint 'area_exports' que aceita diferentes áreas
       const endpoint = 'area_exports';
+      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
       // Tentar fazer a exportação via API
       try {
-        const response = await fetch(`http://localhost:8000/api/v1/reports/exports/${endpoint}/`, {
+        const response = await fetch(`${API_BASE}/reports/exports/${endpoint}/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

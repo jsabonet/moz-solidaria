@@ -33,8 +33,10 @@ export const useNotifications = (): UseNotificationsReturn => {
 
   const getWebSocketUrl = () => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+    const baseUrl = API_URL.replace('/api/v1', '').replace('http://', '').replace('https://', '');
     const host = process.env.NODE_ENV === 'development' 
-      ? 'localhost:8000' 
+      ? baseUrl || 'localhost:8000' 
       : window.location.host;
     return `${protocol}//${host}/ws/notifications/`;
   };
