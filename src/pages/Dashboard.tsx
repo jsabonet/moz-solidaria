@@ -657,7 +657,7 @@ const Dashboard: React.FC = () => {
               <TabsContent value="overview" className="space-y-4">
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
                   {/* Estatísticas da Comunidade */}
-                  <Card>
+                  {/* <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Doadores Ativos</CardTitle>
                       <Users className="h-4 w-4 text-muted-foreground" />
@@ -668,9 +668,9 @@ const Dashboard: React.FC = () => {
                         Usuários com perfil doador
                       </p>
                     </CardContent>
-                  </Card>
+                  </Card> */}
 
-                  <Card>
+                  {/* <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Voluntários</CardTitle>
                       <Heart className="h-4 w-4 text-muted-foreground" />
@@ -681,9 +681,9 @@ const Dashboard: React.FC = () => {
                         Usuários voluntários ativos
                       </p>
                     </CardContent>
-                  </Card>
+                  </Card> */}
 
-                  <Card>
+                  {/* <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Beneficiários</CardTitle>
                       <UserCheck className="h-4 w-4 text-muted-foreground" />
@@ -694,9 +694,9 @@ const Dashboard: React.FC = () => {
                         Beneficiários cadastrados
                       </p>
                     </CardContent>
-                  </Card>
+                  </Card> */}
 
-                  <Card>
+                  {/* <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Total de Doações</CardTitle>
                       <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -707,9 +707,9 @@ const Dashboard: React.FC = () => {
                         Via Portal de Comunidade
                       </p>
                     </CardContent>
-                  </Card>
+                  </Card> */}
 
-                  <Card>
+                  {/* <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Parcerias Ativas</CardTitle>
                       <Users className="h-4 w-4 text-muted-foreground" />
@@ -720,7 +720,7 @@ const Dashboard: React.FC = () => {
                         Organizações parceiras
                       </p>
                     </CardContent>
-                  </Card>
+                  </Card> */}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
