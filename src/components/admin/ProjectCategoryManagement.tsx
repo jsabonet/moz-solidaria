@@ -471,30 +471,30 @@ const ProjectCategoryManagement = () => {
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        {/* <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold">{categories.length}</div>
             <p className="text-xs text-muted-foreground">Total de Categorias</p>
           </CardContent>
-        </Card>
-        <Card>
+        </Card> */}
+        {/* <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold">{categories.filter(c => c.is_active).length}</div>
             <p className="text-xs text-muted-foreground">Categorias Ativas</p>
           </CardContent>
-        </Card>
-        <Card>
+        </Card> */}
+        {/* <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold">{categories.reduce((acc, cat) => acc + (cat.projects_count || 0), 0)}</div>
             <p className="text-xs text-muted-foreground">Total de Projetos</p>
           </CardContent>
-        </Card>
-        <Card>
+        </Card> */}
+        {/* <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold">{programs.length}</div>
             <p className="text-xs text-muted-foreground">Programas Ativos</p>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
 
       {/* Table */}

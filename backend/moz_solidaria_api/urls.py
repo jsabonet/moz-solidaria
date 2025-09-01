@@ -172,7 +172,8 @@ urlpatterns = [
         # Sistema RBAC - Gestão de Permissões e Usuários
         path('rbac/', include('core.permissions_urls')),
         
-        # path('core/', include('core.urls')),  # Temporariamente desabilitado
+        # Core system endpoints (programs, project categories, etc.)
+        path('core/', include('core.urls')),
     ])),
 ]
 

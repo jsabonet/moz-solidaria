@@ -1640,8 +1640,8 @@ class ExportViewSet(viewsets.ViewSet):
         """
         
         contact_text = f"""
-         ajuda@mozsolidaria.com<br/>
-         www.mozsolidaria.com<br/>
+         ajuda@mozsolidaria.org<br/>
+         www.mozsolidaria.org<br/>
          +258 84 204 0330
         """
         

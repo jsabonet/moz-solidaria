@@ -188,23 +188,31 @@ const CreateProject: React.FC = () => {
         setUsers(usersData);
         setCategories(categoriesData);
         
+        // Log para debug
+        console.log('📋 Programas carregados:', programsData);
+        console.log('👥 Usuários carregados:', usersData);
+        console.log('🏷️ Categorias carregadas:', categoriesData);
+        
       } catch (error) {
         console.error('Erro ao carregar dados iniciais:', error);
         toast.error('Erro ao carregar dados. Usando valores padrão.');
         
-        // Fallback para dados mock
+        // Fallback para dados mock - programas baseados no sistema real
         setPrograms([
-          { id: 1, name: 'Educação' },
-          { id: 2, name: 'Apoio Humanitário' },
-          { id: 3, name: 'Formação Juvenil' },
-          { id: 4, name: 'Saúde Pública' },
-          { id: 5, name: 'Infraestrutura' }
+          { id: 1, name: 'Apoio Alimentar e Nutricional' },
+          { id: 2, name: 'Reconstrução e Habitação' }, 
+          { id: 3, name: 'Educação e Capacitação' },
+          { id: 4, name: 'Saúde Comunitária' },
+          { id: 5, name: 'Proteção e Direitos Humanos' },
+          { id: 6, name: 'Apoio Psicossocial' }
         ]);
         setCategories([
           { id: 1, name: 'Educação' },
           { id: 2, name: 'Saúde' },
           { id: 3, name: 'Infraestrutura' },
-          { id: 4, name: 'Assistência Social' }
+          { id: 4, name: 'Assistência Social' },
+          { id: 5, name: 'Habitação' },
+          { id: 6, name: 'Proteção Social' }
         ]);
         setUsers([
           { id: 1, username: 'admin', full_name: 'Administrador Principal' },
@@ -608,13 +616,27 @@ const CreateProject: React.FC = () => {
                             <SelectValue placeholder="Selecione um programa" />
                           </SelectTrigger>
                           <SelectContent>
-                            {programs.map((program) => (
-                              <SelectItem key={program.id} value={program.id.toString()}>
-                                {program.name}
+                            {programs.length === 0 ? (
+                              <SelectItem value="" disabled>
+                                Nenhum programa disponível
                               </SelectItem>
-                            ))}
+                            ) : (
+                              programs.map((program) => (
+                                <SelectItem key={program.id} value={program.id.toString()}>
+                                  {program.name}
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
+                        {programs.length === 0 && (
+                          <div className="text-xs text-muted-foreground text-amber-600">
+                            ⚠️ Nenhum programa carregado. Verifique a conexão com o servidor.
+                          </div>
+                        )}
+                        <div className="text-xs text-muted-foreground">
+                          Programas disponíveis: {programs.length}
+                        </div>
                       </FormField>
 
                       <FormField error={validationErrors.category_id}>

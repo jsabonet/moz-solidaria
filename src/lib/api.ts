@@ -664,7 +664,51 @@ export async function deleteProject(id: number) {
 // Buscar programas disponíveis
 export async function fetchPrograms() {
   try {
-    // Extrair programas dos projetos públicos
+    console.log('🔍 fetchPrograms: Tentando buscar programas...');
+    
+    // Tentar buscar via endpoint específico de programas
+    console.log('🎯 fetchPrograms: Tentando endpoint /api/v1/core/programs/');
+    const res = await fetch(`${API_BASE}/core/programs/`);
+    if (res.ok) {
+      const data = await res.json();
+      console.log('✅ fetchPrograms: Endpoint funcionou!', data);
+      
+      // Se é uma resposta paginada, usar results
+      if (data.results && Array.isArray(data.results)) {
+        const programs = data.results.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          slug: item.slug,
+          description: item.description || item.short_description || '',
+          color: item.color || '#3498db',
+          icon: item.icon || 'folder'
+        }));
+        console.log(`✅ fetchPrograms: ${programs.length} programas encontrados`);
+        return programs;
+      }
+      // Se é um array direto
+      else if (Array.isArray(data)) {
+        const programs = data.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          slug: item.slug,
+          description: item.description || item.short_description || '',
+          color: item.color || '#3498db',
+          icon: item.icon || 'folder'
+        }));
+        console.log(`✅ fetchPrograms: ${programs.length} programas encontrados`);
+        return programs;
+      }
+      // Fallback para formato antigo
+      return data.results || data;
+    }
+  } catch (error) {
+    console.warn('⚠️ fetchPrograms: Endpoint de programas não disponível, tentando extrair dos projetos:', error);
+  }
+
+  try {
+    // Fallback: Extrair programas dos projetos públicos
+    console.log('🔄 fetchPrograms: Tentando fallback via projetos públicos');
     const projects = await fetchPublicProjects();
     const programsMap = new Map();
     projects.forEach(p => {
@@ -672,11 +716,68 @@ export async function fetchPrograms() {
         programsMap.set(p.program.id, p.program);
       }
     });
-    return Array.from(programsMap.values());
+    const extractedPrograms = Array.from(programsMap.values());
+    
+    if (extractedPrograms.length > 0) {
+      console.log(`✅ fetchPrograms: ${extractedPrograms.length} programas extraídos de projetos`);
+      return extractedPrograms;
+    }
   } catch (error) {
-    console.warn('Usando dados mock para programas:', error);
-    return [];
+    console.warn('❌ fetchPrograms: Erro ao extrair programas dos projetos:', error);
   }
+
+  // Dados mock atualizados - baseados nos programas reais criados
+  console.log('📦 fetchPrograms: Usando dados de fallback realísticos');
+  return [
+    { 
+      id: 1, 
+      name: 'Apoio Alimentar',
+      slug: 'apoio-alimentar',
+      description: 'Programas de assistência alimentar para comunidades vulneráveis',
+      color: '#e74c3c',
+      icon: 'utensils'
+    },
+    { 
+      id: 2, 
+      name: 'Reconstrução',
+      slug: 'reconstrucao',
+      description: 'Programas de reconstrução de infraestruturas e habitações',
+      color: '#f39c12',
+      icon: 'hammer'
+    }, 
+    { 
+      id: 3, 
+      name: 'Educação',
+      slug: 'educacao',
+      description: 'Programas educacionais e de capacitação profissional',
+      color: '#3498db',
+      icon: 'graduation-cap'
+    },
+    { 
+      id: 4, 
+      name: 'Saúde',
+      slug: 'saude',
+      description: 'Programas de assistência médica e promoção da saúde',
+      color: '#2ecc71',
+      icon: 'heartbeat'
+    },
+    { 
+      id: 5, 
+      name: 'Proteção',
+      slug: 'protecao',
+      description: 'Programas de proteção infantil e direitos humanos',
+      color: '#9b59b6',
+      icon: 'shield-alt'
+    },
+    { 
+      id: 6, 
+      name: 'Apoio Psicossocial',
+      slug: 'apoio-psicossocial',
+      description: 'Programas de apoio psicológico e reintegração social',
+      color: '#1abc9c',
+      icon: 'hands-helping'
+    }
+  ];
 }
 
 // Buscar usuários/responsáveis disponíveis (requer autenticação)

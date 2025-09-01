@@ -196,7 +196,7 @@ const Dashboard: React.FC = () => {
   const handleViewSite = () => {
     try {
       // URL do site principal - pode ser configurada via variável de ambiente
-      const siteUrl = import.meta.env.VITE_SITE_URL || 'https://mozsolidaria.com' || 'http://localhost:3000';
+      const siteUrl = import.meta.env.VITE_SITE_URL || 'https://mozsolidaria.org' || 'http://localhost:3000';
       
       // Validar se é uma URL válida
       new URL(siteUrl);
