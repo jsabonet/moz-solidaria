@@ -1,7 +1,7 @@
 // src/pages/CreateProject.tsx
 // Versão melhorada com validação e interface aprimorada
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -279,44 +279,56 @@ const CreateProject: React.FC = () => {
     }
   }, [isEditing, slug, navigate]);
 
-  // Auto-gerar slug
+  // Auto-gerar slug com debounce para evitar re-renderizações excessivas
   useEffect(() => {
     if (formData.name && !isEditing) {
-      const slug = formData.name
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .trim();
-      setFormData(prev => ({ ...prev, slug }));
-    }
-  }, [formData.name, isEditing]);
+      const timeoutId = setTimeout(() => {
+        const slug = formData.name
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .trim();
+        
+        // Só atualiza se o slug for diferente do atual
+        if (slug !== formData.slug) {
+          setFormData(prev => ({ ...prev, slug }));
+        }
+      }, 300); // Debounce de 300ms
 
-  // Validação em tempo real
-  useEffect(() => {
-    if (isDirty) {
-      const errors = validateForm(formData);
-      setValidationErrors(errors);
+      return () => clearTimeout(timeoutId);
     }
+  }, [formData.name, isEditing, formData.slug]);
+
+  // Validação em tempo real com useMemo para evitar re-renderizações
+  const computedValidationErrors = useMemo(() => {
+    if (!isDirty) return {};
+    return validateForm(formData);
   }, [formData, isDirty]);
 
-  // Atualizar campo do formulário
-  const updateField = (field: keyof FormData, value: any) => {
+  // Atualizar estado de errors apenas quando validationErrors mudar
+  useEffect(() => {
+    setValidationErrors(computedValidationErrors);
+  }, [computedValidationErrors]);
+
+  // Atualizar campo do formulário (otimizado com useCallback)
+  const updateField = useCallback((field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setIsDirty(true);
     
     // Limpar erro específico quando campo é corrigido
-    if (validationErrors[field]) {
-      setValidationErrors(prev => {
+    setValidationErrors(prev => {
+      if (prev[field]) {
         const newErrors = { ...prev };
         delete newErrors[field];
         return newErrors;
-      });
-    }
-  };
+      }
+      return prev;
+    });
+  }, []);
 
-  // Submissão do formulário
-  const handleSubmit = async (e: React.FormEvent, isDraft: boolean = false) => {
+  // Submissão do formulário (otimizado com useCallback)
+  const handleSubmit = useCallback(async (e: React.FormEvent, isDraft: boolean = false) => {
     e.preventDefault();
     setIsDirty(true);
     
@@ -397,10 +409,10 @@ const CreateProject: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [formData, isEditing, projectId, navigate]);
 
-  // Handle file changes
-  const handleFileChange = (field: 'featured_image') => (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle file changes (otimizado com useCallback)
+  const handleFileChange = useCallback((field: 'featured_image') => (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       // Validar tamanho do arquivo (máx 10MB)
@@ -420,13 +432,13 @@ const CreateProject: React.FC = () => {
       updateField(field, file);
       toast.success('Imagem carregada com sucesso!');
     }
-  };
+  }, [updateField]);
 
-  // Remover imagem
-  const removeFile = (field: 'featured_image') => {
+  // Remover imagem (otimizado com useCallback)
+  const removeFile = useCallback((field: 'featured_image') => {
     updateField(field, undefined);
     toast.info('Imagem removida');
-  };
+  }, [updateField]);
 
   // Componente de campo com validação
   const FormField: React.FC<{
