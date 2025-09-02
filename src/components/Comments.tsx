@@ -5,9 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-
-// Função auxiliar para obter token
-const getToken = () => localStorage.getItem('authToken');
+import api from '@/lib/api';
 
 interface Comment {
   id: number;
@@ -75,26 +73,23 @@ const Comments: React.FC<CommentsProps> = ({
   const fetchComments = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/blog/posts/${postSlug}/comments/`);
-      if (response.ok) {
-        const data = await response.json();
-        const allComments = data.results || data;
-        // Filtrar apenas comentários aprovados
-        const approvedComments = allComments.filter((comment: Comment) => comment.is_approved);
-        setComments(approvedComments);
-        
-        // Atualizar contador se a função for fornecida
-        if (onCommentsUpdate) {
-          onCommentsUpdate(approvedComments.length);
-        }
-      } else {
-        throw new Error('Erro ao carregar comentários');
+      const response = await api.get(`/blog/posts/${postSlug}/comments/`);
+      const data = response.data;
+      const allComments = data.results || data;
+      // Filtrar apenas comentários aprovados
+      const approvedComments = allComments.filter((comment: Comment) => comment.is_approved);
+      setComments(approvedComments);
+
+      // Atualizar contador se a função for fornecida
+      if (onCommentsUpdate) {
+        onCommentsUpdate(approvedComments.length);
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Erro",
         description: "Não foi possível carregar os comentários.",
       });
+      console.error('Comentários - fetch error:', error);
     } finally {
       setLoading(false);
     }
@@ -121,48 +116,38 @@ const Comments: React.FC<CommentsProps> = ({
 
     setSubmitting(true);
     try {
-      const token = getToken();
-      const response = await fetch(`http://localhost:8000/api/v1/blog/posts/${postSlug}/comments/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-        body: JSON.stringify({
-          content: formData.content.trim(),
-          author_name: formData.author_name.trim(),
-          author_email: formData.author_email.trim(),
-          ...(formData.parent && { parent: formData.parent }),
-        }),
+      const payload: any = {
+        content: formData.content.trim(),
+        author_name: formData.author_name.trim(),
+        author_email: formData.author_email.trim(),
+      };
+      if (formData.parent) payload.parent = formData.parent;
+
+      const response = await api.post(`/blog/posts/${postSlug}/comments/`, payload);
+      const data = response.data;
+      toast({
+        title: "Sucesso",
+        description: data.message || "Comentário enviado! Aguarde a aprovação.",
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        toast({
-          title: "Sucesso",
-          description: data.message || "Comentário enviado! Aguarde a aprovação.",
-        });
-        
-        // Reset form
-        setFormData(prev => ({
-          ...prev,
-          content: '',
-          parent: null,
-        }));
-        setShowForm(false);
-        setReplyingTo(null);
-        
-        // Refresh comments (que já atualizará o contador via onCommentsUpdate)
-        fetchComments();
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao enviar comentário');
-      }
-    } catch (error) {
+      // Reset form
+      setFormData(prev => ({
+        ...prev,
+        content: '',
+        parent: null,
+      }));
+      setShowForm(false);
+      setReplyingTo(null);
+
+      // Refresh comments
+      fetchComments();
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || error?.message || 'Erro ao enviar comentário';
       toast({
         title: "Erro",
-        description: error instanceof Error ? error.message : "Não foi possível enviar o comentário.",
+        description: msg,
       });
+      console.error('Comentários - submit error:', error);
     } finally {
       setSubmitting(false);
     }
