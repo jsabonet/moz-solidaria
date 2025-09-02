@@ -33,6 +33,7 @@ import CommentsPage from "@/pages/CommentsPage";
 import AuthPage from "@/pages/AuthPage";
 import DonationProofPage from "@/pages/DonationProofPage";
 import ProjectDetail from "@/pages/ProjectDetail";
+import Projects from "@/pages/Projects";
 import AuthCacheManager from "@/components/auth/AuthCacheManager";
 
 const queryClient = new QueryClient();
@@ -71,6 +72,7 @@ const App = () => (
               } 
             />
             <Route path="/projeto/:slug" element={<ProjectDetail />} />
+            <Route path="/projects" element={<Projects />} />
             <Route path="/doacao" element={<Doacao />} />
             <Route path="/enviar-comprovante" element={<DonationProofPage />} />
             <Route path="/contacto" element={<Contacto />} />
