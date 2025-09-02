@@ -1,7 +1,7 @@
 // src/pages/CreateProject.tsx
-// Versão melhorada com validação e interface aprimorada
+// Versão simplificada baseada no padrão de CreatePost que funciona
 
-import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -83,18 +83,6 @@ interface User {
 interface ValidationErrors {
   [key: string]: string;
 }
-
-// Componentes memoizados para evitar re-renderizações
-const MemoizedInput = memo(({ value, onChange, ...props }: any) => (
-  <Input value={value} onChange={onChange} {...props} />
-));
-
-const MemoizedTextarea = memo(({ value, onChange, ...props }: any) => (
-  <Textarea value={value} onChange={onChange} {...props} />
-));
-
-MemoizedInput.displayName = 'MemoizedInput';
-MemoizedTextarea.displayName = 'MemoizedTextarea';
 
 // Validação básica
 const validateForm = (formData: FormData): ValidationErrors => {
@@ -323,69 +311,8 @@ const CreateProject: React.FC = () => {
     setValidationErrors(computedValidationErrors);
   }, [computedValidationErrors]);
 
-  // Atualizar campo do formulário (otimizado com useCallback)
-  const updateField = useCallback((field: keyof FormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    setIsDirty(true);
-    
-    // Limpar erro específico quando campo é corrigido
-    setValidationErrors(prev => {
-      if (prev[field]) {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      }
-      return prev;
-    });
-  }, []);
-
-  // Handlers memoizados para evitar re-criação de funções
-  const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    updateField('name', e.target.value);
-  }, [updateField]);
-
-  const handleSlugChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    updateField('slug', e.target.value);
-  }, [updateField]);
-
-  const handleShortDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    updateField('short_description', e.target.value);
-  }, [updateField]);
-
-  const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    updateField('description', e.target.value);
-  }, [updateField]);
-
-  const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    updateField('content', e.target.value);
-  }, [updateField]);
-
-  const handleMetaKeywordsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    updateField('meta_keywords', e.target.value);
-  }, [updateField]);
-
-  const handleLocationChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    updateField('location', e.target.value);
-  }, [updateField]);
-
-  const handleDistrictChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    updateField('district', e.target.value);
-  }, [updateField]);
-
-  const handleTargetBeneficiariesChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    updateField('target_beneficiaries', parseInt(e.target.value) || 0);
-  }, [updateField]);
-
-  const handleBudgetChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    updateField('budget', parseFloat(e.target.value) || 0);
-  }, [updateField]);
-
-  const handleMetaDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    updateField('meta_description', e.target.value);
-  }, [updateField]);
-
-  // Submissão do formulário (otimizado com useCallback)
-  const handleSubmit = useCallback(async (e: React.FormEvent, isDraft: boolean = false) => {
+  // Submissão do formulário (simplificado)
+  const handleSubmit = async (e: React.FormEvent, isDraft: boolean = false) => {
     e.preventDefault();
     setIsDirty(true);
     
@@ -466,10 +393,10 @@ const CreateProject: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, isEditing, projectId, navigate]);
+  };
 
-  // Handle file changes (otimizado com useCallback)
-  const handleFileChange = useCallback((field: 'featured_image') => (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle file changes (simplificado)
+  const handleFileChange = (field: 'featured_image') => (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       // Validar tamanho do arquivo (máx 10MB)
@@ -486,16 +413,16 @@ const CreateProject: React.FC = () => {
         return;
       }
 
-      updateField(field, file);
+      setFormData({ ...formData, [field]: file });
       toast.success('Imagem carregada com sucesso!');
     }
-  }, [updateField]);
+  };
 
-  // Remover imagem (otimizado com useCallback)
-  const removeFile = useCallback((field: 'featured_image') => {
-    updateField(field, undefined);
+  // Remover imagem (simplificado)
+  const removeFile = (field: 'featured_image') => {
+    setFormData({ ...formData, [field]: undefined });
     toast.info('Imagem removida');
-  }, [updateField]);
+  };
 
   // Componente de campo com validação
   const FormField: React.FC<{
@@ -631,10 +558,10 @@ const CreateProject: React.FC = () => {
                     <div className="space-y-4">
                       <FormField error={validationErrors.name}>
                         <Label htmlFor="name">Nome do Projeto *</Label>
-                        <MemoizedInput
+                        <Input
                           id="name"
                           value={formData.name}
-                          onChange={handleNameChange}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                           placeholder="Digite o nome do projeto"
                           className={validationErrors.name ? 'border-destructive' : ''}
                         />
@@ -648,7 +575,7 @@ const CreateProject: React.FC = () => {
                         <Input
                           id="slug"
                           value={formData.slug}
-                          onChange={handleSlugChange}
+                          onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                           placeholder="url-amigavel-do-projeto"
                           disabled={isEditing}
                           className={validationErrors.slug ? 'border-destructive' : ''}
@@ -660,10 +587,10 @@ const CreateProject: React.FC = () => {
 
                       <FormField error={validationErrors.short_description}>
                         <Label htmlFor="short_description">Descrição Curta *</Label>
-                        <MemoizedTextarea
+                        <Textarea
                           id="short_description"
                           value={formData.short_description}
-                          onChange={handleShortDescriptionChange}
+                          onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
                           placeholder="Resumo conciso do projeto"
                           rows={3}
                           className={validationErrors.short_description ? 'border-destructive' : ''}
@@ -679,7 +606,7 @@ const CreateProject: React.FC = () => {
                         <Label htmlFor="program_id">Programa *</Label>
                         <Select
                           value={formData.program_id}
-                          onValueChange={(value) => updateField('program_id', value)}
+                          onValueChange={(value) => setFormData({ ...formData, program_id: value })}
                         >
                           <SelectTrigger className={validationErrors.program_id ? 'border-destructive' : ''}>
                             <SelectValue placeholder="Selecione um programa" />
@@ -712,7 +639,7 @@ const CreateProject: React.FC = () => {
                         <Label htmlFor="category_id">Categoria</Label>
                         <Select
                           value={formData.category_id}
-                          onValueChange={(value) => updateField('category_id', value)}
+                          onValueChange={(value) => setFormData({ ...formData, category_id: value })}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione uma categoria" />
@@ -731,7 +658,7 @@ const CreateProject: React.FC = () => {
                         <Label htmlFor="status">Status</Label>
                         <Select
                           value={formData.status}
-                          onValueChange={(value) => updateField('status', value)}
+                          onValueChange={(value) => setFormData({ ...formData, status: value })}
                         >
                           <SelectTrigger>
                             <SelectValue />
@@ -749,7 +676,7 @@ const CreateProject: React.FC = () => {
                         <Label htmlFor="priority">Prioridade</Label>
                         <Select
                           value={formData.priority}
-                          onValueChange={(value) => updateField('priority', value)}
+                          onValueChange={(value) => setFormData({ ...formData, priority: value })}
                         >
                           <SelectTrigger>
                             <SelectValue />
@@ -770,7 +697,7 @@ const CreateProject: React.FC = () => {
                     <Textarea
                       id="description"
                       value={formData.description}
-                      onChange={handleDescriptionChange}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       placeholder="Descrição detalhada do projeto, objetivos e metodologia"
                       rows={6}
                       className={validationErrors.description ? 'border-destructive' : ''}
@@ -785,7 +712,7 @@ const CreateProject: React.FC = () => {
                     <Textarea
                       id="content"
                       value={formData.content}
-                      onChange={handleContentChange}
+                      onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                       placeholder="Texto detalhado, metodologia, parceiros, etc."
                       rows={6}
                     />
@@ -796,7 +723,7 @@ const CreateProject: React.FC = () => {
                     <Input
                       id="meta_keywords"
                       value={formData.meta_keywords}
-                      onChange={handleMetaKeywordsChange}
+                      onChange={(e) => setFormData({ ...formData, meta_keywords: e.target.value })}
                       placeholder="educação, saúde, crianças"
                     />
                     <div className="text-xs text-muted-foreground">Palavras-chave para SEO (opcional)</div>
@@ -825,7 +752,7 @@ const CreateProject: React.FC = () => {
                         <Input
                           id="location"
                           value={formData.location}
-                          onChange={handleLocationChange}
+                          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                           placeholder="Cidade, região ou local específico"
                           className={validationErrors.location ? 'border-destructive' : ''}
                         />
@@ -836,7 +763,7 @@ const CreateProject: React.FC = () => {
                         <Input
                           id="district"
                           value={formData.district}
-                          onChange={handleDistrictChange}
+                          onChange={(e) => setFormData({ ...formData, district: e.target.value })}
                           placeholder="Nome do distrito"
                         />
                       </FormField>
@@ -845,7 +772,7 @@ const CreateProject: React.FC = () => {
                         <Label htmlFor="province">Província</Label>
                         <Select
                           value={formData.province}
-                          onValueChange={(value) => updateField('province', value)}
+                          onValueChange={(value) => setFormData({ ...formData, province: value })}
                         >
                           <SelectTrigger>
                             <SelectValue />
@@ -890,7 +817,7 @@ const CreateProject: React.FC = () => {
                               <Calendar
                                 mode="single"
                                 selected={formData.start_date}
-                                onSelect={(date) => updateField('start_date', date)}
+                                onSelect={(date) => setFormData({ ...formData, start_date: date })}
                                 initialFocus
                                 locale={ptBR}
                               />
@@ -919,7 +846,7 @@ const CreateProject: React.FC = () => {
                               <Calendar
                                 mode="single"
                                 selected={formData.end_date}
-                                onSelect={(date) => updateField('end_date', date)}
+                                onSelect={(date) => setFormData({ ...formData, end_date: date })}
                                 initialFocus
                                 locale={ptBR}
                               />
@@ -938,7 +865,7 @@ const CreateProject: React.FC = () => {
                               type="number"
                               min="1"
                               value={formData.target_beneficiaries}
-                              onChange={handleTargetBeneficiariesChange}
+                              onChange={(e) => setFormData({ ...formData, target_beneficiaries: parseInt(e.target.value) || 0 })}
                               placeholder="100"
                               className={cn(
                                 'pl-10',
@@ -958,7 +885,7 @@ const CreateProject: React.FC = () => {
                               min="0"
                               step="0.01"
                               value={formData.budget}
-                              onChange={handleBudgetChange}
+                              onChange={(e) => setFormData({ ...formData, budget: parseFloat(e.target.value) || 0 })}
                               placeholder="50000"
                               className={cn(
                                 'pl-10', validationErrors.budget && 'border-destructive'
@@ -1088,7 +1015,7 @@ const CreateProject: React.FC = () => {
                           </div>
                           <Switch
                             checked={formData.is_public}
-                            onCheckedChange={(checked) => updateField('is_public', checked)}
+                            onCheckedChange={(checked) => setFormData({ ...formData, is_public: checked })}
                           />
                         </div>
 
@@ -1101,7 +1028,7 @@ const CreateProject: React.FC = () => {
                           </div>
                           <Switch
                             checked={formData.is_featured}
-                            onCheckedChange={(checked) => updateField('is_featured', checked)}
+                            onCheckedChange={(checked) => setFormData({ ...formData, is_featured: checked })}
                           />
                         </div>
 
@@ -1115,7 +1042,7 @@ const CreateProject: React.FC = () => {
                         <Textarea
                           id="meta_description"
                           value={formData.meta_description}
-                          onChange={handleMetaDescriptionChange}
+                          onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
                           placeholder="Descrição para motores de busca"
                           rows={3}
                         />
