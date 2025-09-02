@@ -17,6 +17,7 @@ interface Post {
   shares_count: number;
   comments_count: number;
   is_liked_by_user: boolean;
+  created_at?: string;
 }
 
 interface SocialInteractionsProps {
@@ -145,6 +146,61 @@ const SocialInteractions: React.FC<SocialInteractionsProps> = ({
   };
 
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [shareStatus, setShareStatus] = useState<Record<string, 'idle' | 'loading' | 'done'>>({});
+  const [copyAnimating, setCopyAnimating] = useState(false);
+
+  const socialColors: Record<string, string> = {
+    whatsapp: 'bg-green-600 hover:bg-green-700 text-white',
+    facebook: 'bg-blue-600 hover:bg-blue-700 text-white',
+    twitter: 'bg-sky-500 hover:bg-sky-600 text-white',
+    telegram: 'bg-[#2AABEE] hover:brightness-90 text-white',
+    email: 'bg-gray-700 hover:bg-gray-800 text-white',
+    other: 'bg-neutral-50 hover:bg-neutral-100 text-foreground border',
+  };
+
+  const SocialIcon = ({ type }: { type: string }) => {
+    switch (type) {
+      case 'whatsapp':
+        return (
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21.7 2.3C19.6.2 16.6-.2 13.9.6 9.7 1.8 6.3 5.1 5.2 9.3 4.5 12 4.9 15 7 17.6L3 21.6l4-1.1c2.5 1.6 5.6 1.8 8.3.5 4.2-1.9 6.8-6.3 5.6-10.7C22.1 7.8 21.7 4.8 21.7 2.3z" fill="currentColor"/>
+          </svg>
+        );
+      case 'facebook':
+        return (
+          <svg className="h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+            <path d="M22 12a10 10 0 1 0-11.5 9.9v-7h-2.2V12h2.2V9.7c0-2.2 1.3-3.4 3.3-3.4.9 0 1.8.1 1.8.1v2h-1c-1 0-1.3.6-1.3 1.3V12h2.2l-.4 2.9h-1.8v7A10 10 0 0 0 22 12"/>
+          </svg>
+        );
+      case 'twitter':
+        return (
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22.46 6c-.77.35-1.6.58-2.46.69a4.3 4.3 0 0 0 1.88-2.37 8.6 8.6 0 0 1-2.73 1.04 4.28 4.28 0 0 0-7.3 3.9A12.14 12.14 0 0 1 3.15 4.6a4.28 4.28 0 0 0 1.33 5.71c-.66 0-1.28-.2-1.82-.5v.05c0 2.06 1.46 3.78 3.4 4.17-.36.1-.74.17-1.13.17-.28 0-.56-.03-.83-.08a4.3 4.3 0 0 0 4 2.98A8.6 8.6 0 0 1 2 19.54a12.1 12.1 0 0 0 6.56 1.92c7.88 0 12.2-6.53 12.2-12.2v-.56A8.7 8.7 0 0 0 22.46 6z"/>
+          </svg>
+        );
+      case 'telegram':
+        return (
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.2 7.2l-1.6 7.3c-.1.5-.4.6-.8.4l-2.2-1.6-1-1-2.6-1.6c-.5-.3-.5-.6 0-.9L15 8.3c.5-.3.9 0 .6.9z"/>
+          </svg>
+        );
+      case 'email':
+        return (
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 4h16v16H4z" />
+            <path d="M22 6l-10 7L2 6" />
+          </svg>
+        );
+      case 'other':
+      default:
+        return (
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83A5 5 0 0 0 14.83 3.1L12 5.9" />
+            <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.9A5 5 0 0 0 9.17 20.9L12 18.1" />
+          </svg>
+        );
+    }
+  };
 
   return (
     <div className="flex items-center gap-6 py-4 border-t border-gray-200">
@@ -199,12 +255,37 @@ const SocialInteractions: React.FC<SocialInteractionsProps> = ({
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-              <Button onClick={() => openSocialShare('whatsapp')} className="w-full">WhatsApp</Button>
-              <Button onClick={() => openSocialShare('facebook')} className="w-full">Facebook</Button>
-              <Button onClick={() => openSocialShare('twitter')} className="w-full">Twitter</Button>
-              <Button onClick={() => openSocialShare('telegram')} className="w-full">Telegram</Button>
-              <Button onClick={() => openSocialShare('email')} className="w-full">E-mail</Button>
-              <Button onClick={() => openSocialShare('other')} className="w-full">Copiar link</Button>
+              {['whatsapp','facebook','twitter','telegram','email','other'].map((type) => (
+                <Button
+                  key={type}
+                  onClick={async () => {
+                    setShareStatus(prev => ({ ...prev, [type]: 'loading' }));
+                    try {
+                      await openSocialShare(type);
+                      setShareStatus(prev => ({ ...prev, [type]: 'done' }));
+                      // small optimistic UI increment for shares count handled by API response
+                      setTimeout(() => setShareStatus(prev => ({ ...prev, [type]: 'idle' })), 1800);
+                      if (type === 'other') {
+                        setCopyAnimating(true);
+                        setTimeout(() => setCopyAnimating(false), 900);
+                      }
+                    } catch (e) {
+                      setShareStatus(prev => ({ ...prev, [type]: 'idle' }));
+                    }
+                  }}
+                  className={`flex items-center justify-center gap-2 ${socialColors[type] || ''} w-full py-2 px-3 rounded-md`}
+                >
+                  <span className="inline-flex items-center">
+                    <SocialIcon type={type} />
+                  </span>
+                  <span className="text-sm">
+                    {type === 'other' ? (copyAnimating ? 'Copiado' : 'Copiar') : type.charAt(0).toUpperCase() + type.slice(1)}
+                  </span>
+                  {/* small status */}
+                  {shareStatus[type] === 'loading' && <span className="ml-2 animate-pulse text-xs">..</span>}
+                  {shareStatus[type] === 'done' && <span className="ml-2 text-xs">✓</span>}
+                </Button>
+              ))}
             </div>
           </div>
 
