@@ -30,7 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { fetchProjects, deleteProject, isAuthenticated, fetchProjectMetrics, fetchCompleteProjectData } from '@/lib/api';
+import { fetchProjects, deleteProject, isAuthenticated, fetchProjectMetrics, fetchCompleteProjectData, fetchTrackingMetricsBySlug } from '@/lib/api';
 import ProjectUpdates from '@/components/ProjectUpdates';
 import ProjectAnalytics from '@/components/ProjectAnalytics';
 import ProjectNotifications from '@/components/ProjectNotifications';
@@ -178,6 +178,15 @@ const ProjectManagement: React.FC = () => {
         // Fase 1: métricas rápidas
         const enrichedPhase1 = await Promise.all(baseProjects.map(async (p) => {
           try {
+            // Preferir tracking por slug
+            const tracking = await fetchTrackingMetricsBySlug(p.slug);
+            if (tracking && (tracking.progressPercentage || tracking.completedMilestones || tracking.budgetTotal)) {
+              const effectiveProgress = tracking.progressPercentage ?? (tracking as any)?.progress_percentage ?? p.progress_percentage;
+              return { ...p, metrics: tracking, progress_percentage: effectiveProgress ?? p.progress_percentage } as Project;
+            }
+          } catch {}
+          try {
+            // Fallback ID-based
             const metrics = await fetchProjectMetrics(p.id);
             const effectiveProgress = metrics.progressPercentage ?? (metrics as any)?.progress_percentage ?? p.progress_percentage;
             return { ...p, metrics, progress_percentage: effectiveProgress ?? p.progress_percentage } as Project;

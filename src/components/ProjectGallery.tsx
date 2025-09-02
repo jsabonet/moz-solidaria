@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X, ExternalLink, MapPin, Users, Calendar } from "lucide-react";
 import { Link } from 'react-router-dom';
-import { fetchPublicProjects, fetchProjectMetrics, fetchCompleteProjectData } from '@/lib/api';
+import { fetchPublicProjects, fetchProjectMetrics, fetchCompleteProjectData, fetchTrackingMetricsBySlug } from '@/lib/api';
 
 interface Project {
   id: number;
@@ -77,6 +77,14 @@ const ProjectGallery = () => {
         // Passo 1: tentar métricas rápidas por ID
         const enrichedPre = await Promise.all(apiProjects.map(async (p: Project) => {
           try {
+            // Try tracking (slug-based) first
+            const metricsTracking = await fetchTrackingMetricsBySlug(p.slug);
+            if (metricsTracking && (metricsTracking.progressPercentage || metricsTracking.completedMilestones || metricsTracking.budgetTotal)) {
+              return { ...p, metrics: metricsTracking } as Project;
+            }
+          } catch {}
+          try {
+            // Fallback to legacy ID-based endpoints
             const metrics = await fetchProjectMetrics(p.id);
             return { ...p, metrics } as Project;
           } catch {

@@ -1245,6 +1245,84 @@ export async function fetchProjectMetrics(projectId: string | number) {
   }
 }
 
+// === Tracking (slug-based) helpers ===
+// Buscar marcos via sistema de tracking usando slug
+export async function fetchTrackingMilestonesBySlug(slug: string) {
+  try {
+    // Endpoint principal no backend de tracking
+    let res = await fetch(`${API_BASE}/tracking/projects/${encodeURIComponent(slug)}/milestones/`);
+    if (!res.ok) {
+      // Fallback: tentar obter via recurso completo e extrair
+      const full = await fetch(`${API_BASE}/tracking/project-tracking/${encodeURIComponent(slug)}/`);
+      if (full.ok) {
+        const data = await full.json();
+        const miles = (data && (data.milestones || data.project_milestones)) || [];
+        return Array.isArray(miles) ? miles : [];
+      }
+      console.warn(`Tracking milestones not found for slug ${slug}`);
+      return [];
+    }
+    const json = await res.json();
+    return json?.results || json || [];
+  } catch (e) {
+    console.warn('Erro ao buscar milestones (tracking) por slug:', e);
+    return [];
+  }
+}
+
+// Buscar métricas via sistema de tracking usando slug (normaliza formato)
+export async function fetchTrackingMetricsBySlug(slug: string) {
+  const empty = {
+    peopleImpacted: 0,
+    budgetUsed: 0,
+    budgetTotal: 0,
+    progressPercentage: 0,
+    completedMilestones: 0,
+    totalMilestones: 0,
+    lastUpdate: null as string | null,
+  };
+  try {
+    // Endpoint principal
+    let res = await fetch(`${API_BASE}/tracking/projects/${encodeURIComponent(slug)}/metrics/`);
+    let raw: any = null;
+    if (res.ok) {
+      raw = await res.json();
+    } else {
+      // Fallback: recurso completo e extrair metrics
+      const full = await fetch(`${API_BASE}/tracking/project-tracking/${encodeURIComponent(slug)}/`);
+      if (full.ok) {
+        const data = await full.json();
+        raw = data?.metrics || null;
+      }
+    }
+    if (!raw) return empty;
+
+    // Pode vir como objeto ou primeiro item num array
+    const m = Array.isArray(raw) ? raw[0] : raw;
+    const normalizeNum = (v: any) => {
+      if (typeof v === 'number') return v;
+      if (typeof v === 'string') {
+        const n = parseFloat(v.replace(/%/g, '').trim());
+        return isNaN(n) ? 0 : n;
+      }
+      return 0;
+    };
+
+    return {
+      peopleImpacted: normalizeNum(m.people_impacted ?? m.peopleImpacted),
+      budgetUsed: normalizeNum(m.budget_used ?? m.budgetUsed),
+      budgetTotal: normalizeNum(m.budget_total ?? m.budgetTotal),
+      progressPercentage: normalizeNum(m.progress_percentage ?? m.progressPercentage),
+      completedMilestones: normalizeNum(m.completed_milestones ?? m.completedMilestones),
+      totalMilestones: normalizeNum(m.total_milestones ?? m.totalMilestones),
+      lastUpdate: m.last_updated || m.lastUpdate || null,
+    };
+  } catch (e) {
+    console.warn('Erro ao buscar métricas (tracking) por slug:', e);
+    return empty;
+  }
+}
+
 // Buscar dados completos do projeto para exibição pública
 export async function fetchCompleteProjectData(slug: string) {
   try {
@@ -1354,18 +1432,32 @@ export async function fetchCompleteProjectData(slug: string) {
             totalMilestones: completeData.metrics.totalMilestones
           });
           
-          // Se ainda não houver milestones mas o projeto básico tem ID, tentar buscar via endpoints específicos
-          if ((!completeData.milestones || completeData.milestones.length === 0) && basicProject?.id) {
+          // Se ainda não houver milestones, tentar tracking por slug e depois endpoints por ID
+          if (!completeData.milestones || completeData.milestones.length === 0) {
             try {
-              const fallbackMilestones = await fetchProjectMilestones(basicProject.id);
-              if (Array.isArray(fallbackMilestones) && fallbackMilestones.length > 0) {
-                completeData.milestones = fallbackMilestones;
-                // Recalcular contagem de marcos
-                completeData.metrics.totalMilestones = fallbackMilestones.length;
-                completeData.metrics.completedMilestones = fallbackMilestones.filter((m: any) => m?.is_completed === true || m?.status === 'completed').length;
+              const trackingMilestones = await fetchTrackingMilestonesBySlug(slug);
+              if (Array.isArray(trackingMilestones) && trackingMilestones.length > 0) {
+                completeData.milestones = trackingMilestones;
               }
             } catch (e) {
-              console.warn('⚠️ Falha ao buscar milestones fallback:', e);
+              console.warn('⚠️ Falha ao buscar milestones via tracking:', e);
+            }
+
+            if ((!completeData.milestones || completeData.milestones.length === 0) && basicProject?.id) {
+              try {
+                const fallbackMilestones = await fetchProjectMilestones(basicProject.id);
+                if (Array.isArray(fallbackMilestones) && fallbackMilestones.length > 0) {
+                  completeData.milestones = fallbackMilestones;
+                }
+              } catch (e) {
+                console.warn('⚠️ Falha ao buscar milestones fallback (ID):', e);
+              }
+            }
+
+            // Recalcular contagem de marcos se conseguirmos preencher
+            if (Array.isArray(completeData.milestones)) {
+              completeData.metrics.totalMilestones = completeData.milestones.length;
+              completeData.metrics.completedMilestones = completeData.milestones.filter((m: any) => m?.is_completed === true || m?.status === 'completed').length;
             }
           }
 
