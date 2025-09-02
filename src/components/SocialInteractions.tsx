@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Share2, MessageCircle, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import api from '@/lib/api';
@@ -106,44 +107,44 @@ const SocialInteractions: React.FC<SocialInteractionsProps> = ({
     { type: 'other', label: 'Copiar link', icon: '🔗' },
   ];
 
-  const openShareDialog = () => {
-    const options = shareMenu.map(option => 
-      `${option.icon} ${option.label}`
-    ).join('\n');
-    
-    const choice = prompt(`Compartilhar via:\n\n${options}\n\nDigite o número da opção (1-${shareMenu.length}):`);
-    
-    if (choice) {
-      const index = parseInt(choice) - 1;
-      if (index >= 0 && index < shareMenu.length) {
-        const selectedOption = shareMenu[index];
-        handleShare(selectedOption.type);
-        
-        // Abrir links específicos de redes sociais
-        const postUrl = `${window.location.origin}/blog/${post.slug}`;
-        const encodedUrl = encodeURIComponent(postUrl);
-        const encodedTitle = encodeURIComponent(post.title);
-        
-        switch (selectedOption.type) {
-          case 'facebook':
-            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, '_blank');
-            break;
-          case 'twitter':
-            window.open(`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`, '_blank');
-            break;
-          case 'whatsapp':
-            window.open(`https://wa.me/?text=${encodedTitle} ${encodedUrl}`, '_blank');
-            break;
-          case 'telegram':
-            window.open(`https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`, '_blank');
-            break;
-          case 'email':
-            window.location.href = `mailto:?subject=${encodedTitle}&body=Confira este post: ${postUrl}`;
-            break;
-        }
-      }
+  // Open a social share action and track it via API, plus optional network-specific navigation
+  const openSocialShare = async (shareType: string) => {
+    try {
+      // Track share on backend and copy link when appropriate
+      await handleShare(shareType);
+    } catch (e) {
+      // handleShare already shows toast
+    }
+
+    const postUrl = `${window.location.origin}/blog/${post.slug}`;
+    const encodedUrl = encodeURIComponent(postUrl);
+    const encodedTitle = encodeURIComponent(post.title);
+
+    switch (shareType) {
+      case 'facebook':
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, '_blank');
+        break;
+      case 'twitter':
+        window.open(`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`, '_blank');
+        break;
+      case 'whatsapp':
+        window.open(`https://wa.me/?text=${encodedTitle}%20${encodedUrl}`, '_blank');
+        break;
+      case 'telegram':
+        window.open(`https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`, '_blank');
+        break;
+      case 'email':
+        window.location.href = `mailto:?subject=${encodedTitle}&body=Confira este post: ${postUrl}`;
+        break;
+      case 'other':
+      default:
+        await navigator.clipboard.writeText(postUrl);
+        toast({ title: 'Link copiado', description: 'O link foi copiado para a área de transferência.' });
+        break;
     }
   };
+
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   return (
     <div className="flex items-center gap-6 py-4 border-t border-gray-200">
@@ -165,19 +166,53 @@ const SocialInteractions: React.FC<SocialInteractionsProps> = ({
       </Button>
 
       {/* Botão de Compartilhar */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={openShareDialog}
-        disabled={isLoading}
-        className="flex items-center gap-2 text-gray-600 hover:text-blue-500"
-      >
-        <Share2 className="h-5 w-5" />
-        <span>{sharesCount}</span>
-        <span className="hidden sm:inline">
-          {sharesCount === 1 ? 'Compartilhamento' : 'Compartilhamentos'}
-        </span>
-      </Button>
+      <Dialog open={isShareOpen} onOpenChange={setIsShareOpen}>
+        <DialogTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={isLoading}
+            className="flex items-center gap-2 text-gray-600 hover:text-blue-500"
+          >
+            <Share2 className="h-5 w-5" />
+            <span>{sharesCount}</span>
+            <span className="hidden sm:inline">
+              {sharesCount === 1 ? 'Compartilhamento' : 'Compartilhamentos'}
+            </span>
+          </Button>
+        </DialogTrigger>
+
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Compartilhar artigo</DialogTitle>
+            <DialogDescription>
+              Compartilhe este artigo com sua rede — escolha uma opção abaixo ou copie o link.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="flex-1">
+                <div className="font-semibold">{post.title}</div>
+                <div className="text-sm text-muted-foreground">{new Date(post.created_at).toLocaleDateString('pt-BR')}</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <Button onClick={() => openSocialShare('whatsapp')} className="w-full">WhatsApp</Button>
+              <Button onClick={() => openSocialShare('facebook')} className="w-full">Facebook</Button>
+              <Button onClick={() => openSocialShare('twitter')} className="w-full">Twitter</Button>
+              <Button onClick={() => openSocialShare('telegram')} className="w-full">Telegram</Button>
+              <Button onClick={() => openSocialShare('email')} className="w-full">E-mail</Button>
+              <Button onClick={() => openSocialShare('other')} className="w-full">Copiar link</Button>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsShareOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Botão de Comentários */}
       {showComments && (
