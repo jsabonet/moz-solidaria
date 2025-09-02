@@ -1,7 +1,7 @@
 // src/pages/CreateProject.tsx
 // Versão simplificada baseada no padrão de CreatePost que funciona
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -658,7 +658,7 @@ const CreateProject: React.FC = () => {
                         <Label htmlFor="status">Status</Label>
                         <Select
                           value={formData.status}
-                          onValueChange={(value) => setFormData({ ...formData, status: value })}
+                          onValueChange={(value) => setFormData({ ...formData, status: value as 'planning' | 'active' | 'completed' | 'suspended' })}
                         >
                           <SelectTrigger>
                             <SelectValue />
@@ -676,7 +676,7 @@ const CreateProject: React.FC = () => {
                         <Label htmlFor="priority">Prioridade</Label>
                         <Select
                           value={formData.priority}
-                          onValueChange={(value) => setFormData({ ...formData, priority: value })}
+                          onValueChange={(value) => setFormData({ ...formData, priority: value as 'low' | 'medium' | 'high' | 'urgent' })}
                         >
                           <SelectTrigger>
                             <SelectValue />
