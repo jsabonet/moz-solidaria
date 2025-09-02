@@ -1,4 +1,4 @@
-const CACHE_NAME = 'moz-solidaria-v2';
+const CACHE_NAME = 'moz-solidaria-v3';
 const urlsToCache = [
   '/',
   '/static/css/main.css',
@@ -41,6 +41,12 @@ self.addEventListener('fetch', (event) => {
 
   // Only cache GET requests
   if (request.method !== 'GET') {
+    return;
+  }
+
+  // Bypass caching for dynamic API and media endpoints
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/media/')) {
+    event.respondWith(fetch(request));
     return;
   }
 

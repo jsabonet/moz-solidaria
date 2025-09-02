@@ -458,6 +458,11 @@ const CreateProject: React.FC = () => {
         is_public: formData.is_public,
         accepts_donations: true
       };
+
+      // Auto-publication safeguard: if not draft and user left status as 'planning', publish as 'active'
+      if (!isDraft && basePayload.status === 'planning') {
+        basePayload.status = 'active';
+      }
       if (hasFiles) {
         submitData = new FormData();
         Object.entries(basePayload).forEach(([k,v]) => { if (v!==undefined && v!==null) submitData.append(k, String(v)); });
