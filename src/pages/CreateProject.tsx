@@ -37,7 +37,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { createProject, updateProject, fetchProjectDetail, fetchProjectDetailForEdit, fetchPrograms, fetchProjectManagers, fetchCategories, isAuthenticated } from '@/lib/api';
+import { createProject, updateProject, fetchProjectDetail, fetchProjectDetailForEdit, fetchPrograms, fetchProjectManagers, fetchProjectCategories, isAuthenticated } from '@/lib/api';
 
 // Interfaces
 interface FormData {
@@ -258,7 +258,7 @@ const CreateProject: React.FC = () => {
         const [programsData, usersData, categoriesData] = await Promise.all([
           fetchPrograms().catch(() => []),
           fetchProjectManagers().catch(() => []),
-          fetchCategories().catch(() => [])
+          fetchProjectCategories().catch(() => [])
         ]);
         
         setPrograms(programsData);
@@ -268,7 +268,7 @@ const CreateProject: React.FC = () => {
         // Log para debug
         console.log('📋 Programas carregados:', programsData);
         console.log('👥 Usuários carregados:', usersData);
-        console.log('🏷️ Categorias carregadas:', categoriesData);
+  console.log('🏷️ Categorias de projeto carregadas:', categoriesData);
         
       } catch (error) {
         console.error('Erro ao carregar dados iniciais:', error);
@@ -356,6 +356,16 @@ const CreateProject: React.FC = () => {
     }
   }, [isEditing, slug, navigate]);
 
+  // Se as categorias carregarem e o valor atual não existir, limpar seleção para evitar 400
+  useEffect(() => {
+    if (formData.category_id && categories.length > 0) {
+      const cid = parseInt(formData.category_id);
+      if (!categories.some((c) => c.id === cid)) {
+        setFormData((prev) => ({ ...prev, category_id: '' }));
+      }
+    }
+  }, [categories]);
+
   // Auto-gerar slug manualmente apenas quando necessário (removido useEffect)
   const generateSlugFromName = (name: string) => {
     if (!name || isEditing) return '';
@@ -406,14 +416,25 @@ const CreateProject: React.FC = () => {
 
     try {
       const hasFiles = formData.featured_image instanceof File;
+      // Validar categoria antes de montar o payload
+      let categoryToSend: number | undefined = undefined;
+      if (formData.category_id) {
+        const cid = parseInt(formData.category_id);
+        if (categories.some((c) => c.id === cid)) {
+          categoryToSend = cid;
+        } else {
+          // Evita enviar ID inválido
+          categoryToSend = undefined;
+        }
+      }
       let submitData: any;
       const basePayload: any = {
         name: formData.name,
         description: formData.description,
         short_description: formData.short_description,
         content: formData.content,
-        program_id: formData.program_id ? parseInt(formData.program_id) : undefined,
-        category_id: formData.category_id ? parseInt(formData.category_id) : undefined,
+  program_id: formData.program_id ? parseInt(formData.program_id) : undefined,
+  category_id: categoryToSend,
         location: formData.location,
         district: formData.district,
         province: formData.province,

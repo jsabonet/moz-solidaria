@@ -131,6 +131,58 @@ export async function fetchCategories() {
   return data.results || data;
 }
 
+// Buscar categorias específicas de Projetos (não confundir com categorias de Blog)
+export async function fetchProjectCategories() {
+  // Tentar múltiplos endpoints possíveis no backend
+  const tryEndpoints = async () => {
+    const endpoints = [
+      `${API_BASE}/projects/admin/categories/`,
+      `${API_BASE}/projects/public/categories/`,
+      `${API_BASE}/projects/categories/`
+    ];
+
+    for (const url of endpoints) {
+      try {
+        // Usar authFetch para incluir Authorization quando disponível
+        const res = await authFetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          const list = (data && Array.isArray(data)) ? data : (data?.results || []);
+          if (Array.isArray(list) && list.length >= 0) {
+            return list.map((c: any) => ({ id: c.id, name: c.name, slug: c.slug }));
+          }
+        }
+      } catch (e) {
+        // Continua tentando próximos endpoints
+        console.warn('fetchProjectCategories endpoint falhou:', url, e);
+      }
+    }
+    return null;
+  };
+
+  // 1) Endpoints dedicados
+  const direct = await tryEndpoints();
+  if (direct) return direct;
+
+  // 2) Fallback: extrair categorias a partir dos projetos públicos
+  try {
+    const projects = await fetchPublicProjects();
+    const map = new Map<number, { id: number; name: string }>();
+    projects.forEach((p: any) => {
+      if (p.category && p.category.id) {
+        map.set(p.category.id, { id: p.category.id, name: p.category.name });
+      }
+    });
+    const arr = Array.from(map.values());
+    if (arr.length > 0) return arr;
+  } catch (e) {
+    console.warn('fetchProjectCategories fallback via projetos falhou:', e);
+  }
+
+  // 3) Sem categorias disponíveis
+  return [];
+}
+
 export async function fetchTags() {
   const res = await fetch(`${API_BASE}/blog/tags/`);
   if (!res.ok) throw new Error('Erro ao buscar tags');
