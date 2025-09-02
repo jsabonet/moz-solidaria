@@ -1,7 +1,7 @@
 // src/pages/CreateProject.tsx
 // Versão melhorada com validação e interface aprimorada
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -83,6 +83,18 @@ interface User {
 interface ValidationErrors {
   [key: string]: string;
 }
+
+// Componentes memoizados para evitar re-renderizações
+const MemoizedInput = memo(({ value, onChange, ...props }: any) => (
+  <Input value={value} onChange={onChange} {...props} />
+));
+
+const MemoizedTextarea = memo(({ value, onChange, ...props }: any) => (
+  <Textarea value={value} onChange={onChange} {...props} />
+));
+
+MemoizedInput.displayName = 'MemoizedInput';
+MemoizedTextarea.displayName = 'MemoizedTextarea';
 
 // Validação básica
 const validateForm = (formData: FormData): ValidationErrors => {
@@ -326,6 +338,51 @@ const CreateProject: React.FC = () => {
       return prev;
     });
   }, []);
+
+  // Handlers memoizados para evitar re-criação de funções
+  const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    updateField('name', e.target.value);
+  }, [updateField]);
+
+  const handleSlugChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    updateField('slug', e.target.value);
+  }, [updateField]);
+
+  const handleShortDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    updateField('short_description', e.target.value);
+  }, [updateField]);
+
+  const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    updateField('description', e.target.value);
+  }, [updateField]);
+
+  const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    updateField('content', e.target.value);
+  }, [updateField]);
+
+  const handleMetaKeywordsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    updateField('meta_keywords', e.target.value);
+  }, [updateField]);
+
+  const handleLocationChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    updateField('location', e.target.value);
+  }, [updateField]);
+
+  const handleDistrictChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    updateField('district', e.target.value);
+  }, [updateField]);
+
+  const handleTargetBeneficiariesChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    updateField('target_beneficiaries', parseInt(e.target.value) || 0);
+  }, [updateField]);
+
+  const handleBudgetChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    updateField('budget', parseFloat(e.target.value) || 0);
+  }, [updateField]);
+
+  const handleMetaDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    updateField('meta_description', e.target.value);
+  }, [updateField]);
 
   // Submissão do formulário (otimizado com useCallback)
   const handleSubmit = useCallback(async (e: React.FormEvent, isDraft: boolean = false) => {
@@ -574,10 +631,10 @@ const CreateProject: React.FC = () => {
                     <div className="space-y-4">
                       <FormField error={validationErrors.name}>
                         <Label htmlFor="name">Nome do Projeto *</Label>
-                        <Input
+                        <MemoizedInput
                           id="name"
                           value={formData.name}
-                          onChange={(e) => updateField('name', e.target.value)}
+                          onChange={handleNameChange}
                           placeholder="Digite o nome do projeto"
                           className={validationErrors.name ? 'border-destructive' : ''}
                         />
@@ -591,7 +648,7 @@ const CreateProject: React.FC = () => {
                         <Input
                           id="slug"
                           value={formData.slug}
-                          onChange={(e) => updateField('slug', e.target.value)}
+                          onChange={handleSlugChange}
                           placeholder="url-amigavel-do-projeto"
                           disabled={isEditing}
                           className={validationErrors.slug ? 'border-destructive' : ''}
@@ -603,10 +660,10 @@ const CreateProject: React.FC = () => {
 
                       <FormField error={validationErrors.short_description}>
                         <Label htmlFor="short_description">Descrição Curta *</Label>
-                        <Textarea
+                        <MemoizedTextarea
                           id="short_description"
                           value={formData.short_description}
-                          onChange={(e) => updateField('short_description', e.target.value)}
+                          onChange={handleShortDescriptionChange}
                           placeholder="Resumo conciso do projeto"
                           rows={3}
                           className={validationErrors.short_description ? 'border-destructive' : ''}
@@ -713,7 +770,7 @@ const CreateProject: React.FC = () => {
                     <Textarea
                       id="description"
                       value={formData.description}
-                      onChange={(e) => updateField('description', e.target.value)}
+                      onChange={handleDescriptionChange}
                       placeholder="Descrição detalhada do projeto, objetivos e metodologia"
                       rows={6}
                       className={validationErrors.description ? 'border-destructive' : ''}
@@ -728,7 +785,7 @@ const CreateProject: React.FC = () => {
                     <Textarea
                       id="content"
                       value={formData.content}
-                      onChange={(e) => updateField('content', e.target.value)}
+                      onChange={handleContentChange}
                       placeholder="Texto detalhado, metodologia, parceiros, etc."
                       rows={6}
                     />
@@ -739,7 +796,7 @@ const CreateProject: React.FC = () => {
                     <Input
                       id="meta_keywords"
                       value={formData.meta_keywords}
-                      onChange={(e) => updateField('meta_keywords', e.target.value)}
+                      onChange={handleMetaKeywordsChange}
                       placeholder="educação, saúde, crianças"
                     />
                     <div className="text-xs text-muted-foreground">Palavras-chave para SEO (opcional)</div>
@@ -768,7 +825,7 @@ const CreateProject: React.FC = () => {
                         <Input
                           id="location"
                           value={formData.location}
-                          onChange={(e) => updateField('location', e.target.value)}
+                          onChange={handleLocationChange}
                           placeholder="Cidade, região ou local específico"
                           className={validationErrors.location ? 'border-destructive' : ''}
                         />
@@ -779,7 +836,7 @@ const CreateProject: React.FC = () => {
                         <Input
                           id="district"
                           value={formData.district}
-                          onChange={(e) => updateField('district', e.target.value)}
+                          onChange={handleDistrictChange}
                           placeholder="Nome do distrito"
                         />
                       </FormField>
@@ -881,7 +938,7 @@ const CreateProject: React.FC = () => {
                               type="number"
                               min="1"
                               value={formData.target_beneficiaries}
-                              onChange={(e) => updateField('target_beneficiaries', parseInt(e.target.value) || 0)}
+                              onChange={handleTargetBeneficiariesChange}
                               placeholder="100"
                               className={cn(
                                 'pl-10',
@@ -901,7 +958,7 @@ const CreateProject: React.FC = () => {
                               min="0"
                               step="0.01"
                               value={formData.budget}
-                              onChange={(e) => updateField('budget', parseFloat(e.target.value) || 0)}
+                              onChange={handleBudgetChange}
                               placeholder="50000"
                               className={cn(
                                 'pl-10', validationErrors.budget && 'border-destructive'
@@ -1058,7 +1115,7 @@ const CreateProject: React.FC = () => {
                         <Textarea
                           id="meta_description"
                           value={formData.meta_description}
-                          onChange={(e) => updateField('meta_description', e.target.value)}
+                          onChange={handleMetaDescriptionChange}
                           placeholder="Descrição para motores de busca"
                           rows={3}
                         />
