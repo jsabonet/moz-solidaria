@@ -14,19 +14,23 @@ import { toast } from "sonner";
 
 const Blog = () => {
   const [blogPosts, setBlogPosts] = useState<any[]>([]);
+  const [search, setSearch] = useState<string>("");
+  const [searching, setSearching] = useState(false);
   const [categories, setCategories] = useState<string[]>(["Todos"]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
-    async function loadData() {
+    let mounted = true;
+    const loadData = async (q?: string) => {
       try {
         setLoading(true);
         setError(null);
         
+        // Buscar posts com query se fornecida
         const [postsData, categoriesData] = await Promise.all([
-          fetchPosts(),
+          fetchPosts(q),
           fetchCategories()
         ]);
         
@@ -50,9 +54,52 @@ const Blog = () => {
       } finally {
         setLoading(false);
       }
-    }
+    };
+
+    // inicial load
     loadData();
+
+    // limpar
+    return () => { mounted = false };
   }, []);
+
+  // Debounced search effect
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      if (search.trim().length === 0) {
+        // reload default list
+        setSearching(false);
+        try {
+          setLoading(true);
+          const postsData = await fetchPosts();
+          const posts = Array.isArray(postsData) ? postsData : postsData.results || [];
+          const publishedPosts = posts.filter(post => post.status === 'published' || post.is_published === true);
+          setBlogPosts(publishedPosts);
+        } catch (err:any) {
+          console.error('Erro ao buscar posts:', err);
+          setError('Erro ao buscar posts');
+        } finally { setLoading(false) }
+        return;
+      }
+
+      setSearching(true);
+      try {
+        setLoading(true);
+        const postsData = await fetchPosts(search);
+        const posts = Array.isArray(postsData) ? postsData : postsData.results || [];
+        const publishedPosts = posts.filter(post => post.status === 'published' || post.is_published === true);
+        setBlogPosts(publishedPosts);
+      } catch (err:any) {
+        console.error('Erro na busca:', err);
+        setError('Erro ao buscar posts');
+      } finally {
+        setSearching(false);
+        setLoading(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(t);
+  }, [search]);
 
   const handleQuickDuplicate = async (post: any) => {
     if (!user) return;
@@ -120,6 +167,8 @@ const Blog = () => {
               <Input 
                 placeholder="Buscar artigos..." 
                 className="pl-10 bg-white text-foreground"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
               />
             </div>
           </div>

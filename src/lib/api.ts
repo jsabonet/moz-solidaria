@@ -102,8 +102,11 @@ export interface Project {
 }
 
 // Funções de leitura
-export async function fetchPosts() {
-  const res = await fetch(`${API_BASE}/blog/posts/`);
+export async function fetchPosts(query?: string) {
+  const url = query && query.trim()
+    ? `${API_BASE}/blog/posts/?search=${encodeURIComponent(query.trim())}`
+    : `${API_BASE}/blog/posts/`;
+  const res = await fetch(url);
   if (!res.ok) throw new Error('Erro ao buscar posts');
   const data = await res.json();
   // The API returns paginated data with 'results' array
