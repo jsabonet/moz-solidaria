@@ -71,10 +71,10 @@ const Blog = () => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
-    // debounce 400ms
+    // debounce 800ms
     debounceRef.current = window.setTimeout(() => {
       setSearch(val);
-    }, 400) as unknown as number;
+    }, 800) as unknown as number;
   };
 
   // Effect to run search whenever `search` changes (debounced by handler)
