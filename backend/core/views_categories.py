@@ -2,7 +2,7 @@
 Views para o sistema de categorias de projetos
 """
 
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status, filters, parsers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
@@ -86,6 +86,8 @@ class ProjectCategoryViewSet(viewsets.ModelViewSet):
 
 class ProjectViewSet(viewsets.ModelViewSet):
     """ViewSet para gerenciar projetos"""
+    # Ensure file uploads (multipart/form-data) are accepted by this viewset
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [

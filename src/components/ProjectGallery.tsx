@@ -307,8 +307,9 @@ const ProjectGallery = () => {
               >
                 <div className="relative overflow-hidden">
                   <img 
-                    src={project.featured_image} 
+                    src={project.featured_image || '/placeholder.svg'} 
                     alt={project.name}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
                     className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                   <div className="absolute top-3 left-3 flex gap-2">
@@ -392,8 +393,9 @@ const ProjectGallery = () => {
             <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="relative">
                 <img 
-                  src={selectedProject.featured_image} 
+                  src={selectedProject.featured_image || '/placeholder.svg'} 
                   alt={selectedProject.name}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
                   className="w-full h-64 object-cover"
                 />
                 <Button
