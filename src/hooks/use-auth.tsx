@@ -374,10 +374,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error('❌ Token não encontrado, fazendo logout');
         logout();
         throw new Error('No token found');
-      }      // 🚀 NOVA ABORDAGEM: Buscar dados frescos direto do banco
+      }
+      
+      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+      
+      // 🚀 NOVA ABORDAGEM: Buscar dados frescos direto do banco
       console.log('📡 Consultando banco de dados para dados atualizados...');
       
-      const response = await fetch(`http://127.0.0.1:8000/api/v1/auth/user/`, {
+      const response = await fetch(`${API_BASE}/auth/user/`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -447,7 +451,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       // 2. Chamar endpoint de limpeza de cache do backend PRIMEIRO
       try {
-        const cacheResponse = await fetch(`http://127.0.0.1:8000/api/v1/auth/sessions/force_user_cache_clear/`, {
+        const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+        const cacheResponse = await fetch(`${API_BASE}/auth/sessions/force_user_cache_clear/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -469,7 +474,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // 3. Buscar dados completamente frescos do banco (com cache já limpo)
-      const userResponse = await fetch(`http://127.0.0.1:8000/api/v1/auth/user/`, {
+      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const userResponse = await fetch(`${API_BASE}/auth/user/`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

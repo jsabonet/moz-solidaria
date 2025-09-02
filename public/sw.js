@@ -11,8 +11,21 @@ const urlsToCache = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(urlsToCache))
+      .then((cache) => {
+        // Cache apenas recursos que realmente existem
+        return cache.addAll([
+          '/',
+          '/logo-moz-solidaria-v2.png',
+          '/manifest.json'
+        ]).catch(err => {
+          console.warn('SW: Alguns recursos não puderam ser cacheados:', err);
+          return Promise.resolve(); // Continue sem falhar
+        });
+      })
       .then(() => self.skipWaiting())
+      .catch(err => {
+        console.warn('SW: Falha na instalação:', err);
+      })
   );
 });
 
