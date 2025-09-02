@@ -84,6 +84,18 @@ interface ValidationErrors {
   [key: string]: string;
 }
 
+// Campo reutilizável com exibição de erro (escopo de módulo para preservar identidade entre renders)
+const FormField: React.FC<{
+  children: React.ReactNode;
+  error?: string;
+  className?: string;
+}> = ({ children, error, className }) => (
+  <div className={cn('space-y-2', className)}>
+    {children}
+    {error && <p className="text-sm text-destructive">{error}</p>}
+  </div>
+);
+
 // Validação básica
 const validateForm = (formData: FormData): ValidationErrors => {
   const errors: ValidationErrors = {};
@@ -425,17 +437,7 @@ const CreateProject: React.FC = () => {
     toast.info('Imagem removida');
   };
 
-  // Componente de campo com validação
-  const FormField: React.FC<{
-    children: React.ReactNode;
-    error?: string;
-    className?: string;
-  }> = ({ children, error, className }) => (
-    <div className={cn('space-y-2', className)}>
-      {children}
-      {error && <p className="text-sm text-destructive">{error}</p>}
-    </div>
-  );
+  // FormField movido para escopo de módulo para evitar remount e perda de foco
 
   // Loading state
   if (loadingData) {
