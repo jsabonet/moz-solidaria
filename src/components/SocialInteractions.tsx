@@ -3,6 +3,7 @@ import { Heart, Share2, MessageCircle, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import api from '@/lib/api';
 
 // Função auxiliar para obter token
 const getToken = () => localStorage.getItem('authToken');
@@ -49,94 +50,48 @@ const SocialInteractions: React.FC<SocialInteractionsProps> = ({
       return;
     }
 
-    const token = getToken();
-    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/blog/posts/${post.slug}/like/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const res = await api.post(`/blog/posts/${post.slug}/like/`);
+      const data = res.data;
+      setIsLiked(data.is_liked);
+      setLikesCount(data.likes_count);
 
-      if (response.ok) {
-        const data = await response.json();
-        setIsLiked(data.is_liked);
-        setLikesCount(data.likes_count);
-        
-        toast({
-          title: "Sucesso",
-          description: data.message,
-        });
+      toast({ title: 'Sucesso', description: data.message });
 
-        if (onUpdate) {
-          onUpdate({
-            ...post,
-            is_liked_by_user: data.is_liked,
-            likes_count: data.likes_count,
-          });
-        }
-      } else {
-        throw new Error('Erro ao curtir post');
+      if (onUpdate) {
+        // send only changed fields to avoid clobbering the full post object
+        onUpdate({ is_liked_by_user: data.is_liked, likes_count: data.likes_count } as any);
       }
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível curtir o post. Tente novamente.",
-      });
+      toast({ title: 'Erro', description: 'Não foi possível curtir o post. Tente novamente.' });
+      console.error('Like error', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleShare = async (shareType: string = 'other') => {
-    const token = getToken();
-    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/blog/posts/${post.slug}/share/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-        body: JSON.stringify({ share_type: shareType }),
-      });
+      const res = await api.post(`/blog/posts/${post.slug}/share/`, { share_type: shareType });
+      const data = res.data;
+      setSharesCount(data.shares_count);
 
-      if (response.ok) {
-        const data = await response.json();
-        setSharesCount(data.shares_count);
-        
-        toast({
-          title: "Sucesso",
-          description: data.message,
-        });
+      toast({ title: 'Sucesso', description: data.message });
 
-        if (onUpdate) {
-          onUpdate({
-            ...post,
-            shares_count: data.shares_count,
-          });
-        }
-
-        // Copiar link para área de transferência
-        const postUrl = `${window.location.origin}/blog/${post.slug}`;
-        await navigator.clipboard.writeText(postUrl);
-        
-        toast({
-          title: "Link copiado!",
-          description: "O link do post foi copiado para sua área de transferência.",
-        });
-      } else {
-        throw new Error('Erro ao compartilhar post');
+      if (onUpdate) {
+        onUpdate({ shares_count: data.shares_count } as any);
       }
+
+      // Copiar link para área de transferência
+      const postUrl = `${window.location.origin}/blog/${post.slug}`;
+      await navigator.clipboard.writeText(postUrl);
+
+      toast({ title: 'Link copiado!', description: 'O link do post foi copiado para sua área de transferência.' });
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível compartilhar o post. Tente novamente.",
-      });
+      toast({ title: 'Erro', description: 'Não foi possível compartilhar o post. Tente novamente.' });
+      console.error('Share error', error);
     } finally {
       setIsLoading(false);
     }

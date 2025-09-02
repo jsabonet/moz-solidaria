@@ -22,8 +22,16 @@ const BlogDetail = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Função para atualizar post com dados sociais
+  // Função para atualizar post com dados sociais (merge parcial)
   const handlePostUpdate = (updatedPost: any) => {
-    setPost(updatedPost);
+    setPost((prev: any) => {
+      if (!prev) return updatedPost;
+      // Se updatedPost contém apenas campos parciais (ex: likes_count), mesclar
+      return {
+        ...prev,
+        ...updatedPost,
+      };
+    });
   };
 
   // Função para atualizar contagem de comentários
