@@ -84,6 +84,71 @@ interface ValidationErrors {
   [key: string]: string;
 }
 
+// Utilitário: comprimir imagem no navegador para reduzir tamanho do upload
+async function compressImage(
+  file: File,
+  options: { maxBytes?: number; maxWidth?: number; mimeType?: string; quality?: number } = {}
+): Promise<File> {
+  const { maxBytes = 950 * 1024, maxWidth = 1600, mimeType = 'image/jpeg' } = options;
+  let quality = options.quality ?? 0.9;
+
+  const readAsImage = (file: File): Promise<HTMLImageElement> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new window.Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = reader.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const toBlob = (canvas: HTMLCanvasElement, type: string, q: number): Promise<Blob> =>
+    new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('toBlob failed'))), type, q);
+    });
+
+  const img = await readAsImage(file);
+  const scale = img.width > maxWidth ? maxWidth / img.width : 1;
+  const width = Math.max(1, Math.round(img.width * scale));
+  const height = Math.max(1, Math.round(img.height * scale));
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return file;
+  canvas.width = width;
+  canvas.height = height;
+  ctx.drawImage(img, 0, 0, width, height);
+
+  // Diminui a qualidade progressivamente até ficar abaixo do limite
+  let blob = await toBlob(canvas, mimeType, quality);
+  while (blob.size > maxBytes && quality > 0.4) {
+    quality = Math.max(0.4, quality - 0.1);
+    blob = await toBlob(canvas, mimeType, quality);
+  }
+
+  // Se ainda estiver maior, faz um segundo passe reduzindo dimensões
+  if (blob.size > maxBytes) {
+    const secondScale = 0.75; // reduz 25%
+    const w2 = Math.max(1, Math.round(canvas.width * secondScale));
+    const h2 = Math.max(1, Math.round(canvas.height * secondScale));
+    const c2 = document.createElement('canvas');
+    const ctx2 = c2.getContext('2d');
+    if (!ctx2) return file;
+    c2.width = w2;
+    c2.height = h2;
+    ctx2.drawImage(canvas, 0, 0, w2, h2);
+    quality = Math.max(0.4, quality - 0.1);
+    blob = await toBlob(c2, mimeType, quality);
+  }
+
+  if (blob.size >= file.size) return file; // não piora
+  const ext = mimeType.split('/')[1] || 'jpg';
+  const name = file.name.replace(/\.(jpe?g|png|webp)$/i, `.${ext}`);
+  return new File([blob], name, { type: mimeType });
+}
+
 // Campo reutilizável com exibição de erro (escopo de módulo para preservar identidade entre renders)
 const FormField: React.FC<{
   children: React.ReactNode;
@@ -426,8 +491,18 @@ const CreateProject: React.FC = () => {
         return;
       }
 
-      setFormData({ ...formData, [field]: file });
-      toast.success('Imagem carregada com sucesso!');
+      // Comprimir imagem para evitar 413 no servidor
+      compressImage(file)
+        .then((compressed) => {
+          setFormData({ ...formData, [field]: compressed });
+          const saved = compressed.size < file.size ? compressed : file;
+          const kb = Math.round(saved.size / 1024);
+          toast.success(`Imagem preparada (${kb} KB)`);
+        })
+        .catch(() => {
+          setFormData({ ...formData, [field]: file });
+          toast.success('Imagem carregada (sem compressão)');
+        });
     }
   };
 
