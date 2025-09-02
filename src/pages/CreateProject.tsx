@@ -279,37 +279,38 @@ const CreateProject: React.FC = () => {
     }
   }, [isEditing, slug, navigate]);
 
-  // Auto-gerar slug com debounce para evitar re-renderizações excessivas
-  useEffect(() => {
-    if (formData.name && !isEditing) {
-      const timeoutId = setTimeout(() => {
-        const slug = formData.name
-          .toLowerCase()
-          .replace(/[^a-z0-9\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .replace(/-+/g, '-')
-          .trim();
-        
-        // Só atualiza se o slug for diferente do atual
-        if (slug !== formData.slug) {
-          setFormData(prev => ({ ...prev, slug }));
-        }
-      }, 300); // Debounce de 300ms
+  // Auto-gerar slug manualmente apenas quando necessário (removido useEffect)
+  const generateSlugFromName = (name: string) => {
+    if (!name || isEditing) return '';
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+  };
 
-      return () => clearTimeout(timeoutId);
-    }
-  }, [formData.name, isEditing, formData.slug]);
+  // Handler para nome que também gera slug
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value;
+    const newSlug = generateSlugFromName(newName);
+    setFormData(prev => ({ 
+      ...prev, 
+      name: newName,
+      slug: newSlug || prev.slug // Só atualiza slug se conseguir gerar um válido
+    }));
+  };
 
-  // Validação em tempo real com useMemo para evitar re-renderizações
-  const computedValidationErrors = useMemo(() => {
-    if (!isDirty) return {};
-    return validateForm(formData);
-  }, [formData, isDirty]);
+  // Validação apenas no submit para evitar re-renderizações durante digitação
+  // const computedValidationErrors = useMemo(() => {
+  //   if (!isDirty) return {};
+  //   return validateForm(formData);
+  // }, [formData, isDirty]);
 
-  // Atualizar estado de errors apenas quando validationErrors mudar
-  useEffect(() => {
-    setValidationErrors(computedValidationErrors);
-  }, [computedValidationErrors]);
+  // // Atualizar estado de errors apenas quando validationErrors mudar
+  // useEffect(() => {
+  //   setValidationErrors(computedValidationErrors);
+  // }, [computedValidationErrors]);
 
   // Submissão do formulário (simplificado)
   const handleSubmit = async (e: React.FormEvent, isDraft: boolean = false) => {
@@ -561,7 +562,7 @@ const CreateProject: React.FC = () => {
                         <Input
                           id="name"
                           value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          onChange={handleNameChange}
                           placeholder="Digite o nome do projeto"
                           className={validationErrors.name ? 'border-destructive' : ''}
                         />
