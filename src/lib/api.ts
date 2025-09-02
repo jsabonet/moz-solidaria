@@ -131,6 +131,16 @@ export async function fetchCategories() {
   return data.results || data;
 }
 
+// Buscar uma categoria de blog específica por ID
+export async function fetchBlogCategoryById(id: number) {
+  const res = await fetch(`${API_BASE}/blog/categories/${id}/`);
+  if (!res.ok) {
+    const errorData = await res.text();
+    throw new Error(`Erro ao buscar categoria do blog: ${res.status} - ${errorData}`);
+  }
+  return res.json();
+}
+
 // Buscar categorias específicas de Projetos (não confundir com categorias de Blog)
 export async function fetchProjectCategories() {
   // Tentar múltiplos endpoints possíveis no backend
@@ -473,6 +483,77 @@ export async function fetchPublicProjects() {
   if (!res.ok) throw new Error('Erro ao buscar projetos públicos');
   const data = await res.json();
   return data.results || data;
+}
+
+// Buscar categorias de projeto (admin) com dados completos
+export async function fetchProjectCategoriesAdmin(): Promise<any[]> {
+  const res = await authFetch(`${API_BASE}/projects/admin/categories/`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  const list = (Array.isArray(data) ? data : (data?.results || [])) as any[];
+  return list;
+}
+
+// Criar categoria de projeto
+export async function createProjectCategory(payload: {
+  name: string;
+  program_id: number;
+  description?: string;
+  color?: string;
+  icon?: string;
+  is_active?: boolean;
+  order?: number;
+}): Promise<any> {
+  const res = await authFetch(`${API_BASE}/projects/admin/categories/`, {
+    method: 'POST',
+    body: JSON.stringify({
+      name: payload.name,
+      program_id: payload.program_id,
+      description: payload.description || '',
+      color: payload.color || 'blue',
+      icon: payload.icon || '',
+      is_active: payload.is_active ?? true,
+      order: payload.order ?? 0,
+    }),
+  });
+  if (!res.ok) {
+    const errorData = await res.text();
+    throw new Error(`Erro ao criar categoria de projeto: ${res.status} - ${errorData}`);
+  }
+  return res.json();
+}
+
+// Garante que exista uma ProjectCategory para o programa com o mesmo nome/slug da categoria do blog
+export async function ensureProjectCategoryForBlogCategory(programId: number, blogCategoryId: number): Promise<number | null> {
+  // 1) Obter dados da categoria do blog
+  const blogCat = await fetchBlogCategoryById(blogCategoryId);
+  const targetName: string = blogCat?.name || '';
+  const targetSlug: string = blogCat?.slug || '';
+  if (!targetName) return null;
+
+  // 2) Verificar se já existe uma ProjectCategory no programa com mesmo slug/nome
+  try {
+    const projCats = await fetchProjectCategoriesAdmin();
+    const found = projCats.find((c: any) => {
+      const progId = c.program?.id || c.program_id;
+      const sameProgram = Number(progId) === Number(programId);
+      const sameSlug = (c.slug || '').toLowerCase() === (targetSlug || '').toLowerCase();
+      const sameName = (c.name || '').toLowerCase() === (targetName || '').toLowerCase();
+      return sameProgram && (sameSlug || sameName);
+    });
+    if (found) return found.id;
+  } catch (e) {
+    console.warn('Falha ao listar categorias de projeto admin:', e);
+  }
+
+  // 3) Criar nova categoria de projeto para este programa
+  try {
+    const created = await createProjectCategory({ name: targetName, program_id: programId, description: blogCat?.description || '' });
+    return created?.id || null;
+  } catch (e) {
+    console.warn('Falha ao criar ProjectCategory a partir de categoria do blog:', e);
+    return null;
+  }
 }
 
 // Buscar detalhes de um projeto por slug

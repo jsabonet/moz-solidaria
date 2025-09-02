@@ -37,7 +37,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { createProject, updateProject, fetchProjectDetail, fetchProjectDetailForEdit, fetchPrograms, fetchProjectManagers, fetchProjectCategories, isAuthenticated } from '@/lib/api';
+import { createProject, updateProject, fetchProjectDetail, fetchProjectDetailForEdit, fetchPrograms, fetchProjectManagers, fetchCategories, ensureProjectCategoryForBlogCategory, isAuthenticated } from '@/lib/api';
 
 // Interfaces
 interface FormData {
@@ -258,17 +258,20 @@ const CreateProject: React.FC = () => {
         const [programsData, usersData, categoriesData] = await Promise.all([
           fetchPrograms().catch(() => []),
           fetchProjectManagers().catch(() => []),
-          fetchProjectCategories().catch(() => [])
+          // Usar categorias do blog por solicitação: reutilizar as mesmas categorias
+          fetchCategories().catch(() => [])
         ]);
         
         setPrograms(programsData);
         setUsers(usersData);
-        setCategories(categoriesData);
+  // Mapear para opções simples {id,name}
+  const mappedCategories = (categoriesData || []).map((c: any) => ({ id: c.id, name: c.name }));
+  setCategories(mappedCategories);
         
         // Log para debug
         console.log('📋 Programas carregados:', programsData);
         console.log('👥 Usuários carregados:', usersData);
-  console.log('🏷️ Categorias de projeto carregadas:', categoriesData);
+  console.log('🏷️ Categorias do blog carregadas para usar nos projetos:', mappedCategories);
         
       } catch (error) {
         console.error('Erro ao carregar dados iniciais:', error);
@@ -416,15 +419,20 @@ const CreateProject: React.FC = () => {
 
     try {
       const hasFiles = formData.featured_image instanceof File;
-      // Validar categoria antes de montar o payload
+      // Se uma categoria do blog foi selecionada, garantir categoria de projeto correspondente para o programa atual
       let categoryToSend: number | undefined = undefined;
       if (formData.category_id) {
-        const cid = parseInt(formData.category_id);
-        if (categories.some((c) => c.id === cid)) {
-          categoryToSend = cid;
-        } else {
-          // Evita enviar ID inválido
-          categoryToSend = undefined;
+        const blogCatId = parseInt(formData.category_id);
+        if (categories.some((c) => c.id === blogCatId)) {
+          const programId = formData.program_id ? parseInt(formData.program_id) : undefined;
+          if (programId) {
+            try {
+              const projCatId = await ensureProjectCategoryForBlogCategory(programId, blogCatId);
+              if (projCatId) categoryToSend = projCatId;
+            } catch (e) {
+              console.warn('Falha ao garantir categoria de projeto para categoria do blog:', e);
+            }
+          }
         }
       }
       let submitData: any;
