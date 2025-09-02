@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,8 @@ const Blog = () => {
   const [blogPosts, setBlogPosts] = useState<any[]>([]);
   const [search, setSearch] = useState<string>("");
   const [searching, setSearching] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const debounceRef = useRef<number | null>(null);
   const [categories, setCategories] = useState<string[]>(["Todos"]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,11 +65,22 @@ const Blog = () => {
     return () => { mounted = false };
   }, []);
 
-  // Debounced search effect
+  // Debounced setter for `search` to avoid updating on every keystroke
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    // debounce 400ms
+    debounceRef.current = window.setTimeout(() => {
+      setSearch(val);
+    }, 400) as unknown as number;
+  };
+
+  // Effect to run search whenever `search` changes (debounced by handler)
   useEffect(() => {
-    const t = setTimeout(async () => {
-      if (search.trim().length === 0) {
-        // reload default list
+    const run = async () => {
+      if (!search || search.trim().length === 0) {
         setSearching(false);
         try {
           setLoading(true);
@@ -78,7 +91,7 @@ const Blog = () => {
         } catch (err:any) {
           console.error('Erro ao buscar posts:', err);
           setError('Erro ao buscar posts');
-        } finally { setLoading(false) }
+        } finally { setLoading(false); }
         return;
       }
 
@@ -96,9 +109,9 @@ const Blog = () => {
         setSearching(false);
         setLoading(false);
       }
-    }, 400);
+    };
 
-    return () => clearTimeout(t);
+    run();
   }, [search]);
 
   const handleQuickDuplicate = async (post: any) => {
@@ -167,8 +180,9 @@ const Blog = () => {
               <Input 
                 placeholder="Buscar artigos..." 
                 className="pl-10 bg-white text-foreground"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                ref={inputRef}
+                onChange={handleInputChange}
+                defaultValue={search}
               />
             </div>
           </div>
