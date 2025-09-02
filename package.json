@@ -7,6 +7,7 @@
     "dev": "vite",
     "dev:force": "vite --force",
     "build": "vite build",
+    "build:server": "NODE_OPTIONS='--max-old-space-size=4096' vite build",
     "build:dev": "vite build --mode development",
     "build:prod": "vite build --mode production",
     "lint": "eslint .",
