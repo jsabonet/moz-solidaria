@@ -22,7 +22,11 @@ const SEOHead: React.FC<SEOHeadProps> = ({
 }) => {
   useEffect(() => {
     // Determinar valores para meta tags
-    const pageTitle = post?.meta_title || post?.title || customTitle || 'Moz Solidária';
+  // Use the actual post title (H1) as the primary source for the page title so
+  // the <title> tag always reflects the visible H1. Fallback to meta_title
+  // only if no explicit post.title exists (handles cases where meta_title was
+  // copied from a progenitor during duplication).
+  const pageTitle = post?.title || post?.meta_title || customTitle || 'Moz Solidária';
     const pageDescription = post?.meta_description || post?.excerpt || customDescription || 'Transformando vidas em Cabo Delgado com esperança e ação';
     const pageImage = post?.og_image || post?.featured_image || customImage || '/logo-moz-solidaria.png';
     const pageUrl = customUrl || (post ? `/blog/${post.slug}` : window.location.href);
