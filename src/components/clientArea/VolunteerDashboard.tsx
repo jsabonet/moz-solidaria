@@ -107,6 +107,8 @@ const VolunteerDashboard: React.FC<VolunteerDashboardProps> = ({ stats }) => {
   useEffect(() => {
     const loadData = async () => {
       try {
+        console.log('🔄 Carregando dados do voluntário...');
+        
         const [opportunitiesRes, skillsRes, profileRes, participationsRes, achievementsRes] = await Promise.all([
           api.get('/volunteers/opportunities/?status=open'),
           api.get('/volunteers/skills/'),
@@ -115,8 +117,21 @@ const VolunteerDashboard: React.FC<VolunteerDashboardProps> = ({ stats }) => {
           api.get('/volunteers/achievements/')
         ]);
         
+        console.log('📊 Respostas recebidas:', {
+          opportunities: opportunitiesRes.data,
+          skills: skillsRes.data,
+          profile: profileRes.data,
+          participations: participationsRes.data,
+          achievements: achievementsRes.data
+        });
+        
         setOpportunities(opportunitiesRes.data.results || opportunitiesRes.data || []);
-        setAllSkills(skillsRes.data.results || skillsRes.data || []);
+        
+        // Debug específico para skills
+        const skillsData = skillsRes.data.results || skillsRes.data || [];
+        console.log('🔧 Skills processadas:', skillsData);
+        setAllSkills(skillsData);
+        
         setVolunteerProfile(profileRes.data);
         setParticipations(participationsRes.data.results || participationsRes.data || []);
         setAchievements(achievementsRes.data.results || achievementsRes.data || []);
@@ -126,7 +141,7 @@ const VolunteerDashboard: React.FC<VolunteerDashboardProps> = ({ stats }) => {
           setSelectedSkills(profileRes.data.skills.map((skill: Skill) => skill.id));
         }
       } catch (error) {
-        console.error('Erro ao carregar dados:', error);
+        console.error('❌ Erro ao carregar dados:', error);
         toast.error('Erro ao carregar dados do voluntário');
       } finally {
         setLoading(false);
@@ -414,23 +429,32 @@ const VolunteerDashboard: React.FC<VolunteerDashboardProps> = ({ stats }) => {
                     <p className="text-sm text-muted-foreground">
                       Selecione suas habilidades para que possamos recomendar oportunidades adequadas:
                     </p>
-                    <div className="grid grid-cols-2 gap-2 max-h-96 overflow-y-auto">
-                      {allSkills.map((skill) => (
-                        <div key={skill.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`skill-${skill.id}`}
-                            checked={selectedSkills.includes(skill.id)}
-                            onCheckedChange={() => toggleSkill(skill.id)}
-                          />
-                          <label 
-                            htmlFor={`skill-${skill.id}`}
-                            className="text-sm cursor-pointer"
-                          >
-                            {skill.name}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
+                    {allSkills.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">Nenhuma habilidade disponível.</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Entre em contato com o administrador para adicionar habilidades.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2 max-h-96 overflow-y-auto">
+                        {allSkills.map((skill) => (
+                          <div key={skill.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`skill-${skill.id}`}
+                              checked={selectedSkills.includes(skill.id)}
+                              onCheckedChange={() => toggleSkill(skill.id)}
+                            />
+                            <label 
+                              htmlFor={`skill-${skill.id}`}
+                              className="text-sm cursor-pointer"
+                            >
+                              {skill.name}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     <div className="flex justify-end space-x-2">
                       <Button variant="outline" onClick={() => setSkillsModalOpen(false)}>
                         Cancelar
