@@ -52,6 +52,10 @@ export async function registerUser(userData: {
   username: string;
   email: string;
   password: string;
+  // optional fields accepted by backend
+  password_confirm?: string;
+  first_name?: string;
+  last_name?: string;
   user_type: 'donor' | 'beneficiary' | 'volunteer' | 'partner';
   full_name: string;
 }) {
@@ -86,6 +90,10 @@ export async function registerUser(userData: {
     }
     if (errorData.password) {
       throw new Error(`Senha: ${errorData.password[0]}`);
+    }
+    // backend uses `password_confirm`; also accept `confirm_password` key if present
+    if (errorData.password_confirm) {
+      throw new Error(`Confirmação de senha: ${errorData.password_confirm[0]}`);
     }
     if (errorData.confirm_password) {
       throw new Error(`Confirmação de senha: ${errorData.confirm_password[0]}`);
