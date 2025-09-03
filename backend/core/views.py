@@ -314,7 +314,7 @@ class BeneficiaryViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         except Beneficiary.DoesNotExist:
             return Response(
-                {'error': 'Perfil de beneficiário não encontrado'}, 
+                {'error': 'Quase lá, conclua as seguintes etapas para validar seu perfil de beneficiário.'}, 
                 status=status.HTTP_404_NOT_FOUND
             )
 
