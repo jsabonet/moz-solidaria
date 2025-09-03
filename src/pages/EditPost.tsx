@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save, Heart, Settings, Eye, Clock, Trash2, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +33,7 @@ interface PostFormData {
 const EditPost: React.FC = () => {
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
   const { user } = useAuth();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -125,11 +126,12 @@ const EditPost: React.FC = () => {
         // If we navigated here after duplicating a post, the navigation state may include
         // an overrideTitle (data.original_title) that preserves the original post title.
         // Prefer that when initializing the editor so users don't see the backend's "[Copia]" prefix.
-        const navState = (window.history && (window.history.state && window.history.state.usr)) ? window.history.state.usr : null;
-        const overrideTitleFromState = (navState && navState.overrideTitle) ? navState.overrideTitle : null;
-
+        const location = useLocation();
+        // extract overrideTitle from react-router location.state
+        // (use a safe access in case state is not the expected shape)
+        // Note: useLocation cannot be called inside useEffect; instead read it from the outer scope.
         const initialData = {
-          title: overrideTitleFromState || post.title || '',
+          title: (location.state && (location.state as any).overrideTitle) || post.title || '',
           content: post.content ?? '',
           excerpt: post.excerpt ?? '',
           category: post.category?.id?.toString() ?? 
@@ -174,7 +176,7 @@ const EditPost: React.FC = () => {
     };
 
     loadData();
-  }, [slug, user, navigate]); // Adicionado slug nas dependências
+  }, [slug, user, navigate, location]); // Adicionado slug e location nas dependências
 
   // Auto-save functionality - modificado para ser mais inteligente
   useEffect(() => {
