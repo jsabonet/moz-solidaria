@@ -57,7 +57,8 @@ export async function registerUser(userData: {
 }) {
   const requestData = {
     ...userData,
-    confirm_password: userData.password, // Add confirm_password field
+  // Backend expects field named `password_confirm` (see UserRegistrationSerializer)
+  password_confirm: userData.password,
   };
   
   const res = await fetch(`${API_BASE}/client-area/auth/register/`, {
