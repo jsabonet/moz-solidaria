@@ -56,6 +56,35 @@ const EditPost: React.FC = () => {
     is_published: false,
   });
 
+  // Keep document <title> in sync with the editor H1 (formData.title).
+  // This ensures that when a post is duplicated and the H1 is changed,
+  // the browser title reflects the new H1 (not the progenitor's title).
+  useEffect(() => {
+    const siteTitle = 'Moz Solidária';
+    try {
+      if (formData && formData.title) {
+        document.title = `${formData.title} | ${siteTitle}`;
+      } else if (post && post.title) {
+        document.title = `${post.title} | ${siteTitle}`;
+      } else {
+        document.title = siteTitle;
+      }
+    } catch (e) {
+      // In non-browser environments or if document is unavailable, ignore
+      // This try/catch keeps SSR/build from failing.
+      // eslint-disable-next-line no-console
+      console.warn('Unable to update document.title', e);
+    }
+
+    return () => {
+      try {
+        document.title = 'Moz Solidária';
+      } catch (e) {
+        // ignore
+      }
+    };
+  }, [formData.title, post]);
+
   const [seoData, setSeoData] = useState<SEOFormData>({
     meta_title: '',
     meta_description: '',
