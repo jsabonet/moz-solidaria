@@ -279,39 +279,35 @@ const CreateDonation: React.FC = () => {
 
             <div className="space-y-2">
               <Label htmlFor="donation-method">Método de Pagamento *</Label>
-              {donationMethods.length === 0 && (
-                <p className="text-sm text-muted-foreground">Carregando métodos de pagamento...</p>
-              )}
-              <Select
-                value={formData.donation_method}
-                onValueChange={(value) => handleInputChange('donation_method', value)}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={
-                    donationMethods.length === 0 
-                      ? "Carregando..." 
-                      : "Selecione o método"
-                  } />
-                </SelectTrigger>
-                <SelectContent>
-                  {donationMethods.length > 0 ? (
-                    donationMethods.map((method) => (
-                      <SelectItem key={method.id} value={method.id.toString()}>
-                        {method.name}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="loading" disabled>
-                      Carregando métodos...
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-              {donationMethods.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {donationMethods.length} métodos disponíveis
-                </p>
+              {donationMethods.length === 0 ? (
+                <div className="p-4 border border-orange-200 bg-orange-50 rounded-lg">
+                  <p className="text-sm text-orange-800 font-medium">⚠️ Nenhum método de pagamento disponível</p>
+                  <p className="text-xs text-orange-600 mt-1">
+                    Entre em contato com o administrador para configurar métodos de doação.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <Select
+                    value={formData.donation_method}
+                    onValueChange={(value) => handleInputChange('donation_method', value)}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o método" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {donationMethods.map((method) => (
+                        <SelectItem key={method.id} value={method.id.toString()}>
+                          {method.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {donationMethods.length} métodos disponíveis
+                  </p>
+                </>
               )}
             </div>
           </div>

@@ -71,16 +71,22 @@ const DonationProofSubmission: React.FC<DonationProofSubmissionProps> = ({
 
   const fetchDonationMethods = async () => {
     try {
+      console.log('🔄 Carregando métodos de doação...');
       const response = await api.get('/donations/methods/');
+      console.log('📊 Resposta métodos de doação:', response.data);
+      
       let methods = [];
       if (response.data && response.data.results && Array.isArray(response.data.results)) {
         methods = response.data.results;
       } else if (Array.isArray(response.data)) {
         methods = response.data;
       }
-      setDonationMethods(methods.filter((method: DonationMethod) => method.is_active));
+      
+      const activeMethods = methods.filter((method: DonationMethod) => method.is_active);
+      console.log('🔧 Métodos ativos processados:', activeMethods);
+      setDonationMethods(activeMethods);
     } catch (error) {
-      console.error('Erro ao carregar métodos de doação:', error);
+      console.error('❌ Erro ao carregar métodos de doação:', error);
       setDonationMethods([]);
     }
   };
@@ -410,22 +416,31 @@ const DonationProofSubmission: React.FC<DonationProofSubmissionProps> = ({
             </div>
             <div>
               <Label htmlFor="donation_method">Método de Doação *</Label>
-              <Select
-                value={formData.donation_method}
-                onValueChange={(value) => handleInputChange('donation_method', value)}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o método usado" />
-                </SelectTrigger>
-                <SelectContent>
-                  {donationMethods.map((method) => (
-                    <SelectItem key={method.id} value={method.id.toString()}>
-                      {method.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {donationMethods.length === 0 ? (
+                <div className="p-4 border border-orange-200 bg-orange-50 rounded-lg mt-2">
+                  <p className="text-sm text-orange-800 font-medium">⚠️ Nenhum método de pagamento disponível</p>
+                  <p className="text-xs text-orange-600 mt-1">
+                    Entre em contato com o administrador para configurar métodos de doação.
+                  </p>
+                </div>
+              ) : (
+                <Select
+                  value={formData.donation_method}
+                  onValueChange={(value) => handleInputChange('donation_method', value)}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o método usado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {donationMethods.map((method) => (
+                      <SelectItem key={method.id} value={method.id.toString()}>
+                        {method.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
 
