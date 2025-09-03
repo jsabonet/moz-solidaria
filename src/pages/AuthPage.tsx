@@ -109,7 +109,9 @@ const AuthPage = () => {
         email: registerData.email,
         password: registerData.password,
         // backend expects `password_confirm`, `first_name` and `last_name`
-        password_confirm: registerData.confirmPassword,
+  password_confirm: registerData.confirmPassword,
+  // include `confirm_password` for compatibility with older backend serializers
+  confirm_password: registerData.confirmPassword,
         first_name: registerData.firstName,
         last_name: registerData.lastName,
         user_type: registerData.userType as UserType,

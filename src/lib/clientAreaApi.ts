@@ -54,6 +54,7 @@ export async function registerUser(userData: {
   password: string;
   // optional fields accepted by backend
   password_confirm?: string;
+  confirm_password?: string;
   first_name?: string;
   last_name?: string;
   user_type: 'donor' | 'beneficiary' | 'volunteer' | 'partner';
@@ -61,8 +62,10 @@ export async function registerUser(userData: {
 }) {
   const requestData = {
     ...userData,
-    // Respect explicit caller-provided password_confirm; fallback to password when not supplied
-    password_confirm: (userData as any).password_confirm ?? userData.password,
+    // Respect explicit caller-provided confirm_password first (server expects this key),
+    // then password_confirm for compatibility; finally fallback to password.
+    confirm_password: (userData as any).confirm_password ?? (userData as any).password_confirm ?? userData.password,
+    password_confirm: (userData as any).password_confirm ?? (userData as any).confirm_password ?? userData.password,
   };
   
   const res = await fetch(`${API_BASE}/client-area/auth/register/`, {
