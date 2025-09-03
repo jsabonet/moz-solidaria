@@ -1,5 +1,7 @@
 # backend/client_area/serializers.py
 from rest_framework import serializers
+import logging
+from django.db import transaction
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from .models import UserProfile, Notification, MatchingRequest, DashboardStats, Cause, Skill, UserSkill
@@ -139,96 +141,104 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        # Remove campos específicos do perfil
-        user_type = validated_data.pop('user_type')
-        phone = validated_data.pop('phone', '')
-        address = validated_data.pop('address', '')
-        description = validated_data.pop('description', '')
-        validated_data.pop('confirm_password')
+        # Use an atomic transaction so partial user creation can't persist on failure
+        try:
+            with transaction.atomic():
+                # Remove campos específicos do perfil
+                user_type = validated_data.pop('user_type')
+                phone = validated_data.pop('phone', '')
+                address = validated_data.pop('address', '')
+                description = validated_data.pop('description', '')
+                # pop confirm_password safely
+                validated_data.pop('confirm_password', None)
 
-        # Criar usuário
-        user = User.objects.create_user(**validated_data)
-        
-        # Criar perfil do client_area (verificar se não existe)
-        profile, created = UserProfile.objects.get_or_create(
-            user=user,
-            defaults={
-                'user_type': user_type,
-                'phone': phone,
-                'address': address,
-                'description': description
-            }
-        )
-        
-        # Criar perfil específico baseado no tipo (usando modelos do core)
-        # Importar apenas quando necessário para evitar imports circulares
-        if user_type == 'donor':
-            from core.models import Donor as CoreDonor, UserProfile as CoreUserProfile
-            
-            # Primeiro criar/buscar perfil no core
-            core_profile, _ = CoreUserProfile.objects.get_or_create(
-                user=user,
-                defaults={'user_type': user_type, 'phone': phone}
-            )
-            
-            # Criar perfil específico
-            CoreDonor.objects.get_or_create(
-                user_profile=core_profile,
-                defaults={}
-            )
-            
-        elif user_type == 'beneficiary':
-            from core.models import Beneficiary as CoreBeneficiary, UserProfile as CoreUserProfile
-            
-            core_profile, _ = CoreUserProfile.objects.get_or_create(
-                user=user,
-                defaults={'user_type': user_type, 'phone': phone}
-            )
-            
-            CoreBeneficiary.objects.get_or_create(
-                user_profile=core_profile,
-                defaults={
-                    'family_size': 1,  # Valor padrão
-                    'community': '',   # Será preenchido posteriormente
-                    'district': '',
-                    'province': 'Cabo Delgado'
-                }
-            )
-            
-        elif user_type == 'volunteer':
-            from core.models import Volunteer as CoreVolunteer, UserProfile as CoreUserProfile
-            
-            core_profile, _ = CoreUserProfile.objects.get_or_create(
-                user=user,
-                defaults={'user_type': user_type, 'phone': phone}
-            )
-            
-            CoreVolunteer.objects.get_or_create(
-                user_profile=core_profile,
-                defaults={}
-            )
-            
-        elif user_type == 'partner':
-            from core.models import Partner as CorePartner, UserProfile as CoreUserProfile
-            
-            core_profile, _ = CoreUserProfile.objects.get_or_create(
-                user=user,
-                defaults={'user_type': user_type, 'phone': phone}
-            )
-            
-            CorePartner.objects.get_or_create(
-                user_profile=core_profile,
-                defaults={
-                    'organization_name': '',  # Será preenchido posteriormente
-                    'contact_person': f"{user.first_name} {user.last_name}".strip(),
-                    'contact_email': user.email,
-                    'contact_phone': phone,
-                    'organization_type': 'ngo',  # Valor padrão
-                    'partnership_level': 'operational'  # Valor padrão
-                }
-            )
-        
-        return user
+                # Criar usuário
+                user = User.objects.create_user(**validated_data)
+
+                # Criar perfil do client_area (verificar se não existe)
+                profile, created = UserProfile.objects.get_or_create(
+                    user=user,
+                    defaults={
+                        'user_type': user_type,
+                        'phone': phone,
+                        'address': address,
+                        'description': description
+                    }
+                )
+
+                # Criar perfil específico baseado no tipo (usando modelos do core)
+                # Importar apenas quando necessário para evitar imports circulares
+                if user_type == 'donor':
+                    from core.models import Donor as CoreDonor, UserProfile as CoreUserProfile
+
+                    # Primeiro criar/buscar perfil no core
+                    core_profile, _ = CoreUserProfile.objects.get_or_create(
+                        user=user,
+                        defaults={'user_type': user_type, 'phone': phone}
+                    )
+
+                    # Criar perfil específico
+                    CoreDonor.objects.get_or_create(
+                        user_profile=core_profile,
+                        defaults={}
+                    )
+
+                elif user_type == 'beneficiary':
+                    from core.models import Beneficiary as CoreBeneficiary, UserProfile as CoreUserProfile
+
+                    core_profile, _ = CoreUserProfile.objects.get_or_create(
+                        user=user,
+                        defaults={'user_type': user_type, 'phone': phone}
+                    )
+
+                    CoreBeneficiary.objects.get_or_create(
+                        user_profile=core_profile,
+                        defaults={
+                            'family_size': 1,  # Valor padrão
+                            'community': '',   # Será preenchido posteriormente
+                            'district': '',
+                            'province': 'Cabo Delgado'
+                        }
+                    )
+
+                elif user_type == 'volunteer':
+                    from core.models import Volunteer as CoreVolunteer, UserProfile as CoreUserProfile
+
+                    core_profile, _ = CoreUserProfile.objects.get_or_create(
+                        user=user,
+                        defaults={'user_type': user_type, 'phone': phone}
+                    )
+
+                    CoreVolunteer.objects.get_or_create(
+                        user_profile=core_profile,
+                        defaults={}
+                    )
+
+                elif user_type == 'partner':
+                    from core.models import Partner as CorePartner, UserProfile as CoreUserProfile
+
+                    core_profile, _ = CoreUserProfile.objects.get_or_create(
+                        user=user,
+                        defaults={'user_type': user_type, 'phone': phone}
+                    )
+
+                    CorePartner.objects.get_or_create(
+                        user_profile=core_profile,
+                        defaults={
+                            'organization_name': '',  # Será preenchido posteriormente
+                            'contact_person': f"{user.first_name} {user.last_name}".strip(),
+                            'contact_email': user.email,
+                            'contact_phone': phone,
+                            'organization_type': 'ngo',  # Valor padrão
+                            'partnership_level': 'operational'  # Valor padrão
+                        }
+                    )
+
+                return user
+        except Exception as e:
+            logging.exception('Erro durante registro de usuário: %s', e)
+            # Raise a DRF validation error so view returns 400 and nothing is committed
+            raise serializers.ValidationError(f'Erro ao criar usuário: {str(e)}')
 
 
 class LoginSerializer(serializers.Serializer):
