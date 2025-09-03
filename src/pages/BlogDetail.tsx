@@ -114,6 +114,25 @@ const BlogDetail = () => {
     loadData();
   }, [slug]);
 
+  // Ensure the browser <title> follows the post H1 (prefer meta_title when available).
+  useEffect(() => {
+    const siteTitle = 'Moz Solidária';
+    try {
+      if (post) {
+        const pageTitle = post.meta_title && post.meta_title.trim() ? post.meta_title : post.title || siteTitle;
+        document.title = `${pageTitle} | ${siteTitle}`;
+      } else {
+        document.title = siteTitle;
+      }
+    } catch (e) {
+      console.warn('BlogDetail: unable to update document.title', e);
+    }
+
+    return () => {
+      try { document.title = 'Moz Solidária'; } catch (e) { /* ignore */ }
+    };
+  }, [post?.title, post?.meta_title]);
+
   // Função para processar URL da imagem
   const getImageUrl = (imageData: any, fallbackUrl?: string) => {
     console.log("🔍 getImageUrl - Processando:", { imageData, fallbackUrl, type: typeof imageData });
