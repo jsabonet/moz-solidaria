@@ -125,11 +125,8 @@ const EditPost: React.FC = () => {
         // Preparar dados do formulário incluindo créditos
         // If we navigated here after duplicating a post, the navigation state may include
         // an overrideTitle (data.original_title) that preserves the original post title.
-        // Prefer that when initializing the editor so users don't see the backend's "[Copia]" prefix.
-        const location = useLocation();
-        // extract overrideTitle from react-router location.state
-        // (use a safe access in case state is not the expected shape)
-        // use the location from component scope (hooks must not be called inside useEffect)
+  // Prefer that when initializing the editor so users don't see the backend's "[Copia]" prefix.
+  // extract overrideTitle from react-router location.state (location is from component scope)
         const initialData = {
           title: (location && (location.state as any)?.overrideTitle) || post.title || '',
           content: post.content ?? '',
