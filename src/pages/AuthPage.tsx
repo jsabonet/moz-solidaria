@@ -108,7 +108,7 @@ const AuthPage = () => {
         username: registerData.username,
         email: registerData.email,
         password: registerData.password,
-        // match serializer names
+        // backend expects `password_confirm`, `first_name` and `last_name`
         password_confirm: registerData.confirmPassword,
         first_name: registerData.firstName,
         last_name: registerData.lastName,
