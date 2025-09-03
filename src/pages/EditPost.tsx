@@ -110,7 +110,7 @@ const EditPost: React.FC = () => {
           fetchCategories()
         ]);
 
-        const post = postData || null;
+  const post = postData || null;
         const categories = Array.isArray(categoriesData) ? categoriesData : [];
         
         if (!post) {
@@ -122,8 +122,14 @@ const EditPost: React.FC = () => {
         setPost(post);
 
         // Preparar dados do formulário incluindo créditos
+        // If we navigated here after duplicating a post, the navigation state may include
+        // an overrideTitle (data.original_title) that preserves the original post title.
+        // Prefer that when initializing the editor so users don't see the backend's "[Copia]" prefix.
+        const navState = (window.history && (window.history.state && window.history.state.usr)) ? window.history.state.usr : null;
+        const overrideTitleFromState = (navState && navState.overrideTitle) ? navState.overrideTitle : null;
+
         const initialData = {
-          title: post.title ?? '',
+          title: overrideTitleFromState || post.title || '',
           content: post.content ?? '',
           excerpt: post.excerpt ?? '',
           category: post.category?.id?.toString() ?? 
@@ -303,7 +309,9 @@ const EditPost: React.FC = () => {
       toast.success('Post duplicado com sucesso!');
       
       // Navigate to edit the duplicated post
-      navigate(`/dashboard/posts/edit/${result.duplicated_post.slug}`);
+      navigate(`/dashboard/posts/edit/${result.duplicated_post.slug}`, {
+        state: { overrideTitle: result.original_title || null }
+      });
       
     } catch (error: any) {
       console.error('EditPost: Erro ao duplicar post:', error);

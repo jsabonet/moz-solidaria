@@ -246,14 +246,7 @@ const SocialInteractions: React.FC<SocialInteractionsProps> = ({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="mt-4 space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="flex-1">
-                <div className="font-semibold">{post.title}</div>
-                <div className="text-sm text-muted-foreground">{new Date(post.created_at).toLocaleDateString('pt-BR')}</div>
-              </div>
-            </div>
-
+          <div className="mt-4">
             <div className="grid grid-cols-3 gap-3">
               {['whatsapp','facebook','twitter','telegram','email','other'].map((type) => (
                 <Button

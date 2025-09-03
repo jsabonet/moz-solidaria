@@ -970,6 +970,15 @@ export async function uploadImage(file: File): Promise<string> {
 }
 
 export async function duplicatePost(slug: string) {
+  // Try to fetch the original post title so we can preserve it client-side
+  let originalTitle: string | null = null;
+  try {
+    const original = await fetchPostDetail(slug);
+    if (original && typeof original.title === 'string') originalTitle = original.title;
+  } catch (e) {
+    // ignore - continue with duplication even if we can't fetch the original
+  }
+
   const res = await fetch(`${API_BASE}/blog/posts/${slug}/duplicate/`, {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -980,8 +989,27 @@ export async function duplicatePost(slug: string) {
     console.error('API Error Response:', errorData);
     throw new Error(`Erro ao duplicar post: ${res.status} - ${errorData}`);
   }
-  
-  return res.json();
+
+  const data = await res.json();
+
+  // Attach the original title so callers can decide how to present the duplicated post
+  if (originalTitle) data.original_title = originalTitle;
+
+  // If backend prefixed the duplicated title (ex: "[Copia] ..."), prefer the original title
+  try {
+    const dup = data?.duplicated_post;
+    if (dup && originalTitle && typeof dup.title === 'string') {
+      const dupTitle = dup.title;
+      const lowered = dupTitle.toLowerCase();
+      if (lowered.includes('copia') || lowered.includes('cópia') || lowered.includes('[copy]') || lowered.startsWith('copy')) {
+        dup.title = originalTitle;
+      }
+    }
+  } catch (e) {
+    // swallow any errors - do not break the duplication flow
+  }
+
+  return data;
 }
 
 // Interface para comentários

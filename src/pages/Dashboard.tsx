@@ -173,8 +173,12 @@ const Dashboard: React.FC = () => {
       
       toast.success('Post duplicado com sucesso!');
       
-      // Optional: Navigate to edit the duplicated post
-      // navigate(`/dashboard/posts/edit/${result.duplicated_post.slug}`);
+      // Optional: Navigate to edit the duplicated post and pass original title (if available)
+      if (result?.duplicated_post) {
+        navigate(`/dashboard/posts/edit/${result.duplicated_post.slug}`, {
+          state: { overrideTitle: result.original_title || null }
+        });
+      }
       
     } catch (error: any) {
       console.error('Erro ao duplicar post:', error);
