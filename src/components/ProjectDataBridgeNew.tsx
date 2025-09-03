@@ -114,10 +114,11 @@ interface ProjectDataStore {
 }
 
 // Configuração da API
-const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') 
-  || (process.env.NODE_ENV === 'production' 
-    ? 'https://api.moz-solidaria.org' 
-    : 'http://localhost:8000');
+const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || (
+  process.env.NODE_ENV === 'production'
+    ? 'https://api.moz-solidaria.org'
+    : (typeof window !== 'undefined' && window.location ? window.location.origin : 'http://localhost:8000')
+);
 
 const API_ENDPOINTS = {
   projectTracking: (slug: string) => `${API_BASE_URL}/api/v1/tracking/project-tracking/${encodeURIComponent(slug)}/`,

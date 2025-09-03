@@ -118,7 +118,8 @@ const BlogDetail = () => {
   const getImageUrl = (imageData: any, fallbackUrl?: string) => {
     console.log("🔍 getImageUrl - Processando:", { imageData, fallbackUrl, type: typeof imageData });
     
-    const API_BASE = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:8000';
+  // If VITE_API_URL isn't provided at build time, use the runtime origin (the host serving the assets)
+  const API_BASE = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || (typeof window !== 'undefined' && window.location ? window.location.origin : 'http://localhost:8000');
     
     // Se imageData é uma string (URL)
     if (typeof imageData === 'string') {

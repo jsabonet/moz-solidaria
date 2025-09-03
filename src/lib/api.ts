@@ -4,7 +4,8 @@
 import axios from 'axios';
 import { a } from 'vitest/dist/chunks/suite.d.FvehnV49.js';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+// Prefer build-time VITE_API_URL; fallback at runtime to the origin that served the frontend
+const API_BASE = import.meta.env.VITE_API_URL || `${(typeof window !== 'undefined' && window.location ? window.location.origin : 'http://localhost:8000')}/api/v1`;
 
 // Interface para tipo de Post
 export interface BlogPost {
