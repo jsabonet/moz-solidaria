@@ -174,7 +174,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                     # Primeiro criar/buscar perfil no core
                     core_profile, _ = CoreUserProfile.objects.get_or_create(
                         user=user,
-                        defaults={'user_type': user_type, 'phone': phone}
+                        defaults={'phone': phone}
                     )
 
                     # Criar perfil específico
@@ -188,7 +188,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
                     core_profile, _ = CoreUserProfile.objects.get_or_create(
                         user=user,
-                        defaults={'user_type': user_type, 'phone': phone}
+                        defaults={'phone': phone}
                     )
 
                     CoreBeneficiary.objects.get_or_create(
@@ -197,7 +197,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                             'family_size': 1,  # Valor padrão
                             'community': '',   # Será preenchido posteriormente
                             'district': '',
-                            'province': 'Cabo Delgado'
+                            'province': 'Cabo Delgado',
+                            'family_status': 'single'  # Valor padrão necessário
                         }
                     )
 
@@ -206,7 +207,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
                     core_profile, _ = CoreUserProfile.objects.get_or_create(
                         user=user,
-                        defaults={'user_type': user_type, 'phone': phone}
+                        defaults={'phone': phone}
                     )
 
                     CoreVolunteer.objects.get_or_create(
@@ -219,16 +220,16 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
                     core_profile, _ = CoreUserProfile.objects.get_or_create(
                         user=user,
-                        defaults={'user_type': user_type, 'phone': phone}
+                        defaults={'phone': phone}
                     )
 
                     CorePartner.objects.get_or_create(
                         user_profile=core_profile,
                         defaults={
-                            'organization_name': '',  # Será preenchido posteriormente
-                            'contact_person': f"{user.first_name} {user.last_name}".strip(),
+                            'organization_name': f"{user.first_name} {user.last_name}".strip() or user.username,  # Nome padrão
+                            'contact_person': f"{user.first_name} {user.last_name}".strip() or user.username,
                             'contact_email': user.email,
-                            'contact_phone': phone,
+                            'contact_phone': phone or '',
                             'organization_type': 'ngo',  # Valor padrão
                             'partnership_level': 'operational'  # Valor padrão
                         }
