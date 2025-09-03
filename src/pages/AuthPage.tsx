@@ -108,6 +108,10 @@ const AuthPage = () => {
         username: registerData.username,
         email: registerData.email,
         password: registerData.password,
+        // match serializer names
+        password_confirm: registerData.confirmPassword,
+        first_name: registerData.firstName,
+        last_name: registerData.lastName,
         user_type: registerData.userType as UserType,
         full_name: `${registerData.firstName} ${registerData.lastName}`.trim(),
       });
