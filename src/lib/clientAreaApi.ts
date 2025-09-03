@@ -68,8 +68,15 @@ export async function registerUser(userData: {
   
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
-    
-    // Extract field-specific errors for better user experience
+
+    // In dev mode, log full error payload so we can inspect exact backend validation
+    // response; also surface the raw JSON as the thrown error for easier debugging in UI.
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.error('API registerUser error', { status: res.status, errorData });
+    }
+
+    // Extract field-specific errors for better user experience (keeps current UX)
     if (errorData.username) {
       throw new Error(`Nome de usuário: ${errorData.username[0]}`);
     }
@@ -85,7 +92,12 @@ export async function registerUser(userData: {
     if (errorData.non_field_errors) {
       throw new Error(errorData.non_field_errors[0]);
     }
-    
+
+    // In dev surface the complete payload; in production fallback to a generic message
+    if (import.meta.env.DEV) {
+      throw new Error(JSON.stringify({ status: res.status, ...errorData }));
+    }
+
     throw new Error('Erro ao registrar usuário. Verifique os dados informados.');
   }
   
