@@ -104,26 +104,13 @@ const AuthPage = () => {
     setRegisterLoading(true);
     
     try {
-      const payload = {
+      await registerUser({
         username: registerData.username,
         email: registerData.email,
         password: registerData.password,
-        // backend expects `password_confirm`, `first_name` and `last_name`
-  password_confirm: registerData.confirmPassword,
-  // include `confirm_password` for compatibility with older backend serializers
-  confirm_password: registerData.confirmPassword,
-        first_name: registerData.firstName,
-        last_name: registerData.lastName,
         user_type: registerData.userType as UserType,
         full_name: `${registerData.firstName} ${registerData.lastName}`.trim(),
-      } as const;
-
-      // Debug: log exact payload being sent so we can inspect in browser console/network
-      // Remove this log after debugging.
-      // eslint-disable-next-line no-console
-      console.log('Register payload', payload);
-
-      await registerUser(payload as any);
+      });
       
       setRegisterSuccess(true);
       setTimeout(() => {

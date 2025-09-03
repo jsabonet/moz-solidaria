@@ -52,20 +52,12 @@ export async function registerUser(userData: {
   username: string;
   email: string;
   password: string;
-  // optional fields accepted by backend
-  password_confirm?: string;
-  confirm_password?: string;
-  first_name?: string;
-  last_name?: string;
   user_type: 'donor' | 'beneficiary' | 'volunteer' | 'partner';
   full_name: string;
 }) {
   const requestData = {
     ...userData,
-    // Respect explicit caller-provided confirm_password first (server expects this key),
-    // then password_confirm for compatibility; finally fallback to password.
-    confirm_password: (userData as any).confirm_password ?? (userData as any).password_confirm ?? userData.password,
-    password_confirm: (userData as any).password_confirm ?? (userData as any).confirm_password ?? userData.password,
+    confirm_password: userData.password, // Add confirm_password field
   };
   
   const res = await fetch(`${API_BASE}/client-area/auth/register/`, {
@@ -75,22 +67,9 @@ export async function registerUser(userData: {
   });
   
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    let errorData: any = { error: 'Erro desconhecido' };
-    try {
-      errorData = JSON.parse(text || '{}');
-    } catch (e) {
-      // not JSON
-      errorData = { error: text || 'Erro desconhecido' };
-    }
-
-    // In dev mode, log full request/response so we can inspect exact payloads
-    if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
-      console.error('API registerUser', { status: res.status, requestData, responseText: text, errorData });
-    }
-
-    // Extract field-specific errors for better user experience (keeps current UX)
+    const errorData = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
+    
+    // Extract field-specific errors for better user experience
     if (errorData.username) {
       throw new Error(`Nome de usuário: ${errorData.username[0]}`);
     }
@@ -100,22 +79,13 @@ export async function registerUser(userData: {
     if (errorData.password) {
       throw new Error(`Senha: ${errorData.password[0]}`);
     }
-    // backend uses `password_confirm`; also accept `confirm_password` key if present
-    if (errorData.password_confirm) {
-      throw new Error(`Confirmação de senha: ${errorData.password_confirm[0]}`);
-    }
     if (errorData.confirm_password) {
       throw new Error(`Confirmação de senha: ${errorData.confirm_password[0]}`);
     }
     if (errorData.non_field_errors) {
       throw new Error(errorData.non_field_errors[0]);
     }
-
-    // In dev surface the complete payload; in production fallback to a generic message
-    if (import.meta.env.DEV) {
-      throw new Error(JSON.stringify({ status: res.status, ...errorData }));
-    }
-
+    
     throw new Error('Erro ao registrar usuário. Verifique os dados informados.');
   }
   
