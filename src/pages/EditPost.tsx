@@ -129,9 +129,9 @@ const EditPost: React.FC = () => {
         const location = useLocation();
         // extract overrideTitle from react-router location.state
         // (use a safe access in case state is not the expected shape)
-        // Note: useLocation cannot be called inside useEffect; instead read it from the outer scope.
+        // use the location from component scope (hooks must not be called inside useEffect)
         const initialData = {
-          title: (location.state && (location.state as any).overrideTitle) || post.title || '',
+          title: (location && (location.state as any)?.overrideTitle) || post.title || '',
           content: post.content ?? '',
           excerpt: post.excerpt ?? '',
           category: post.category?.id?.toString() ?? 
