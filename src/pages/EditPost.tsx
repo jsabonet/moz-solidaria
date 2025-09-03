@@ -255,8 +255,8 @@ const EditPost: React.FC = () => {
           ? (publishNow ? 'published' : 'draft')
           : (formData.is_published ? 'published' : 'draft'),
         is_published: publishNow !== undefined ? publishNow : formData.is_published,
-        // Adicionar dados SEO
-        meta_title: seoData.meta_title,
+  // Adicionar dados SEO (garantir que meta_title receba o título do editor se estiver vazio)
+  meta_title: (seoData.meta_title && seoData.meta_title.trim()) ? seoData.meta_title : formData.title,
         meta_description: seoData.meta_description,
         meta_keywords: seoData.meta_keywords,
         focus_keyword: seoData.focus_keyword,
