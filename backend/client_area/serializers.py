@@ -108,6 +108,8 @@ class DashboardStatsSerializer(serializers.ModelSerializer):
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=6)
     confirm_password = serializers.CharField(write_only=True)
+    # Accept either `password_confirm` (frontend variants) or `confirm_password`
+    password_confirm = serializers.CharField(write_only=True, required=False)
     user_type = serializers.ChoiceField(choices=UserProfile.USER_TYPES)
     phone = serializers.CharField(required=False, allow_blank=True)
     address = serializers.CharField(required=False, allow_blank=True)
@@ -118,11 +120,22 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'username', 'email', 'password', 'confirm_password',
+            'password_confirm',
             'first_name', 'last_name', 'full_name', 'user_type', 'phone', 'address', 'description'
         ]
 
     def validate(self, attrs):
-        if attrs['password'] != attrs['confirm_password']:
+        # Normalize possible alias from frontend
+        if 'confirm_password' not in attrs and 'password_confirm' in attrs:
+            attrs['confirm_password'] = attrs.pop('password_confirm')
+
+        password = attrs.get('password')
+        confirm = attrs.get('confirm_password')
+
+        if password is None or confirm is None:
+            raise serializers.ValidationError("Password e confirmação são obrigatórios")
+
+        if password != confirm:
             raise serializers.ValidationError("As senhas não coincidem")
         
         # Processar full_name se fornecido
@@ -139,16 +152,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        # Remove campos específicos do perfil
+    # Remove campos específicos do perfil
         user_type = validated_data.pop('user_type')
         phone = validated_data.pop('phone', '')
         address = validated_data.pop('address', '')
         description = validated_data.pop('description', '')
-        validated_data.pop('confirm_password')
+        # pop confirm_password safely (may be absent if alias used earlier)
+        validated_data.pop('confirm_password', None)
 
         # Criar usuário
         user = User.objects.create_user(**validated_data)
-        
+
         # Criar perfil do client_area (verificar se não existe)
         profile, created = UserProfile.objects.get_or_create(
             user=user,

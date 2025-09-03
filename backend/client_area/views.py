@@ -23,14 +23,33 @@ def register_user(request):
     serializer = UserRegistrationSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
-        token, created = Token.objects.get_or_create(user=user)
-        
-        # Criar estatísticas iniciais
-        DashboardStats.objects.get_or_create(user_profile=user.client_profile)
-        
+
+        # Try to create token and initial stats but don't fail the whole request
+        token_key = None
+        try:
+            token, created = Token.objects.get_or_create(user=user)
+            token_key = token.key
+        except Exception as e:
+            # Log to server logs so we can inspect later
+            import logging
+            logging.exception('Erro ao criar token para usuário recém-criado: %s', e)
+
+        try:
+            DashboardStats.objects.get_or_create(user_profile=user.client_profile)
+        except Exception as e:
+            import logging
+            logging.exception('Erro ao criar DashboardStats para usuário: %s', e)
+
+        # Prepare safe response data (attempt to include profile if available)
+        profile_data = None
+        try:
+            profile_data = UserProfileSerializer(user.client_profile).data
+        except Exception:
+            profile_data = None
+
         return Response({
-            'user': UserProfileSerializer(user.client_profile).data,
-            'token': token.key,
+            'user': profile_data,
+            'token': token_key,
             'message': 'Usuário criado com sucesso'
         }, status=status.HTTP_201_CREATED)
     
@@ -378,14 +397,30 @@ class RegisterView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            token, created = Token.objects.get_or_create(user=user)
-            
-            # Criar estatísticas iniciais se não existir
-            DashboardStats.objects.get_or_create(user_profile=user.client_profile)
-            
+
+            token_key = None
+            try:
+                token, created = Token.objects.get_or_create(user=user)
+                token_key = token.key
+            except Exception as e:
+                import logging
+                logging.exception('Erro ao criar token na RegisterView: %s', e)
+
+            try:
+                DashboardStats.objects.get_or_create(user_profile=user.client_profile)
+            except Exception as e:
+                import logging
+                logging.exception('Erro ao criar DashboardStats na RegisterView: %s', e)
+
+            profile_data = None
+            try:
+                profile_data = UserProfileSerializer(user.client_profile).data
+            except Exception:
+                profile_data = None
+
             return Response({
-                'user': UserProfileSerializer(user.client_profile).data,
-                'token': token.key,
+                'user': profile_data,
+                'token': token_key,
                 'message': 'Usuário criado com sucesso'
             }, status=status.HTTP_201_CREATED)
         
