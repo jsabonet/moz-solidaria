@@ -104,7 +104,7 @@ const AuthPage = () => {
     setRegisterLoading(true);
     
     try {
-      await registerUser({
+      const payload = {
         username: registerData.username,
         email: registerData.email,
         password: registerData.password,
@@ -114,7 +114,14 @@ const AuthPage = () => {
         last_name: registerData.lastName,
         user_type: registerData.userType as UserType,
         full_name: `${registerData.firstName} ${registerData.lastName}`.trim(),
-      });
+      } as const;
+
+      // Debug: log exact payload being sent so we can inspect in browser console/network
+      // Remove this log after debugging.
+      // eslint-disable-next-line no-console
+      console.log('Register payload', payload);
+
+      await registerUser(payload as any);
       
       setRegisterSuccess(true);
       setTimeout(() => {

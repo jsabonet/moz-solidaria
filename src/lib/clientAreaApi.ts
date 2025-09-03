@@ -72,13 +72,19 @@ export async function registerUser(userData: {
   });
   
   if (!res.ok) {
-    const errorData = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
+    const text = await res.text().catch(() => '');
+    let errorData: any = { error: 'Erro desconhecido' };
+    try {
+      errorData = JSON.parse(text || '{}');
+    } catch (e) {
+      // not JSON
+      errorData = { error: text || 'Erro desconhecido' };
+    }
 
-    // In dev mode, log full error payload so we can inspect exact backend validation
-    // response; also surface the raw JSON as the thrown error for easier debugging in UI.
+    // In dev mode, log full request/response so we can inspect exact payloads
     if (import.meta.env.DEV) {
       // eslint-disable-next-line no-console
-      console.error('API registerUser error', { status: res.status, errorData });
+      console.error('API registerUser', { status: res.status, requestData, responseText: text, errorData });
     }
 
     // Extract field-specific errors for better user experience (keeps current UX)
