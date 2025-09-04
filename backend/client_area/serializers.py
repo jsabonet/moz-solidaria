@@ -159,7 +159,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                 profile, created = UserProfile.objects.get_or_create(
                     user=user,
                     defaults={
-                        'user_type': user_type,
                         'phone': phone,
                         'address': address,
                         'description': description
