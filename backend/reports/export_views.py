@@ -88,10 +88,21 @@ class ExportViewSet(viewsets.ViewSet):
             logger.info(f"   - Opções: {options}")
             
             # Validar tipo de exportação
+            valid_types = ['blog', 'projects', 'donations', 'volunteers', 'beneficiaries', 'partners']
             if not export_type:
+                logger.error("❌ Tipo de exportação não fornecido")
                 return Response({
                     'error': 'Tipo de exportação é obrigatório',
-                    'available_types': ['blog', 'projects', 'donations', 'volunteers', 'beneficiaries']
+                    'available_types': valid_types,
+                    'received': request.data
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            if export_type not in valid_types:
+                logger.error(f"❌ Tipo de exportação inválido: {export_type}")
+                return Response({
+                    'error': f'Tipo de exportação inválido: {export_type}',
+                    'available_types': valid_types,
+                    'received_type': export_type
                 }, status=status.HTTP_400_BAD_REQUEST)
             
             # Usar dados fornecidos ou buscar no banco
@@ -104,11 +115,23 @@ class ExportViewSet(viewsets.ViewSet):
                 logger.info(f"🔍 Obtidos {len(data)} registros do banco de dados")
             
             if not data:
+                logger.warning(f"⚠️ Nenhum dado encontrado para {export_type}")
                 return Response({
                     'error': 'Nenhum dado encontrado para exportação',
                     'type': export_type,
-                    'options': options
+                    'options': options,
+                    'suggestion': 'Tente ajustar os filtros de data ou verificar se há dados cadastrados'
                 }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Validar formato de exportação
+            valid_formats = ['pdf', 'excel', 'csv', 'json']
+            if export_format not in valid_formats:
+                logger.error(f"❌ Formato de exportação inválido: {export_format}")
+                return Response({
+                    'error': f'Formato não suportado: {export_format}',
+                    'available_formats': valid_formats,
+                    'received_format': export_format
+                }, status=status.HTTP_400_BAD_REQUEST)
             
             # Gerar arquivo no formato solicitado
             if export_format.lower() == 'pdf':
@@ -119,12 +142,6 @@ class ExportViewSet(viewsets.ViewSet):
                 return self._generate_csv(data, options, filename)
             elif export_format.lower() == 'json':
                 return self._generate_json(data, options, filename)
-            else:
-                return Response({
-                    'error': 'Formato não suportado',
-                    'format': export_format,
-                    'available_formats': ['pdf', 'excel', 'csv', 'json']
-                }, status=status.HTTP_400_BAD_REQUEST)
                 
         except Exception as e:
             logger.error(f"❌ Erro na exportação: {str(e)}")
@@ -147,11 +164,12 @@ class ExportViewSet(viewsets.ViewSet):
             return self._get_beneficiaries_data(date_range, selected_fields)
         elif export_type == 'partners':
             return self._get_partners_data(date_range, selected_fields)
-        # elif export_type == 'projects':
-        #     return self._get_projects_data(date_range, selected_fields)
+        elif export_type == 'projects':
+            return self._get_projects_data(date_range, selected_fields)
         elif export_type == 'blog':
             return self._get_blog_data(date_range, selected_fields)
         else:
+            logger.warning(f"⚠️ Tipo de exportação não suportado: {export_type}")
             return []
 
     def _get_donations_data(self, date_range, selected_fields):
@@ -300,33 +318,41 @@ class ExportViewSet(viewsets.ViewSet):
 
         return data
 
-    def _get_projects_data(self, export_type='all'):
+    def _get_projects_data(self, date_range, selected_fields):
         """Buscar dados de projetos"""
         try:
             from core.models import Project
-            projects = Project.objects.all()
+            queryset = Project.objects.all()
             
-            if export_type == 'active':
-                projects = projects.filter(status='active')
-            elif export_type == 'completed':
-                projects = projects.filter(status='completed')
-            elif export_type == 'pending':
-                projects = projects.filter(status='pending')
+            # Aplicar filtros de data se fornecidos
+            if date_range.get('from'):
+                queryset = queryset.filter(created_at__gte=date_range['from'])
+            if date_range.get('to'):
+                queryset = queryset.filter(created_at__lte=date_range['to'])
             
-            projects_data = []
-            for project in projects:
-                projects_data.append({
-                    'id': project.id,
-                    'nome': project.title,
-                    'categoria': project.category.name if hasattr(project, 'category') and project.category else 'N/A',
+            data = []
+            for project in queryset:
+                row = {
+                    'title': project.title,
+                    'description': project.description[:200] + '...' if len(project.description) > 200 else project.description,
+                    'category': project.category.name if hasattr(project, 'category') and project.category else 'N/A',
                     'status': project.status,
-                    'descricao': project.description[:100] + '...' if len(project.description) > 100 else project.description,
-                    'data_criacao': project.created_at.strftime('%Y-%m-%d') if project.created_at else 'N/A',
-                    'data_atualizacao': project.updated_at.strftime('%Y-%m-%d') if project.updated_at else 'N/A',
-                    'orcamento_necessario': f"MZN {project.budget_needed:,.2f}" if hasattr(project, 'budget_needed') and project.budget_needed else 'N/A',
-                })
-            
-            return projects_data
+                    'progress': getattr(project, 'progress', 0),
+                    'budget': float(getattr(project, 'budget_needed', 0)),
+                    'funds_raised': float(getattr(project, 'funds_raised', 0)),
+                    'beneficiaries_count': getattr(project, 'beneficiaries_count', 0),
+                    'start_date': project.created_at.strftime('%Y-%m-%d') if project.created_at else '',
+                    'end_date': getattr(project, 'end_date', ''),
+                    'location': getattr(project, 'location', 'N/A')
+                }
+                
+                # Filtrar campos se especificado
+                if selected_fields:
+                    row = {k: v for k, v in row.items() if k in selected_fields}
+                
+                data.append(row)
+
+            return data
             
         except Exception as e:
             logger.error(f"Erro ao buscar projetos: {str(e)}")
