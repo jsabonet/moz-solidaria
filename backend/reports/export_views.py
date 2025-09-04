@@ -1802,7 +1802,15 @@ class ExportViewSet(viewsets.ViewSet):
             format_type = request.data.get('format', 'pdf')  # pdf, excel, csv, json
             export_type = request.data.get('type', 'all')  # all, active, location, etc.
             
+            # Log detalhado para debug
+            logger.info(f"📊 Area Exports solicitada:")
+            logger.info(f"   - Área: {area}")
+            logger.info(f"   - Formato: {format_type}")
+            logger.info(f"   - Tipo: {export_type}")
+            logger.info(f"   - Payload completo: {request.data}")
+            
             if not area:
+                logger.error("❌ Área não fornecida")
                 return Response({
                     'error': 'Área é obrigatória',
                     'available_areas': ['projects', 'donations', 'volunteers', 'beneficiaries']
@@ -1810,10 +1818,10 @@ class ExportViewSet(viewsets.ViewSet):
             
             # Mapear área para função de dados correspondente
             data_functions = {
-                'projects': self._get_projects_data,
-                'donations': self._get_donations_data_detailed,
-                'volunteers': self._get_volunteers_data_detailed,
-                'beneficiaries': self._get_beneficiaries_data_detailed
+                'projects': lambda export_type: self._get_projects_data({}, []),
+                'donations': lambda export_type: self._get_donations_data({}, []),
+                'volunteers': lambda export_type: self._get_volunteers_data({}, []),
+                'beneficiaries': lambda export_type: self._get_beneficiaries_data({}, [])
             }
             
             if area not in data_functions:
