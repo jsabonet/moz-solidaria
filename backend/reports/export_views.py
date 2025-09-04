@@ -1832,6 +1832,16 @@ class ExportViewSet(viewsets.ViewSet):
             
             # Obter dados da área específica
             area_data = data_functions[area](export_type)
+            logger.info(f"   - Registros retornados para '{area}': {len(area_data) if isinstance(area_data, list) else 'n/a'}")
+
+            # Evitar 400 quando não há dados: gerar arquivo com mensagem amigável
+            if not area_data:
+                logger.warning(f"⚠️ Nenhum dado encontrado para a área '{area}'. Gerando arquivo com mensagem informativa.")
+                area_data = [{
+                    'status': 'Sem dados disponíveis',
+                    'detalhes': f"Nenhum registro encontrado para a área '{area}' no momento.",
+                    'gerado_em': timezone.now().strftime('%Y-%m-%d %H:%M')
+                }]
             
             # Gerar nome do arquivo baseado na área
             area_names = {
