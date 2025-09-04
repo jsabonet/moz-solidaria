@@ -267,7 +267,7 @@ const Doacao = () => {
             </Card>
 
             {/* Transparência */}
-            <Card>
+            {/* <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <CheckCircle className="h-6 w-6 text-green-600" />
@@ -294,10 +294,10 @@ const Doacao = () => {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
 
             {/* Bancos Suportados */}
-            <Card>
+            {/* <Card>
               <CardHeader>
                 <CardTitle>Bancos Suportados</CardTitle>
                 <CardDescription>
@@ -314,7 +314,7 @@ const Doacao = () => {
                   ))}
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
 
           </div>
         </div>

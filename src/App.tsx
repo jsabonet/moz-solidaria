@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "sonner";
 import { AuthProvider } from "@/hooks/use-auth";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { Suspense } from "react";
 import { 
   LazyClientArea, 
@@ -45,7 +44,6 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <PWAInstallPrompt />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />

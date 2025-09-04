@@ -54,7 +54,7 @@ const QuickAccessSection = () => {
             Como Pode Participar?
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Existem várias formas de se envolver com a Moz Solidária e fazer a diferença na vida de quem mais precisa.
+            Existem várias formas de se envolver com a Associação Moz Solidária e fazer a diferença na vida de quem mais precisa.
           </p>
         </div>
 

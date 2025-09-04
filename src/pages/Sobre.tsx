@@ -31,34 +31,34 @@ const Sobre = () => {
 
   const timeline = [
     {
-      year: "2014",
+      year: "2024",
       title: "Fundação da Organização",
-      description: "A MOZ SOLIDÁRIA foi fundada com o objetivo de apoiar as comunidades de Cabo Delgado."
-    },
-    {
-      year: "2016",
-      title: "Primeiros Programas de Educação",
-      description: "Lançamento dos primeiros programas de alfabetização em comunidades rurais."
-    },
-    {
-      year: "2018",
-      title: "Expansão para Saúde",
-      description: "Início dos programas de saúde preventiva e campanhas de vacinação."
-    },
-    {
-      year: "2020",
-      title: "Resposta à Pandemia",
-      description: "Adaptação dos programas para apoiar comunidades durante a pandemia de COVID-19."
-    },
-    {
-      year: "2022",
-      title: "Programa de Empoderamento",
-      description: "Lançamento de programas específicos para empoderamento feminino e de jovens."
+      description: "A ASSOCIAÇÃO MOZ SOLIDÁRIA foi oficialmente fundada em Mocímboa da Praia, província de Cabo Delgado, com o objetivo de apoiar comunidades afetadas por conflitos e pobreza extrema."
     },
     {
       year: "2024",
-      title: "10 Anos de Impacto",
-      description: "Celebração de uma década transformando vidas em Cabo Delgado."
+      title: "Estruturação Institucional",
+      description: "Desenvolvimento do quadro institucional, estabelecimento da missão, visão e valores, e preparação para o início das operações humanitárias."
+    },
+    {
+      year: "2025",
+      title: "Início das Operações",
+      description: "Lançamento oficial das primeiras ações humanitárias com foco em apoio alimentar emergencial e assistência às famílias deslocadas."
+    },
+    {
+      year: "2025",
+      title: "Programas de Educação",
+      description: "Implementação dos primeiros programas educacionais, incluindo alfabetização de adultos e apoio escolar para crianças em comunidades rurais."
+    },
+    {
+      year: "2025",
+      title: "Expansão dos Serviços",
+      description: "Ampliação das atividades para incluir saúde comunitária, formação profissional de jovens e programas de empoderamento feminino."
+    },
+    {
+      year: "2025",
+      title: "Parcerias Estratégicas",
+      description: "Estabelecimento de parcerias com organizações locais e internacionais para fortalecer o impacto e alcance das ações humanitárias."
     }
   ];
 
@@ -94,7 +94,7 @@ const Sobre = () => {
         <div className="container mx-auto px-4 lg:px-8">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-              Sobre a Moz Solidária
+              Sobre a Associação Moz Solidária
             </h1>
             <p className="text-xl md:text-2xl text-white/90 leading-relaxed">
               Uma organização humanitária movida pelo princípio do amor ao próximo
@@ -110,7 +110,7 @@ const Sobre = () => {
             <h2 className="text-3xl lg:text-4xl font-bold">Quem Somos</h2>
             <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
               <p>
-                A Moz Solidária é uma organização humanitária sem fins lucrativos, sediada em Mocímboa da Praia, 
+                A Associação Moz Solidária é uma organização humanitária sem fins lucrativos, sediada em Mocímboa da Praia, 
                 na província de Cabo Delgado, Moçambique. Nascemos da necessidade urgente de apoiar comunidades 
                 afetadas por conflitos, pobreza extrema e desastres naturais, com foco na reconstrução da dignidade 
                 humana e no fortalecimento social.
@@ -127,7 +127,7 @@ const Sobre = () => {
                 sempre respeitando a cultura, a fé e os direitos das comunidades que apoiamos.
               </p>
               <p className="text-xl font-semibold text-primary">
-                A Moz Solidária é mais do que uma organização – é um movimento de união, empatia e compromisso com a vida.
+                A Associação Moz Solidária é mais do que uma organização – é um movimento de união, empatia e compromisso com a vida.
               </p>
             </div>
           </div>
@@ -146,7 +146,7 @@ const Sobre = () => {
             </div>
             <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
               <p>
-                Na Moz Solidária, a transparência é um dos nossos pilares fundamentais. Acreditamos que prestar 
+                Na Associação Moz Solidária, a transparência é um dos nossos pilares fundamentais. Acreditamos que prestar 
                 contas com clareza e responsabilidade é essencial para manter a confiança de todos que caminham 
                 ao nosso lado — doadores, voluntários, parceiros e beneficiários.
               </p>
@@ -288,7 +288,7 @@ const Sobre = () => {
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">Nossa História</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Uma jornada de 10 anos transformando vidas em Cabo Delgado
+              Uma jornada recém-iniciada com grande impacto em Cabo Delgado
             </p>
           </div>
           
@@ -364,15 +364,15 @@ const Sobre = () => {
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
                   <Calendar className="h-5 w-5 text-primary" />
-                  <span>Operando desde 2014</span>
+                  <span>Fundada em 2024, operando desde 2025</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Users className="h-5 w-5 text-primary" />
-                  <span>25+ comunidades apoiadas</span>
+                  <span>10+ comunidades em fase de apoio</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Heart className="h-5 w-5 text-primary" />
-                  <span>5,000+ vidas impactadas</span>
+                  <span>1,000+ vidas sendo impactadas</span>
                 </div>
               </div>
             </div>

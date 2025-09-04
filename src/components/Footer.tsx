@@ -20,14 +20,19 @@ const Footer = () => {
               atuando no apoio a comunidades afetadas por conflitos, pobreza e desastres naturais em Cabo Delgado.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-white/70 hover:text-white transition-colors">
+              <a href="https://www.facebook.com/mozsolidaria/" target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-white transition-colors">
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="#" className="text-white/70 hover:text-white transition-colors">
+              <a href="https://www.instagram.com/mozsolidaria/?hl=pt-pt" target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-white transition-colors">
                 <Instagram className="h-5 w-5" />
               </a>
-              <a href="#" className="text-white/70 hover:text-white transition-colors">
+              <a href="https://x.com/mozsolidaria" target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-white transition-colors">
                 <Twitter className="h-5 w-5" />
+              </a>
+              <a href="https://tiktok.com/@mozsolidaria" target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-white transition-colors">
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19.321 5.562a5.122 5.122 0 0 1-.443-.258 6.228 6.228 0 0 1-1.137-.966c-.849-.849-1.415-1.415-1.415-3.338h-3.496v14.25c0 1.245-1.008 2.25-2.25 2.25s-2.25-1.005-2.25-2.25c0-1.245 1.008-2.25 2.25-2.25.414 0 .801.117 1.137.315V9.819a5.73 5.73 0 0 0-1.137-.117c-3.178 0-5.75 2.572-5.75 5.75s2.572 5.75 5.75 5.75 5.75-2.572 5.75-5.75V8.597a8.725 8.725 0 0 0 5.041 1.608v-3.496c-.825 0-1.617-.258-2.25-.641z"/>
+                </svg>
               </a>
             </div>
           </div>
@@ -81,7 +86,7 @@ const Footer = () => {
         <div className="border-t border-white/20 mt-8 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-white/80 text-sm flex items-center space-x-1">
-              <span>© 2025 Moz Solidária - "Unidos pela mesma causa"</span>
+              <span>© 2025 Associação Moz Solidária - "Unidos pela mesma causa"</span>
             </p>
             <div className="flex items-center space-x-4 text-sm">
               <Link to="/politica-privacidade" className="text-white/70 hover:text-white transition-colors">

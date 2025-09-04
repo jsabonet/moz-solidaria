@@ -36,11 +36,11 @@ const Contacto = () => {
   ];
 
   const departments = [
-    {
-      name: "Direção Geral",
-      email: "direcao@mozsolidaria.org",
-      description: "Questões estratégicas e parcerias"
-    },
+    // {
+    //   name: "Direção Geral",
+    //   email: "direcao@mozsolidaria.org",
+    //   description: "Questões estratégicas e parcerias"
+    // },
     {
       name: "Programas e Projetos",
       email: "programas@mozsolidaria.org",
@@ -52,8 +52,8 @@ const Contacto = () => {
       description: "Voluntariado e oportunidades de carreira"
     },
     {
-      name: "Comunicação",
-      email: "comunicacao@mozsolidaria.org",
+      name: "Logística",
+      email: "logistica@mozsolidaria.org",
       description: "Imprensa e comunicação social"
     }
   ];
@@ -171,14 +171,19 @@ const Contacto = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="flex space-x-4">
-                    <a href="#" className="w-10 h-10 bg-blue-600 text-white rounded-lg flex items-center justify-center hover:bg-blue-700 transition-colors">
+                    <a href="https://www.facebook.com/mozsolidaria/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-blue-600 text-white rounded-lg flex items-center justify-center hover:bg-blue-700 transition-colors">
                       <Facebook className="h-5 w-5" />
                     </a>
-                    <a href="#" className="w-10 h-10 bg-pink-600 text-white rounded-lg flex items-center justify-center hover:bg-pink-700 transition-colors">
+                    <a href="https://www.instagram.com/mozsolidaria/?hl=pt-pt" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-pink-600 text-white rounded-lg flex items-center justify-center hover:bg-pink-700 transition-colors">
                       <Instagram className="h-5 w-5" />
                     </a>
-                    <a href="#" className="w-10 h-10 bg-blue-400 text-white rounded-lg flex items-center justify-center hover:bg-blue-500 transition-colors">
+                    <a href="https://x.com/mozsolidaria" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-blue-400 text-white rounded-lg flex items-center justify-center hover:bg-blue-500 transition-colors">
                       <Twitter className="h-5 w-5" />
+                    </a>
+                    <a href="https://tiktok.com/@mozsolidaria" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors">
+                      <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19.321 5.562a5.122 5.122 0 0 1-.443-.258 6.228 6.228 0 0 1-1.137-.966c-.849-.849-1.415-1.415-1.415-3.338h-3.496v14.25c0 1.245-1.008 2.25-2.25 2.25s-2.25-1.005-2.25-2.25c0-1.245 1.008-2.25 2.25-2.25.414 0 .801.117 1.137.315V9.819a5.73 5.73 0 0 0-1.137-.117c-3.178 0-5.75 2.572-5.75 5.75s2.572 5.75 5.75 5.75 5.75-2.572 5.75-5.75V8.597a8.725 8.725 0 0 0 5.041 1.608v-3.496c-.825 0-1.617-.258-2.25-.641z"/>
+                      </svg>
                     </a>
                   </div>
                   <p className="text-sm text-muted-foreground mt-3">
@@ -281,7 +286,7 @@ const Contacto = () => {
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="Localização da MOZ SOLIDÁRIA em Cabo Delgado, Moçambique"
+                title="Localização da Associação MOZ SOLIDÁRIA em Cabo Delgado, Moçambique"
               />
             </div>
           </div>

@@ -148,7 +148,7 @@ const Index = () => {
                 Quem Somos
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                A MOZ SOLIDÁRIA é uma organização humanitária sem fins lucrativos, movida pelo princípio do amor ao próximo. 
+                A ASSOCIAÇÃO MOZ SOLIDÁRIA é uma organização humanitária sem fins lucrativos, movida pelo princípio do amor ao próximo. 
                 Atuamos no apoio a comunidades afetadas por conflitos, pobreza e desastres naturais em Cabo Delgado, 
                 promovendo dignidade, esperança e desenvolvimento sustentável.
               </p>

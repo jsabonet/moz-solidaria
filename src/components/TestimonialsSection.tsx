@@ -22,7 +22,7 @@ const TestimonialsSection = () => {
       name: "Maria João Mussa",
       role: "Beneficiária do Programa de Apoio Alimentar",
       location: "Mocímboa da Praia",
-      content: "A Moz Solidária chegou num momento muito difícil para a nossa família. Com as cestas básicas, conseguimos alimentar os nossos filhos e recuperar a esperança. Muito obrigada pela vossa solidariedade.",
+      content: "A Associação Moz Solidária chegou num momento muito difícil para a nossa família. Com as cestas básicas, conseguimos alimentar os nossos filhos e recuperar a esperança. Muito obrigada pela vossa solidariedade.",
       image: "https://images.unsplash.com/photo-1654027678170-2f16d4e87787?q=80&w=627&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       category: "Apoio Alimentar"
     },
@@ -31,7 +31,7 @@ const TestimonialsSection = () => {
       name: "Carlos Namirre",
       role: "Jovem formado em Marcenaria",
       location: "Nangade",
-      content: "Graças à formação que recebi da Moz Solidária, hoje tenho a minha própria oficina de marcenaria. Posso sustentar a minha família e ajudar outros jovens da comunidade.",
+      content: "Graças à formação que recebi da Associação Moz Solidária, hoje tenho a minha própria oficina de marcenaria. Posso sustentar a minha família e ajudar outros jovens da comunidade.",
       image: "https://images.unsplash.com/photo-1540547750293-6d44b6a9decd?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       category: "Formação Profissional"
     },
@@ -49,7 +49,7 @@ const TestimonialsSection = () => {
       name: "José Amade",
       role: "Líder Comunitário",
       location: "Palma",
-      content: "A Moz Solidária trabalha com transparência e respeito pela nossa cultura. Eles não apenas ajudam, mas ensinam-nos a sermos autónomos. Isso faz toda a diferença.",
+      content: "A Associação Moz Solidária trabalha com transparência e respeito pela nossa cultura. Eles não apenas ajudam, mas ensinam-nos a sermos autónomos. Isso faz toda a diferença.",
       image: "https://plus.unsplash.com/premium_photo-1691411181780-46644cfb8258?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       category: "Liderança Comunitária"
     },

@@ -188,8 +188,8 @@ const Programas = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEOHead 
-        title="Nossas Áreas de Atuação - MOZ SOLIDÁRIA"
-        description="Conheça os programas da MOZ SOLIDÁRIA em Cabo Delgado: apoio alimentar, reconstrução, educação, saúde, direitos humanos e apoio psicossocial."
+        title="Nossas Áreas de Atuação - ASSOCIAÇÃO MOZ SOLIDÁRIA"
+        description="Conheça os programas da ASSOCIAÇÃO MOZ SOLIDÁRIA em Cabo Delgado: apoio alimentar, reconstrução, educação, saúde, direitos humanos e apoio psicossocial."
         keywords="programas humanitários, cabo delgado, moçambique, apoio alimentar, educação, saúde, reconstrução, direitos humanos"
         type="website"
       />

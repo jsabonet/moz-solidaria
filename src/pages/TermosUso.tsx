@@ -64,7 +64,7 @@ const TermosUso = () => {
             </div>
             <p className="text-xl opacity-90 leading-relaxed">
               Condições e diretrizes para o uso responsável dos nossos serviços, 
-              site e participação em atividades da Moz Solidária.
+              site e participação em atividades da Associação Moz Solidária.
             </p>
             <div className="bg-white/10 backdrop-blur rounded-lg p-4 inline-block">
               <p className="text-sm">
@@ -235,7 +235,7 @@ const TermosUso = () => {
                 <CardContent className="space-y-3">
                   <p className="text-muted-foreground text-sm">
                     Todo o conteúdo do site, incluindo textos, imagens, logos, designs e materiais, 
-                    são propriedade da Moz Solidária ou usados com permissão.
+                    são propriedade da Associação Moz Solidária ou usados com permissão.
                   </p>
                   <p className="text-muted-foreground text-sm">
                     É proibida a reprodução sem autorização prévia por escrito.
@@ -275,7 +275,7 @@ const TermosUso = () => {
               <h4 className="font-semibold text-yellow-900 mb-3">Disclaimer Importante</h4>
               <div className="space-y-3 text-yellow-800 text-sm">
                 <p>
-                  A Moz Solidária se esforça para manter informações precisas e atualizadas, 
+                  A Associação Moz Solidária se esforça para manter informações precisas e atualizadas, 
                   mas não garante a completude ou exatidão de todo o conteúdo.
                 </p>
                 <p>

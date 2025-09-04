@@ -354,7 +354,7 @@ const Blog = () => {
             Mantenha-se Atualizado
           </h2>
           <p className="text-xl text-white/90 max-w-2xl mx-auto">
-            Receba as últimas notícias e histórias de impacto da MOZ SOLIDÁRIA diretamente no seu email
+            Receba as últimas notícias e histórias de impacto da Associação MOZ SOLIDÁRIA diretamente no seu email
           </p>
           <div className="max-w-md mx-auto flex gap-3">
             <Input 
