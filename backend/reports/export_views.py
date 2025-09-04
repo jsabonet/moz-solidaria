@@ -74,12 +74,18 @@ class ExportViewSet(viewsets.ViewSet):
         try:
             # Validar dados de entrada
             export_type = request.data.get('type')
-            export_format = request.data.get('format', 'pdf')
+            export_format = request.data.get('format') or request.data.get('options', {}).get('format', 'pdf')
             filename = request.data.get('filename', f'export_{export_type}_{timezone.now().strftime("%Y%m%d_%H%M%S")}')
             options = request.data.get('options', {})
             provided_data = request.data.get('data', [])
             
-            logger.info(f"📊 Iniciando exportação: type={export_type}, format={export_format}")
+            # Log detalhado para debug
+            logger.info(f"📊 Exportação solicitada:")
+            logger.info(f"   - Tipo: {export_type}")
+            logger.info(f"   - Formato: {export_format}")
+            logger.info(f"   - Arquivo: {filename}")
+            logger.info(f"   - Dados fornecidos: {len(provided_data) if provided_data else 0} registros")
+            logger.info(f"   - Opções: {options}")
             
             # Validar tipo de exportação
             if not export_type:
@@ -91,11 +97,11 @@ class ExportViewSet(viewsets.ViewSet):
             # Usar dados fornecidos ou buscar no banco
             if provided_data:
                 data = provided_data
-                logger.info(f"📄 Usando dados fornecidos: {len(data)} registros")
+                logger.info(f"📄 Usando {len(data)} registros fornecidos pelo frontend")
             else:
                 # Buscar dados no banco baseado no tipo
                 data = self._get_data_by_type(export_type, options)
-                logger.info(f"🔍 Dados obtidos do banco: {len(data)} registros")
+                logger.info(f"🔍 Obtidos {len(data)} registros do banco de dados")
             
             if not data:
                 return Response({

@@ -51,6 +51,9 @@ interface ExportOptions {
   emailRecipients: string[];
   includeImages: boolean;
   summaryStats: boolean;
+  includeMetadata?: boolean;
+  useRealData?: boolean;
+  generateFrom?: string;
 }
 
 const ExportButton: React.FC<ExportButtonProps> = ({
@@ -173,48 +176,75 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       setIsExporting(true);
       console.log('🚀 Iniciando exportação:', { type, options: exportOptions });
 
-      // Preparar dados para exportação
+      // Preparar dados para exportação com estrutura completa
       const exportPayload: ExportRequest = {
         type,
-        options: exportOptions,
+        format: exportOptions.format,
         filename,
+        options: {
+          ...exportOptions,
+          selectedFields: exportOptions.selectedFields.length > 0 
+            ? exportOptions.selectedFields 
+            : getAvailableFields().filter(field => field.default).map(field => field.id),
+          includeMetadata: true,
+          useRealData: true,
+          generateFrom: 'dashboard'
+        },
         data: data.length > 0 ? data : undefined
       };
 
       try {
+        // Sempre tentar usar a API real primeiro
+        console.log('🚀 Enviando dados para backend:');
+        console.log('   - URL da API:', `${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'}/api/v1/reports/exports/generate/`);
+        console.log('   - Payload:', exportPayload);
+        console.log('   - Dados reais:', data.length > 0 ? `${data.length} registros` : 'Dados serão buscados no backend');
+        
         if (exportOptions.emailRecipients.length > 0) {
-          // Envio por email - tentar API real
+          // Envio por email via API
           await reportsApi.exportData(exportPayload);
           toast.success('✅ Exportação enviada por email!');
           console.log('✅ Exportação por email realizada via API');
         } else {
-          // Download direto - tentar API real
+          // Download direto via API
           const blob = await reportsApi.exportData(exportPayload);
           downloadFile(blob, filename, exportOptions.format);
-          toast.success('✅ Download iniciado!');
-          console.log('✅ Download via API realizado');
+          toast.success(`✅ Download ${exportOptions.format.toUpperCase()} iniciado via backend!`);
+          console.log('✅ Download via API backend realizado');
         }
       } catch (apiError) {
-        console.warn('⚠️ API não disponível, gerando exportação local:', apiError);
-        
-        // Fallback: gerar arquivo simulado localmente
-        const simulatedData = generateSimulatedExportData(type, exportOptions);
-        const blob = new Blob([simulatedData], {
-          type: getContentTypeForFormat(exportOptions.format)
+        console.error('❌ Erro detalhado na API do backend:', {
+          message: apiError.message,
+          stack: apiError.stack,
+          exportPayload
         });
         
-        // Download manual
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${filename}_${new Date().toISOString().split('T')[0]}.${exportOptions.format}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        
-        toast.success('📁 Exportação simulada concluída!');
-        console.log('✅ Exportação local realizada');
+        // Só usar fallback em caso de erro crítico
+        if (apiError.message?.includes('Failed to fetch') || 
+            apiError.message?.includes('NetworkError') || 
+            apiError.message?.includes('ERR_CONNECTION_REFUSED')) {
+          console.warn('⚠️ Problema de rede detectado, usando fallback local');
+          
+          const simulatedData = generateSimulatedExportData(type, exportOptions);
+          const blob = new Blob([simulatedData], {
+            type: getContentTypeForFormat(exportOptions.format)
+          });
+          
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${filename}_${new Date().toISOString().split('T')[0]}.${exportOptions.format}`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+          
+          toast.error('⚠️ Servidor indisponível - usando dados locais de demonstração');
+        } else {
+          // Re-throw outros erros para debug
+          toast.error(`Erro na exportação: ${apiError.message}`);
+          throw apiError;
+        }
       }
     } catch (error) {
       console.error('❌ Erro na exportação:', error);

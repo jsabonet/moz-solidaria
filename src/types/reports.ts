@@ -49,6 +49,9 @@ export interface ExportOptions {
   includeImages: boolean;
   summaryStats: boolean;
   customFilters?: Record<string, any>;
+  includeMetadata?: boolean;
+  useRealData?: boolean;
+  generateFrom?: string;
 }
 
 export interface ReportField {
@@ -235,6 +238,7 @@ export interface CreateScheduledReportRequest {
 
 export interface ExportRequest {
   type: 'donations' | 'volunteers' | 'beneficiaries' | 'partners' | 'projects' | 'blog';
+  format: 'csv' | 'excel' | 'pdf' | 'json';
   options: ExportOptions;
   filename: string;
   data?: any[];
