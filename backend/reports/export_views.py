@@ -174,7 +174,7 @@ class ExportViewSet(viewsets.ViewSet):
 
     def _get_donations_data(self, date_range, selected_fields):
         """Obter dados de doações"""
-        queryset = Donation.objects.all()
+        queryset = Donation.objects.select_related('donor', 'donation_method').all()
         
         if date_range.get('from'):
             queryset = queryset.filter(created_at__gte=date_range['from'])
@@ -185,15 +185,17 @@ class ExportViewSet(viewsets.ViewSet):
         for donation in queryset:
             row = {
                 'amount': float(donation.amount),
-                'donor_name': donation.donor_name or 'Anônimo',
-                'donor_email': donation.donor_email or '',
-                'donor_phone': donation.donor_phone or '',
-                'payment_method': donation.payment_method,
-                'status': donation.status,
+                'donor_name': donation.donor.get_full_name() or donation.donor.username if donation.donor else 'Anônimo',
+                'donor_email': donation.donor.email if donation.donor else '',
+                'donor_username': donation.donor.username if donation.donor else '',
+                'payment_method': donation.payment_method or '',
+                'donation_method': donation.donation_method.name if donation.donation_method else '',
+                'status': donation.get_status_display(),
                 'created_at': donation.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                'project_name': donation.project.title if donation.project else '',
-                'receipt_number': donation.receipt_number or '',
-                'notes': donation.notes or ''
+                'currency': donation.currency,
+                'payment_reference': donation.payment_reference or '',
+                'purpose': donation.purpose or '',
+                'is_anonymous': donation.is_anonymous,
             }
             
             # Filtrar campos se especificado
@@ -206,7 +208,7 @@ class ExportViewSet(viewsets.ViewSet):
 
     def _get_volunteers_data(self, date_range, selected_fields):
         """Obter dados de voluntários"""
-        queryset = VolunteerProfile.objects.all()
+        queryset = VolunteerProfile.objects.select_related('user').all()
         
         if date_range.get('from'):
             queryset = queryset.filter(created_at__gte=date_range['from'])
@@ -215,17 +217,21 @@ class ExportViewSet(viewsets.ViewSet):
 
         data = []
         for volunteer in queryset:
+            skills_names = [skill.name for skill in volunteer.skills.all()]
+            
             row = {
                 'full_name': volunteer.user.get_full_name() or volunteer.user.username,
                 'email': volunteer.user.email,
                 'phone': volunteer.phone or '',
-                'skills': ', '.join([skill.name for skill in volunteer.skills.all()]),
-                'availability': volunteer.availability or '',
-                'experience': volunteer.experience or '',
-                'projects_count': volunteer.projects.count(),
-                'hours_contributed': volunteer.total_hours_contributed or 0,
+                'skills': ', '.join(skills_names) if skills_names else 'Nenhuma habilidade cadastrada',
+                'availability': volunteer.get_availability_display(),
+                'bio': volunteer.bio or '',
+                'max_hours_per_week': volunteer.max_hours_per_week,
+                'total_hours_contributed': volunteer.total_hours_contributed or 0,
+                'volunteer_level': volunteer.volunteer_level,
                 'registration_date': volunteer.created_at.strftime('%Y-%m-%d'),
-                'last_activity': volunteer.last_activity.strftime('%Y-%m-%d') if volunteer.last_activity else ''
+                'last_activity': volunteer.updated_at.strftime('%Y-%m-%d') if volunteer.updated_at else '',
+                'is_active': volunteer.is_active
             }
             
             if selected_fields:
@@ -2195,7 +2201,7 @@ class ExportViewSet(viewsets.ViewSet):
     def _get_donations_data_detailed(self, export_type='all'):
         """Buscar dados detalhados de doações"""
         try:
-            donations = Donation.objects.all()
+            donations = Donation.objects.select_related('donor', 'donation_method').all()
             
             if export_type == 'completed':
                 donations = donations.filter(status='completed')
@@ -2210,14 +2216,17 @@ class ExportViewSet(viewsets.ViewSet):
             for donation in donations:
                 donations_data.append({
                     'id': donation.id,
-                    'doador': donation.donor_name if hasattr(donation, 'donor_name') else 'Anônimo',
-                    'email': donation.donor_email if hasattr(donation, 'donor_email') else 'N/A',
+                    'doador': donation.donor.get_full_name() or donation.donor.username if donation.donor else 'Anônimo',
+                    'email': donation.donor.email if donation.donor else 'N/A',
                     'valor': f"MZN {donation.amount:,.2f}" if donation.amount else 'N/A',
-                    'projeto': donation.project.title if donation.project else 'N/A',
+                    'moeda': donation.currency,
                     'data': donation.created_at.strftime('%Y-%m-%d %H:%M') if donation.created_at else 'N/A',
-                    'status': donation.status if hasattr(donation, 'status') else 'completed',
-                    'metodo': donation.payment_method if hasattr(donation, 'payment_method') else 'N/A',
-                    'comprovante': 'Sim' if hasattr(donation, 'receipt_file') and donation.receipt_file else 'Não'
+                    'status': donation.get_status_display(),
+                    'metodo': donation.payment_method or '',
+                    'metodo_doacao': donation.donation_method.name if donation.donation_method else 'N/A',
+                    'referencia': donation.payment_reference or '',
+                    'finalidade': donation.purpose or '',
+                    'anonima': 'Sim' if donation.is_anonymous else 'Não'
                 })
             
             return donations_data
@@ -2231,29 +2240,35 @@ class ExportViewSet(viewsets.ViewSet):
                     'doador': 'Ana Costa',
                     'email': 'ana@email.com',
                     'valor': 'MZN 5,000.00',
-                    'projeto': 'Verde Urbano',
+                    'moeda': 'MZN',
                     'data': '2024-03-10 14:30',
                     'status': 'Concluída',
-                    'metodo': 'Transferência Bancária',
-                    'comprovante': 'Sim'
+                    'metodo': 'bank_transfer',
+                    'metodo_doacao': 'Transferência Bancária',
+                    'referencia': 'REF123',
+                    'finalidade': 'Apoio geral',
+                    'anonima': 'Não'
                 },
                 {
                     'id': 2,
                     'doador': 'Carlos Lima',
                     'email': 'carlos@email.com',
                     'valor': 'MZN 2,500.00',
-                    'projeto': 'Educação para Todos',
+                    'moeda': 'MZN',
                     'data': '2024-03-12 09:15',
                     'status': 'Concluída',
-                    'metodo': 'M-Pesa',
-                    'comprovante': 'Sim'
+                    'metodo': 'mpesa',
+                    'metodo_doacao': 'M-Pesa',
+                    'referencia': 'MP456',
+                    'finalidade': 'Educação',
+                    'anonima': 'Não'
                 }
             ]
 
     def _get_volunteers_data_detailed(self, export_type='all'):
         """Buscar dados detalhados de voluntários"""
         try:
-            volunteers = VolunteerProfile.objects.all()
+            volunteers = VolunteerProfile.objects.select_related('user').all()
             
             if export_type == 'active':
                 volunteers = volunteers.filter(is_active=True)
@@ -2265,16 +2280,21 @@ class ExportViewSet(viewsets.ViewSet):
             volunteers_data = []
             for volunteer in volunteers:
                 # Converter todos os campos para string para evitar problemas de serialização
+                skills_names = [skill.name for skill in volunteer.skills.all()]
+                
                 volunteers_data.append({
                     'id': volunteer.id,
-                    'nome': str(f"{volunteer.user.first_name} {volunteer.user.last_name}") if volunteer.user else 'N/A',
+                    'nome': str(f"{volunteer.user.first_name} {volunteer.user.last_name}").strip() if volunteer.user else 'N/A',
                     'email': str(volunteer.user.email) if volunteer.user else 'N/A',
-                    'telefone': str(volunteer.phone) if hasattr(volunteer, 'phone') and volunteer.phone else 'N/A',
-                    'habilidades': str(volunteer.skills) if hasattr(volunteer, 'skills') and volunteer.skills else 'N/A',
-                    'disponibilidade': str(volunteer.availability) if hasattr(volunteer, 'availability') and volunteer.availability else 'N/A',
-                    'experiencia': str(volunteer.experience) if hasattr(volunteer, 'experience') and volunteer.experience else 'N/A',
-                    'data_cadastro': volunteer.created_at.strftime('%Y-%m-%d') if hasattr(volunteer, 'created_at') and volunteer.created_at else 'N/A',
-                    'status': 'Ativo' if hasattr(volunteer, 'is_active') and volunteer.is_active else 'Inativo'
+                    'telefone': str(volunteer.phone) if volunteer.phone else 'N/A',
+                    'habilidades': ', '.join(skills_names) if skills_names else 'Nenhuma habilidade cadastrada',
+                    'disponibilidade': str(volunteer.get_availability_display()) if volunteer.availability else 'N/A',
+                    'bio': str(volunteer.bio) if volunteer.bio else 'N/A',
+                    'max_horas_semana': volunteer.max_hours_per_week,
+                    'horas_contribuidas': volunteer.total_hours_contributed or 0,
+                    'nivel_voluntario': volunteer.volunteer_level,
+                    'data_cadastro': volunteer.created_at.strftime('%Y-%m-%d') if volunteer.created_at else 'N/A',
+                    'status': 'Ativo' if volunteer.is_active else 'Inativo'
                 })
             
             return volunteers_data
@@ -2290,7 +2310,10 @@ class ExportViewSet(viewsets.ViewSet):
                     'telefone': '+258 84 123 4567',
                     'habilidades': 'Design, Marketing, Comunicação',
                     'disponibilidade': 'Fins de semana',
-                    'experiencia': '2 anos em ONGs',
+                    'bio': 'Voluntária experiente em design e comunicação',
+                    'max_horas_semana': 10,
+                    'horas_contribuidas': 45,
+                    'nivel_voluntario': 'Iniciante',
                     'data_cadastro': '2024-01-20',
                     'status': 'Ativo'
                 },
@@ -2300,8 +2323,11 @@ class ExportViewSet(viewsets.ViewSet):
                     'email': 'paulo@email.com',
                     'telefone': '+258 82 987 6543',
                     'habilidades': 'Programação, Gestão de Projetos',
-                    'disponibilidade': 'Tardes, Segunda a Sexta',
-                    'experiencia': '5 anos em tecnologia',
+                    'disponibilidade': 'Flexível',
+                    'bio': 'Desenvolvedor com experiência em tecnologia',
+                    'max_horas_semana': 15,
+                    'horas_contribuidas': 120,
+                    'nivel_voluntario': 'Avançado',
                     'data_cadastro': '2024-02-05',
                     'status': 'Ativo'
                 }
