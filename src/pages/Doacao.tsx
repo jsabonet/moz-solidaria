@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
 import { Copy, Phone, Mail, MapPin, Building2, CreditCard, Banknote, Heart, CheckCircle, FileText, Upload } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -63,6 +64,7 @@ const Doacao = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+      <SEOHead page="doacao" />
       <Header />
       
       {/* Hero Section */}

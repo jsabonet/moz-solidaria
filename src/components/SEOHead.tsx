@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { BlogPost } from '@/lib/api';
+import { SEOConfig } from '@/config/seo';
 
 interface SEOHeadProps {
   post?: BlogPost;
@@ -9,6 +10,7 @@ interface SEOHeadProps {
   image?: string;
   url?: string;
   type?: string;
+  page?: keyof typeof SEOConfig.pages;
 }
 
 const SEOHead: React.FC<SEOHeadProps> = ({ 
@@ -18,22 +20,23 @@ const SEOHead: React.FC<SEOHeadProps> = ({
   keywords: customKeywords,
   image: customImage,
   url: customUrl,
-  type = 'website'
+  type = 'website',
+  page
 }) => {
   useEffect(() => {
-    // Determinar valores para meta tags
-  // Use the actual post title (H1) as the primary source for the page title so
-  // the <title> tag always reflects the visible H1. Fallback to meta_title
-  // only if no explicit post.title exists (handles cases where meta_title was
-  // copied from a progenitor during duplication).
-  const pageTitle = post?.title || post?.meta_title || customTitle || 'Moz Solidária';
-    const pageDescription = post?.meta_description || post?.excerpt || customDescription || 'Transformando vidas em Cabo Delgado com esperança e ação';
-    const pageImage = post?.og_image || post?.featured_image || customImage || '/logo-moz-solidaria.png';
-    const pageUrl = customUrl || (post ? `/blog/${post.slug}` : window.location.href);
-    const siteTitle = 'Moz Solidária';
+    // Configuração SEO baseada na página atual
+    const pageConfig = page ? SEOConfig.pages[page] : null;
+    
+    // Determinar valores para meta tags com prioridade hierárquica
+    const pageTitle = post?.title || post?.meta_title || customTitle || pageConfig?.title || SEOConfig.site.title;
+    const pageDescription = post?.meta_description || post?.excerpt || customDescription || pageConfig?.description || SEOConfig.site.description;
+    const pageKeywords = post?.meta_keywords || customKeywords || pageConfig?.keywords || SEOConfig.keywords.primary.join(', ');
+    const pageImage = post?.og_image || post?.featured_image || customImage || SEOConfig.site.defaultImage;
+    const pageUrl = customUrl || (post ? `${SEOConfig.site.url}/blog/${post.slug}` : window.location.href);
+    const canonicalUrl = post?.canonical_url || pageUrl;
     
     // Atualizar título da página
-    document.title = post ? `${pageTitle} | ${siteTitle}` : pageTitle;
+    document.title = post ? `${pageTitle} | ${SEOConfig.site.name}` : pageTitle;
     
     // Função para atualizar ou criar meta tag
     const updateMetaTag = (name: string, content: string, property?: boolean) => {
@@ -110,6 +113,30 @@ const SEOHead: React.FC<SEOHeadProps> = ({
     // Meta tags básicas
     updateMetaTag('description', pageDescription);
     
+    // Meta tags essenciais para SEO
+    updateMetaTag('viewport', 'width=device-width, initial-scale=1');
+    updateMetaTag('charset', 'UTF-8');
+    updateMetaTag('language', 'pt-PT');
+    updateMetaTag('author', 'Moz Solidária');
+    updateMetaTag('publisher', 'Moz Solidária');
+    updateMetaTag('theme-color', '#dc2626');
+    
+    // Geo meta tags para localização
+    updateMetaTag('geo.region', 'MZ-P');
+    updateMetaTag('geo.placename', 'Cabo Delgado, Moçambique');
+    updateMetaTag('geo.position', '-11.35;40.35');
+    updateMetaTag('ICBM', '-11.35, 40.35');
+    
+    // Link canonical
+    const existingCanonical = document.querySelector('link[rel="canonical"]');
+    if (existingCanonical) {
+      existingCanonical.remove();
+    }
+    const canonical = document.createElement('link');
+    canonical.rel = 'canonical';
+    canonical.href = canonicalUrl;
+    document.head.appendChild(canonical);
+    
     // Atualizar robots meta tag
     updateRobotsTag();
     
@@ -156,7 +183,7 @@ const SEOHead: React.FC<SEOHeadProps> = ({
     updateMetaTag('og:description', post?.og_description || pageDescription, true);
     updateMetaTag('og:image', pageImage, true);
     updateMetaTag('og:url', pageUrl, true);
-    updateMetaTag('og:site_name', siteTitle, true);
+    updateMetaTag('og:site_name', SEOConfig.site.name, true);
     
     // Article specific tags
     if (post) {
@@ -276,7 +303,7 @@ const SEOHead: React.FC<SEOHeadProps> = ({
     // Cleanup function
     return () => {
       // Reset to default values when component unmounts
-      document.title = siteTitle;
+      document.title = SEOConfig.site.title;
     };
   }, [post, customTitle, customDescription, customImage, customUrl, type]);
 

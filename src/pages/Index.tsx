@@ -61,11 +61,8 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {/* SEO Meta Tags para a página inicial */}
       <SEOHead 
-        title="MOZ SOLIDÁRIA - Transformando Vidas em Cabo Delgado"
-        description="A MOZ SOLIDÁRIA é uma organização humanitária sem fins lucrativos que atua no apoio a comunidades afetadas por conflitos em Cabo Delgado, Moçambique."
-        keywords="moçambique, cabo delgado, ong, solidariedade, humanitária, ajuda, apoio comunitário, reconstrução, educação, saúde"
+        page="home"
         type="website"
-        image="/logo-moz-solidaria.png"
       />
       
       <Header />

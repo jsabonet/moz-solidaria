@@ -1,3 +1,6 @@
+# Robots.txt para Moz Solidária
+# https://mozsolidaria.org/robots.txt
+
 User-agent: Googlebot
 Allow: /
 
@@ -16,9 +19,34 @@ Disallow: /admin/
 Disallow: /dashboard/
 Disallow: /client-area/
 Disallow: /login/
+Disallow: /register/
+Disallow: /api/auth/
+Disallow: /*.pdf$
+Disallow: /media/private/
 
-# Sitemap
-Sitemap: https://www.mozsolidaria.org/sitemap.xml
+# Permitir crawling de páginas importantes
+Allow: /sobre
+Allow: /programas
+Allow: /blog
+Allow: /contacto
+Allow: /doacao
+Allow: /transparencia
+Allow: /media/uploads/
+
+# Sitemaps
+Sitemap: https://mozsolidaria.org/sitemap.xml
+Sitemap: https://mozsolidaria.org/sitemap-blog.xml
+Sitemap: https://mozsolidaria.org/sitemap-programas.xml
 
 # Crawl-delay for respectful crawling
 Crawl-delay: 1
+
+# Bloquear bots indesejados
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /

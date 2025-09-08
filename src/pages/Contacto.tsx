@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
 import { MapPin, Mail, Phone, Clock, Facebook, Instagram, Twitter, Send } from "lucide-react";
 
 const Contacto = () => {
@@ -60,6 +61,7 @@ const Contacto = () => {
 
   return (
     <div className="min-h-screen">
+      <SEOHead page="contacto" />
       <Header />
       
       {/* Hero Section */}

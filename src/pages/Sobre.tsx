@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
 import { Target, Eye, Heart, Users, Award, MapPin, Calendar, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -87,6 +88,7 @@ const Sobre = () => {
 
   return (
     <div className="min-h-screen">
+      <SEOHead page="sobre" />
       <Header />
       
       {/* Hero Section */}

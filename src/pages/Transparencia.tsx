@@ -223,12 +223,7 @@ const Transparencia = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEOHead 
-        title="Transparência - MOZ SOLIDÁRIA"
-        description="Transparência total: conheça nossos relatórios financeiros, impacto social e prestação de contas da Associação Moz Solidária."
-        keywords="transparência, prestação de contas, relatórios financeiros, impacto social, auditoria, moz solidária"
-        type="website"
-      />
+      <SEOHead page="transparencia" />
       
       <Header />
 
