@@ -145,6 +145,9 @@ urlpatterns = [
     path('', api_root, name='api_root'),  # Root endpoint
     path('admin/', admin.site.urls),
     
+    # SEO URLs (sitemaps, robots.txt) - devem estar na raiz
+    path('', include('core.urls')),  # Inclui sitemaps na raiz
+    
     # API endpoints
     path('api/v1/', include([
         # Authentication
