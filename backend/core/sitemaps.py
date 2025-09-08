@@ -13,25 +13,55 @@ from blog.models import BlogPost
 
 def sitemap_index(request):
     """Sitemap index principal"""
-    template = loader.get_template('sitemap_index.xml')
+    try:
+        template = loader.get_template('sitemap_index.xml')
+        
+        # Data padrão para lastmod
+        default_lastmod = timezone.now()
+        
+        # Tentar obter data do último post do blog
+        try:
+            latest_blog = BlogPost.objects.filter(is_published=True).latest('updated_at')
+            blog_lastmod = latest_blog.updated_at
+        except (BlogPost.DoesNotExist, AttributeError):
+            blog_lastmod = default_lastmod
+        
+        sitemaps = [
+            {
+                'location': request.build_absolute_uri('/sitemap-static.xml'),
+                'lastmod': default_lastmod
+            },
+            {
+                'location': request.build_absolute_uri('/sitemap-blog.xml'),
+                'lastmod': blog_lastmod
+            },
+            {
+                'location': request.build_absolute_uri('/sitemap-programas.xml'),
+                'lastmod': default_lastmod
+            }
+        ]
+        
+        context = {'sitemaps': sitemaps}
+        return HttpResponse(template.render(context, request), content_type='application/xml')
     
-    sitemaps = [
-        {
-            'location': request.build_absolute_uri('/sitemap-static.xml'),
-            'lastmod': timezone.now()
-        },
-        {
-            'location': request.build_absolute_uri('/sitemap-blog.xml'),
-            'lastmod': BlogPost.objects.filter(is_published=True).latest('updated_at').updated_at if BlogPost.objects.filter(is_published=True).exists() else timezone.now()
-        },
-        {
-            'location': request.build_absolute_uri('/sitemap-programas.xml'),
-            'lastmod': timezone.now()
-        }
-    ]
-    
-    context = {'sitemaps': sitemaps}
-    return HttpResponse(template.render(context, request), content_type='application/xml')
+    except Exception as e:
+        # Fallback simples se der erro
+        xml_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <sitemap>
+        <loc>{request.build_absolute_uri('/sitemap-static.xml')}</loc>
+        <lastmod>{timezone.now().isoformat()}</lastmod>
+    </sitemap>
+    <sitemap>
+        <loc>{request.build_absolute_uri('/sitemap-blog.xml')}</loc>
+        <lastmod>{timezone.now().isoformat()}</lastmod>
+    </sitemap>
+    <sitemap>
+        <loc>{request.build_absolute_uri('/sitemap-programas.xml')}</loc>
+        <lastmod>{timezone.now().isoformat()}</lastmod>
+    </sitemap>
+</sitemapindex>'''
+        return HttpResponse(xml_content, content_type='application/xml')
 
 def sitemap_static(request):
     """Sitemap para páginas estáticas"""
