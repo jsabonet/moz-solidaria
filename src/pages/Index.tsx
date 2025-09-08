@@ -12,10 +12,10 @@ import { Link } from "react-router-dom";
 
 const Index = () => {
   const impactStats = [
-    { number: 500, label: "Famílias Alimentadas", suffix: "+" },
-    { number: 15, label: "Escolas Reconstruídas", suffix: "+" },
-    { number: 300, label: "Jovens Capacitados", suffix: "+" },
-    { number: 25, label: "Comunidades Apoiadas", suffix: "+" },
+    { number: 20, label: "Famílias Alimentadas", suffix: "+" },
+    { number: 1, label: "Escolas Reconstruídas", suffix: "+" },
+    { number: 15, label: "Jovens Capacitados", suffix: "+" },
+    { number: 5, label: "Comunidades Apoiadas", suffix: "+" },
   ];
 
   const programs = [

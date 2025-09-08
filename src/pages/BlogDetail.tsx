@@ -369,16 +369,16 @@ const BlogDetail = () => {
             </div>
 
             {/* Tags */}
-            <div className="mb-8">
+            {/* <div className="mb-8">
               <h3 className="text-lg font-semibold mb-3">Categoria</h3>
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline">
                   {post.category?.name || 'Sem categoria'}
                 </Badge>
               </div>
-            </div>
+            </div> */}
 
-            <Separator className="my-8" />
+            {/* <Separator className="my-8" /> */}
 
             {/* Componente de interações sociais principal */}
             <SocialInteractions 
@@ -494,7 +494,7 @@ const BlogDetail = () => {
       </section>
 
       {/* CTA Newsletter */}
-      <section className="py-16 bg-gradient-to-r from-solidarity-orange to-solidarity-warm text-white">
+      {/* <section className="py-16 bg-gradient-to-r from-solidarity-orange to-solidarity-warm text-white">
         <div className="container mx-auto px-4 lg:px-8 text-center space-y-6">
           <h2 className="text-3xl font-bold">
             Não Perca Nenhuma História
@@ -514,7 +514,7 @@ const BlogDetail = () => {
           </div>
         </div>
       </section>
-
+ */}
       <Footer />
     </div>
   );
