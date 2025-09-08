@@ -31,23 +31,32 @@ log_error() {
 }
 
 # Verificar se está no diretório correto
-if [[ ! -f "manage.py" ]]; then
-    log_error "Execute este script no diretório raiz do projeto (onde está o manage.py)"
+if [[ ! -f "manage.py" ]] && [[ ! -f "backend/manage.py" ]]; then
+    log_error "Execute este script no diretório raiz do projeto (onde há manage.py ou backend/manage.py)"
     exit 1
 fi
+
+# Determinar diretório do Django
+if [[ -f "manage.py" ]]; then
+    DJANGO_DIR="."
+else
+    DJANGO_DIR="backend"
+fi
+
+log_step "Django detectado em: $DJANGO_DIR"
 
 # ETAPA 1: BACKEND - Configurações Django
 log_step "1. Configurando Backend Django..."
 
 # 1.1 Verificar se sitemaps.py foi criado
-if [[ ! -f "backend/core/sitemaps.py" ]]; then
-    log_error "Arquivo backend/core/sitemaps.py não encontrado!"
+if [[ ! -f "$DJANGO_DIR/core/sitemaps.py" ]]; then
+    log_error "Arquivo $DJANGO_DIR/core/sitemaps.py não encontrado!"
     exit 1
 fi
 
 # 1.2 Aplicar migrações (se necessário)
 log_step "1.1 Aplicando migrações Django..."
-cd backend
+cd $DJANGO_DIR
 python manage.py makemigrations
 python manage.py migrate
 log_success "Migrações aplicadas"
@@ -97,6 +106,11 @@ log_success "Configurações Django testadas"
 
 # ETAPA 2: FRONTEND - Build e Deploy
 log_step "2. Preparando Frontend..."
+
+# Voltar para diretório raiz
+if [[ "$DJANGO_DIR" == "backend" ]]; then
+    cd ..
+fi
 
 # 2.1 Instalar dependências
 log_step "2.1 Instalando dependências npm..."
