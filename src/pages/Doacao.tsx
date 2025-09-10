@@ -47,7 +47,7 @@ const Doacao = () => {
       detalhes: [
         { label: "Operadora", valor: "Vodacom M-Pesa" },
         { label: "Número", valor: "+258 84 204 0330" },
-        { label: "Nome", valor: "MOZ SOLIDÁRIA" },
+        { label: "Nome", valor: "ADAMO ABDALA" },
         { label: "Referência", valor: "DOACAO-HUMANITARIA" }
       ]
     },
@@ -57,7 +57,7 @@ const Doacao = () => {
       detalhes: [
         { label: "Operadora", valor: "Movitel E-Mola" },
         { label: "Número", valor: "+258 86 204 0330" },
-        { label: "Nome", valor: "MOZ SOLIDÁRIA" },
+        { label: "Nome", valor: "ADAMO ERNESTO ABDALA" },
         { label: "Referência", valor: "DOACAO-HUMANITARIA" }
       ]
     }
