@@ -20,7 +20,7 @@ const Doacao = () => {
   };
 
   const bancosSuportados = [
-    { nome: "BCI - Banco Comercial e de Investimentos", logo: "🏦" },
+    { nome: "Millennium BIM (Banco Internacional de Moçambique)", logo: "🏦" },
     { nome: "Standard Bank", logo: "🏦" },
     { nome: "BIM - Banco Internacional de Moçambique", logo: "🏦" },
     { nome: "Millennium BIM", logo: "🏦" },
@@ -33,11 +33,12 @@ const Doacao = () => {
       metodo: "Transferência Bancária",
       icon: <Building2 className="h-6 w-6" />,
       detalhes: [
-        { label: "Banco", valor: "BCI - Banco Comercial e de Investimentos" },
-        { label: "Nome da Conta", valor: "MOZ SOLIDÁRIA - Organização Humanitária" },
-        { label: "Número da Conta", valor: "0003.4567.8901.2345.6" },
-        { label: "IBAN", valor: "MZ59 0003 4567 8901 2345 6789" },
-        { label: "SWIFT/BIC", valor: "BCIMZMZM" }
+        { label: "Banco", valor: "Millennium BIM (Banco Internacional de Moçambique)" },
+        { label: "Nome da Conta", valor: "ADAMO ERNESTO ABDALA" },
+        { label: "Número da Conta", valor: "233341164" },
+        { label: "NIB", valor: "000100000023334116457" },
+        { label: "IBAN", valor: "MZ59000100000023334116457" },
+        { label: "SWIFT/BIC", valor: "BIMOMZMXXX" }
       ]
     },
     {
