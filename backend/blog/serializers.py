@@ -225,13 +225,30 @@ class BlogPostCreateUpdateSerializer(serializers.ModelSerializer):
                     from django.core.files.base import ContentFile
                     import uuid
                     import mimetypes
-                    from urllib.parse import urlparse
+                    from urllib.parse import urlparse, unquote
+                    import logging
+                    
+                    logger = logging.getLogger('blog.image_download')
+                    
+                    # Corrigir URL encoding: decodificar e re-encodificar corretamente
+                    try:
+                        # Primeiro decode para remover encoding incorreto
+                        decoded_url = unquote(value)
+                        # Verificar se ainda tem caracteres problemáticos
+                        parsed = urlparse(decoded_url)
+                        clean_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+                        if parsed.query:
+                            clean_url += f"?{parsed.query}"
+                        value = clean_url
+                    except Exception as url_error:
+                        logger.warning(f"Erro ao limpar URL {value}: {url_error}")
                     
                     # Headers para simular um browser real
                     headers = {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
                     }
                     
+                    logger.info(f"📥 Baixando imagem de: {value}")
                     print(f"📥 Baixando imagem de: {value}")
                     resp = requests.get(value, timeout=30, headers=headers)
                     
@@ -255,17 +272,24 @@ class BlogPostCreateUpdateSerializer(serializers.ModelSerializer):
                         # Criar arquivo Django a partir do conteúdo baixado
                         data['featured_image'] = ContentFile(resp.content, name=file_name)
                         
+                        logger.info(f"✅ Imagem baixada com sucesso: {file_name} ({len(resp.content)} bytes)")
                         print(f"✅ Imagem baixada com sucesso: {file_name} ({len(resp.content)} bytes)")
                     else:
+                        logger.warning(f"❌ Falha ao baixar imagem: HTTP {resp.status_code}")
                         print(f"❌ Falha ao baixar imagem: HTTP {resp.status_code}")
-                        # Manter a URL original se o download falhar
+                        # Remover campo para evitar erro 400 em vez de manter URL
+                        data.pop('featured_image', None)
                         
                 except ImportError as e:
+                    logger.error(f"❌ Biblioteca requests não disponível: {e}")
                     print(f"❌ Biblioteca requests não disponível: {e}")
-                    # Manter a URL original se requests não estiver disponível
+                    # Remover campo para evitar erro 400
+                    data.pop('featured_image', None)
                 except Exception as e:
+                    logger.error(f"❌ Erro inesperado ao baixar imagem: {e}")
                     print(f"❌ Erro inesperado ao baixar imagem: {e}")
-                    # Manter a URL original se houver qualquer erro
+                    # Remover campo para evitar erro 400 em vez de manter URL crua
+                    data.pop('featured_image', None)
                     
         return super().to_internal_value(data)
 
@@ -315,13 +339,30 @@ class NewsletterSerializer(serializers.ModelSerializer):
                     from django.core.files.base import ContentFile
                     import uuid
                     import mimetypes
-                    from urllib.parse import urlparse
+                    from urllib.parse import urlparse, unquote
+                    import logging
+                    
+                    logger = logging.getLogger('blog.image_download')
+                    
+                    # Corrigir URL encoding: decodificar e re-encodificar corretamente
+                    try:
+                        # Primeiro decode para remover encoding incorreto
+                        decoded_url = unquote(value)
+                        # Verificar se ainda tem caracteres problemáticos
+                        parsed = urlparse(decoded_url)
+                        clean_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+                        if parsed.query:
+                            clean_url += f"?{parsed.query}"
+                        value = clean_url
+                    except Exception as url_error:
+                        logger.warning(f"Erro ao limpar URL {value}: {url_error}")
                     
                     # Headers para simular um browser real
                     headers = {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
                     }
                     
+                    logger.info(f"📥 Baixando imagem de: {value}")
                     print(f"📥 Baixando imagem de: {value}")
                     resp = requests.get(value, timeout=30, headers=headers)
                     
@@ -345,14 +386,22 @@ class NewsletterSerializer(serializers.ModelSerializer):
                         # Criar arquivo Django a partir do conteúdo baixado
                         data['featured_image'] = ContentFile(resp.content, name=file_name)
                         
+                        logger.info(f"✅ Imagem baixada com sucesso: {file_name} ({len(resp.content)} bytes)")
                         print(f"✅ Imagem baixada com sucesso: {file_name} ({len(resp.content)} bytes)")
                     else:
+                        logger.warning(f"❌ Falha ao baixar imagem: HTTP {resp.status_code}")
                         print(f"❌ Falha ao baixar imagem: HTTP {resp.status_code}")
+                        # Remover campo para evitar erro 400
+                        data.pop('featured_image', None)
                         
                 except requests.RequestException as e:
+                    logger.error(f"❌ Erro de rede ao baixar imagem: {e}")
                     print(f"❌ Erro de rede ao baixar imagem: {e}")
+                    data.pop('featured_image', None)
                 except Exception as e:
-                        print(f"❌ Erro inesperado ao baixar imagem: {e}")
+                    logger.error(f"❌ Erro inesperado ao baixar imagem: {e}")
+                    print(f"❌ Erro inesperado ao baixar imagem: {e}")
+                    data.pop('featured_image', None)
                     
         return super().to_internal_value(data)
 
