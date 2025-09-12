@@ -158,8 +158,22 @@ const UserManagement: React.FC = () => {
       
       // Buscar todas as páginas
       while (nextUrl) {
+        // Normalização preventiva de Mixed Content
+        if (nextUrl.startsWith('http://mozsolidaria.org')) {
+          nextUrl = nextUrl.replace('http://', 'https://');
+        }
+        if (nextUrl.startsWith('http://www.mozsolidaria.org')) {
+          nextUrl = nextUrl.replace('http://', 'https://');
+        }
+        if (nextUrl.startsWith('http://') && nextUrl.includes('mozsolidaria.org')) {
+          nextUrl = nextUrl.replace('http://', 'https://');
+        }
+        // Se vier caminho relativo, anexar API_BASE
+        if (nextUrl && nextUrl.startsWith('/')) {
+          nextUrl = `${API_BASE.replace(/\/$/, '')}${nextUrl}`;
+        }
+
         setLoadingProgress(`Carregando página ${pageNumber}...`);
-        
         const response = await fetch(nextUrl, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -179,7 +193,14 @@ const UserManagement: React.FC = () => {
         // Verificar se a resposta é paginada (tem 'results') ou uma lista direta
         if (data.results && Array.isArray(data.results)) {
           allUsers = [...allUsers, ...data.results];
-          nextUrl = data.next; // URL da próxima página
+          let nxt = data.next;
+          if (nxt) {
+            if (nxt.startsWith('http://mozsolidaria.org')) nxt = nxt.replace('http://', 'https://');
+            else if (nxt.startsWith('http://www.mozsolidaria.org')) nxt = nxt.replace('http://', 'https://');
+            else if (nxt.startsWith('http://') && nxt.includes('mozsolidaria.org')) nxt = nxt.replace('http://', 'https://');
+            else if (nxt.startsWith('/')) nxt = `${API_BASE.replace(/\/$/, '')}${nxt}`;
+          }
+          nextUrl = nxt;
           setLoadingProgress(`${allUsers.length} usuários carregados...`);
         } else if (Array.isArray(data)) {
           allUsers = [...allUsers, ...data];

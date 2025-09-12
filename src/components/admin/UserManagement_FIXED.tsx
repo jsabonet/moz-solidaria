@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import { getApiBase } from '@/lib/config';
 import { 
   Users, 
   UserCheck, 
@@ -148,7 +149,7 @@ const UserManagement: React.FC = () => {
     try {
       setLoading(true);
       setLoadingProgress('Iniciando carregamento...');
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const API_BASE = getApiBase ? getApiBase() : ((import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api/v1');
       const token = localStorage.getItem('authToken');
       
       let allUsers: User[] = [];
@@ -157,14 +158,12 @@ const UserManagement: React.FC = () => {
       
       // Buscar todas as páginas
       while (nextUrl) {
+        if (nextUrl.startsWith('http://mozsolidaria.org')) nextUrl = nextUrl.replace('http://', 'https://');
+        else if (nextUrl.startsWith('http://www.mozsolidaria.org')) nextUrl = nextUrl.replace('http://', 'https://');
+        else if (nextUrl.startsWith('http://') && nextUrl.includes('mozsolidaria.org')) nextUrl = nextUrl.replace('http://', 'https://');
+        if (nextUrl.startsWith('/')) nextUrl = `${API_BASE.replace(/\/$/, '')}${nextUrl}`;
         setLoadingProgress(`Carregando página ${pageNumber}...`);
-        
-        const response = await fetch(nextUrl, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+        const response = await fetch(nextUrl, { headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }});
 
         if (!response.ok) {
           toast.error('Erro ao carregar usuários');
@@ -178,7 +177,14 @@ const UserManagement: React.FC = () => {
         // Verificar se a resposta é paginada (tem 'results') ou uma lista direta
         if (data.results && Array.isArray(data.results)) {
           allUsers = [...allUsers, ...data.results];
-          nextUrl = data.next; // URL da próxima página
+          let nxt = data.next;
+          if (nxt) {
+            if (nxt.startsWith('http://mozsolidaria.org')) nxt = nxt.replace('http://', 'https://');
+            else if (nxt.startsWith('http://www.mozsolidaria.org')) nxt = nxt.replace('http://', 'https://');
+            else if (nxt.startsWith('http://') && nxt.includes('mozsolidaria.org')) nxt = nxt.replace('http://', 'https://');
+            else if (nxt.startsWith('/')) nxt = `${API_BASE.replace(/\/$/, '')}${nxt}`;
+          }
+          nextUrl = nxt;
           setLoadingProgress(`${allUsers.length} usuários carregados...`);
         } else if (Array.isArray(data)) {
           allUsers = [...allUsers, ...data];

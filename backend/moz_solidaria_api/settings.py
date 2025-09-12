@@ -452,3 +452,28 @@ if not DEBUG:
             LOGGING['handlers']['audit_file']['filename'] = fallback_log_dir / 'audit.log'
         if 'security_file' in LOGGING['handlers']:
             LOGGING['handlers']['security_file']['filename'] = fallback_log_dir / 'security.log'
+
+# ---------------------------------------------------------------------------
+# Proxy / HTTPS canonicalization (fixes DRF absolute pagination HTTP links)
+# When behind Nginx forwarding HTTPS traffic, Django needs to know the original
+# request scheme so that request.build_absolute_uri() uses https.
+# ---------------------------------------------------------------------------
+if not DEBUG:
+    # Honor X-Forwarded-Proto header set by Nginx
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    # Allow host/port from forwarded host header (important for correct domain)
+    USE_X_FORWARDED_HOST = True
+
+    # Trusted origins for CSRF (required when SECURE_SSL_REDIRECT and HTTPS)
+    CSRF_TRUSTED_ORIGINS = [
+        'https://mozsolidaria.org',
+        'https://www.mozsolidaria.org',
+    ]
+
+    # Ensure production HTTPS domains are present in CORS (if not provided via env)
+    for _origin in ['https://mozsolidaria.org', 'https://www.mozsolidaria.org']:
+        if _origin not in CORS_ALLOWED_ORIGINS:
+            CORS_ALLOWED_ORIGINS.append(_origin)
+
+    # Once SSL certificate is installed and tested, uncomment to force redirect
+    # SECURE_SSL_REDIRECT = True
