@@ -7,11 +7,23 @@ set -e
 
 echo "🚀 Iniciando deploy com cache busting..."
 
-# Definir variáveis
-PROJECT_DIR="/var/www/mozsolidaria"
-FRONTEND_DIR="$PROJECT_DIR/frontend"
+# Auto-detectar diretório do projeto
+CURRENT_DIR=$(pwd)
+if [[ "$CURRENT_DIR" == *"moz-solidaria"* ]]; then
+    PROJECT_DIR="$CURRENT_DIR"
+else
+    # Fallback para estrutura padrão
+    PROJECT_DIR="/var/www/mozsolidaria/frontend"
+    if [ ! -d "$PROJECT_DIR" ]; then
+        PROJECT_DIR="/home/ubuntu/moz-solidaria"
+    fi
+fi
+
+FRONTEND_DIR="$PROJECT_DIR"
 BACKEND_DIR="$PROJECT_DIR/backend"
 NGINX_CONFIG="/etc/nginx/sites-available/mozsolidaria"
+
+echo "📁 Diretório do projeto: $PROJECT_DIR"
 
 # Backup da versão atual
 BACKUP_DIR="/var/backups/mozsolidaria/$(date +%Y%m%d_%H%M%S)"
@@ -22,10 +34,15 @@ sudo cp -r "$FRONTEND_DIR/dist" "$BACKUP_DIR/dist_backup" 2>/dev/null || echo "N
 # Navegar para o diretório do projeto
 cd "$FRONTEND_DIR"
 
-# Garantir que temos a versão mais recente do código
-echo "📥 Atualizando código..."
-git fetch origin
-git reset --hard origin/main
+# Verificar se estamos em um repositório git
+if [ ! -d ".git" ]; then
+    echo "⚠️  Não é um repositório git, pulando atualização de código"
+else
+    # Garantir que temos a versão mais recente do código
+    echo "📥 Atualizando código..."
+    git fetch origin
+    git reset --hard origin/main
+fi
 
 # Instalar/atualizar dependências se necessário
 if [ -f "package-lock.json" ]; then
@@ -46,13 +63,23 @@ fi
 # Atualizar nginx.conf se necessário
 echo "🔧 Verificando configuração do Nginx..."
 if [ -f "nginx.conf" ]; then
-    if ! sudo diff -q "nginx.conf" "$NGINX_CONFIG" > /dev/null 2>&1; then
-        echo "📝 Atualizando configuração do Nginx..."
-        sudo cp "nginx.conf" "$NGINX_CONFIG"
-        sudo nginx -t && sudo systemctl reload nginx
+    # Verificar se nginx config existe
+    if [ -f "$NGINX_CONFIG" ]; then
+        if ! sudo diff -q "nginx.conf" "$NGINX_CONFIG" > /dev/null 2>&1; then
+            echo "📝 Atualizando configuração do Nginx..."
+            sudo cp "nginx.conf" "$NGINX_CONFIG"
+            sudo nginx -t && sudo systemctl reload nginx
+        else
+            echo "✅ Configuração do Nginx já está atualizada"
+        fi
     else
-        echo "✅ Configuração do Nginx já está atualizada"
+        echo "📝 Criando configuração do Nginx..."
+        sudo cp "nginx.conf" "$NGINX_CONFIG"
+        sudo ln -sf "$NGINX_CONFIG" "/etc/nginx/sites-enabled/" 2>/dev/null || true
+        sudo nginx -t && sudo systemctl reload nginx
     fi
+else
+    echo "⚠️  Arquivo nginx.conf não encontrado, pulando configuração"
 fi
 
 # Limpar cache do Nginx (se configurado)
