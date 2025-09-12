@@ -226,6 +226,8 @@ class BlogPostCreateUpdateSerializer(serializers.ModelSerializer):
                     import uuid
                     import mimetypes
                     from urllib.parse import urlparse, unquote
+                    from django.conf import settings
+                    import os
                     import logging
                     
                     logger = logging.getLogger('blog.image_download')
@@ -233,16 +235,50 @@ class BlogPostCreateUpdateSerializer(serializers.ModelSerializer):
                     # Corrigir URL encoding: decodificar e re-encodificar corretamente
                     try:
                         # Primeiro decode para remover encoding incorreto
+                        original_value = value
                         decoded_url = unquote(value)
-                        # Verificar se ainda tem caracteres problemáticos
+                        # Substituir backslashes por barras normais (causando host mozsolidaria.org%5c)
+                        decoded_url = decoded_url.replace('\\', '/').replace('%5c', '/').replace('%5C', '/')
+                        # Normalizar espaços no caminho (codificar para %20)
+                        # Não codificamos já para permitir requote posteriormente; apenas strip
+                        decoded_url = decoded_url.strip()
                         parsed = urlparse(decoded_url)
-                        clean_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+
+                        # Se host veio com '%5c' por algum motivo, limpar novamente
+                        host = parsed.netloc.replace('%5c', '').replace('%5C', '')
+
+                        # Reconstruir caminho seguro segmentando e removendo vazios
+                        safe_path_parts = [p for p in parsed.path.split('/') if p]
+                        safe_path = '/' + '/'.join(safe_path_parts)
+
+                        clean_url = f"{parsed.scheme}://{host}{safe_path}"
                         if parsed.query:
                             clean_url += f"?{parsed.query}"
                         value = clean_url
+                        logger.debug(f"Sanitizada URL imagem: original='{original_value}' -> limpa='{value}'")
                     except Exception as url_error:
                         logger.warning(f"Erro ao limpar URL {value}: {url_error}")
                     
+                    # Tratamento especial: se a URL é do próprio domínio e aponta para /media/, usar arquivo local sem HTTP
+                    try:
+                        parsed_local = urlparse(value)
+                        local_hosts = { 'mozsolidaria.org', 'www.mozsolidaria.org' }
+                        if parsed_local.netloc in local_hosts and parsed_local.path.startswith('/media/'):
+                            relative_media_path = parsed_local.path[len('/media/'):]  # remove prefix
+                            media_root = getattr(settings, 'MEDIA_ROOT', None)
+                            if media_root:
+                                local_file_path = os.path.join(media_root, relative_media_path)
+                                if os.path.exists(local_file_path):
+                                    from django.core.files import File
+                                    with open(local_file_path, 'rb') as f:
+                                        data['featured_image'] = File(f, name=os.path.basename(local_file_path))
+                                    logger.info(f"✅ Usando arquivo local para featured_image: {local_file_path}")
+                                    return super().to_internal_value(data)
+                                else:
+                                    logger.warning(f"Arquivo local não encontrado: {local_file_path}")
+                    except Exception as local_err:
+                        logger.warning(f"Falha ao tentar usar arquivo local para imagem: {local_err}")
+
                     # Headers para simular um browser real
                     headers = {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -340,6 +376,8 @@ class NewsletterSerializer(serializers.ModelSerializer):
                     import uuid
                     import mimetypes
                     from urllib.parse import urlparse, unquote
+                    from django.conf import settings
+                    import os
                     import logging
                     
                     logger = logging.getLogger('blog.image_download')
@@ -347,16 +385,42 @@ class NewsletterSerializer(serializers.ModelSerializer):
                     # Corrigir URL encoding: decodificar e re-encodificar corretamente
                     try:
                         # Primeiro decode para remover encoding incorreto
+                        original_value = value
                         decoded_url = unquote(value)
-                        # Verificar se ainda tem caracteres problemáticos
+                        decoded_url = decoded_url.replace('\\', '/').replace('%5c', '/').replace('%5C', '/')
+                        decoded_url = decoded_url.strip()
                         parsed = urlparse(decoded_url)
-                        clean_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+                        host = parsed.netloc.replace('%5c', '').replace('%5C', '')
+                        safe_path_parts = [p for p in parsed.path.split('/') if p]
+                        safe_path = '/' + '/'.join(safe_path_parts)
+                        clean_url = f"{parsed.scheme}://{host}{safe_path}"
                         if parsed.query:
                             clean_url += f"?{parsed.query}"
                         value = clean_url
+                        logger.debug(f"Sanitizada URL imagem (newsletter): original='{original_value}' -> limpa='{value}'")
                     except Exception as url_error:
                         logger.warning(f"Erro ao limpar URL {value}: {url_error}")
                     
+                    # Tratamento especial local
+                    try:
+                        parsed_local = urlparse(value)
+                        local_hosts = { 'mozsolidaria.org', 'www.mozsolidaria.org' }
+                        if parsed_local.netloc in local_hosts and parsed_local.path.startswith('/media/'):
+                            relative_media_path = parsed_local.path[len('/media/'):]
+                            media_root = getattr(settings, 'MEDIA_ROOT', None)
+                            if media_root:
+                                local_file_path = os.path.join(media_root, relative_media_path)
+                                if os.path.exists(local_file_path):
+                                    from django.core.files import File
+                                    with open(local_file_path, 'rb') as f:
+                                        data['featured_image'] = File(f, name=os.path.basename(local_file_path))
+                                    logger.info(f"✅ Usando arquivo local para featured_image (newsletter): {local_file_path}")
+                                    return super().to_internal_value(data)
+                                else:
+                                    logger.warning(f"Arquivo local não encontrado (newsletter): {local_file_path}")
+                    except Exception as local_err:
+                        logger.warning(f"Falha ao tentar usar arquivo local (newsletter): {local_err}")
+
                     # Headers para simular um browser real
                     headers = {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
