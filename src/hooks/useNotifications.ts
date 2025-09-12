@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
+import { getApiBase } from '@/lib/config';
 
 interface Notification {
   id: number;
@@ -33,7 +34,7 @@ export const useNotifications = (): UseNotificationsReturn => {
 
   const getWebSocketUrl = () => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+    const API_URL = getApiBase();
     const baseUrl = API_URL.replace('/api/v1', '').replace('http://', '').replace('https://', '');
     const host = process.env.NODE_ENV === 'development' 
       ? baseUrl || 'localhost:8000' 
@@ -198,7 +199,7 @@ export const useNotifications = (): UseNotificationsReturn => {
     const token = localStorage.getItem('auth_token');
     if (!token) return;
 
-    const API_BASE = (import.meta as any).env.VITE_API_URL || 'http://localhost:8000/api/v1';
+    const API_BASE = getApiBase();
     fetch(`${API_BASE}/client-area/notifications/mark-all-read/`, {
       method: 'POST',
       headers: {

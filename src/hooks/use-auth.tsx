@@ -377,7 +377,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('No token found');
       }
       
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const API_BASE = getApiBase();
       
       // 🚀 NOVA ABORDAGEM: Buscar dados frescos direto do banco
       console.log('📡 Consultando banco de dados para dados atualizados...');
@@ -452,7 +452,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       // 2. Chamar endpoint de limpeza de cache do backend PRIMEIRO
       try {
-        const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+        const API_BASE = getApiBase();
         const cacheResponse = await fetch(`${API_BASE}/auth/sessions/force_user_cache_clear/`, {
           method: 'POST',
           headers: {
@@ -475,7 +475,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // 3. Buscar dados completamente frescos do banco (com cache já limpo)
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const API_BASE = getApiBase();
       const userResponse = await fetch(`${API_BASE}/auth/user/`, {
         method: 'GET',
         headers: {

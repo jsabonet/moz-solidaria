@@ -1,5 +1,6 @@
 // src/components/reports/ReportsCenter.tsx
 import React, { useState, useEffect } from 'react';
+import { getApiBase } from '@/lib/config';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -108,7 +109,7 @@ const ReportsCenter: React.FC = () => {
 
       // O backend tem um endpoint 'area_exports' que aceita diferentes áreas
       const endpoint = 'area_exports';
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const API_BASE = getApiBase();
 
       // Tentar fazer a exportação via API
       try {
