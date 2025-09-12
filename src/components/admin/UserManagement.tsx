@@ -19,6 +19,7 @@ import {
   Eye,
   User
 } from 'lucide-react';
+import { getApiBase } from '@/lib/config';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -148,7 +149,7 @@ const UserManagement: React.FC = () => {
     try {
       setLoading(true);
       setLoadingProgress('Iniciando carregamento...');
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const API_BASE = getApiBase();
       const token = localStorage.getItem('authToken');
       
       let allUsers: User[] = [];
@@ -330,7 +331,7 @@ const UserManagement: React.FC = () => {
     if (!selectedUser) return;
 
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const API_BASE = getApiBase();
       const token = localStorage.getItem('authToken');
       
       const response = await fetch(`${API_BASE}/auth/users/${selectedUser.id}/`, {
@@ -363,7 +364,7 @@ const UserManagement: React.FC = () => {
     }
     
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const API_BASE = getApiBase();
       const token = localStorage.getItem('authToken');
       
       const response = await fetch(`${API_BASE}/auth/users/${user.id}/`, {
@@ -395,7 +396,7 @@ const UserManagement: React.FC = () => {
     }
     
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const API_BASE = getApiBase();
       const token = localStorage.getItem('authToken');
       
       const response = await fetch(`${API_BASE}/auth/users/${user.id}/`, {
@@ -479,7 +480,7 @@ const UserManagement: React.FC = () => {
     }
     
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const API_BASE = getApiBase();
       const token = localStorage.getItem('authToken');
       
       if (!token) {
