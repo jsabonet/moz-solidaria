@@ -1,13 +1,14 @@
 {
   "name": "vite_react_shadcn_ts",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "dev:force": "vite --force",
     "build": "vite build",
     "build:server": "NODE_OPTIONS='--max-old-space-size=4096' vite build",
+    "build:server:memory": "cross-env NODE_OPTIONS='--max-old-space-size=4096' vite build",
     "build:dev": "vite build --mode development",
     "build:prod": "vite build --mode production",
     "lint": "eslint .",
@@ -17,7 +18,12 @@
     "test:coverage": "vitest --coverage",
     "deploy": "npm run build && echo 'Build completed! Ready for deployment.'",
     "deploy:preview": "npm run build && npm run preview",
-    "analyze": "npm run build && npx vite-bundle-analyzer dist"
+    "analyze": "npm run build && npx vite-bundle-analyzer dist",
+    "version:patch": "npm version patch --no-git-tag-version",
+    "version:minor": "npm version minor --no-git-tag-version",
+    "version:major": "npm version major --no-git-tag-version",
+    "build:production": "npm run version:patch && npm run build:server && npm run generate:build-info",
+    "generate:build-info": "node scripts/generate-build-info.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

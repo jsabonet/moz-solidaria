@@ -16,6 +16,7 @@ import {
   LazyCreateProject,
   ComponentLoader 
 } from "@/components/LazyComponents";
+import { UpdateChecker } from "@/components/UpdateChecker";
 
 // Pages que são carregadas imediatamente (críticas)
 import Index from "@/pages/Index";
@@ -294,6 +295,8 @@ const App = () => (
       </TooltipProvider>
       <Toaster />
       <Sonner />
+      {/* Sistema de detecção automática de atualizações */}
+      <UpdateChecker checkInterval={300000} showToast={true} />
     </AuthProvider>
   </QueryClientProvider>
 );
