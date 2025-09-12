@@ -32,6 +32,7 @@ from client_area.models import UserProfile
 from client_area.serializers import UserProfileSerializer
 from django.contrib.auth.models import Permission
 from django.utils import timezone
+from django.http import JsonResponse
 
 @api_view(['GET'])
 def api_root(request):
@@ -150,6 +151,8 @@ urlpatterns = [
     
     # API endpoints
     path('api/v1/', include([
+    # Health check (simple, no auth)
+    path('health/', lambda request: JsonResponse({'status': 'ok', 'timestamp': timezone.now().isoformat()}), name='health'),
         # Authentication
         path('auth/', include([
             path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

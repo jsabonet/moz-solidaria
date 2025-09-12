@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
+// (toast import removido; auto update agora é silencioso)
 
 interface BuildInfo {
   version: string;
@@ -10,16 +10,47 @@ interface BuildInfo {
 }
 
 interface UpdateCheckerProps {
-  checkInterval?: number; // em milissegundos (padrão: 5 minutos)
-  showToast?: boolean;
+  checkInterval?: number; // ms (default 5m)
+  autoReloadDelayMs?: number; // tempo entre detectar e recarregar (default 3000)
+  hardReload?: boolean; // se true usa location.reload(true) style (força) / fallback normal
+  log?: boolean; // habilita logs no console
 }
 
 export const UpdateChecker: React.FC<UpdateCheckerProps> = ({ 
-  checkInterval = 5 * 60 * 1000, // 5 minutos
-  showToast = true 
+  checkInterval = 5 * 60 * 1000,
+  autoReloadDelayMs = 3000,
+  hardReload = false,
+  log = false,
 }) => {
   const [currentBuildId, setCurrentBuildId] = useState<string | null>(null);
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
+  const [reloadScheduled, setReloadScheduled] = useState(false);
+
+  const scheduleReload = (newId: string) => {
+    if (reloadScheduled) return;
+    setReloadScheduled(true);
+    if (log) console.info('[UpdateChecker] Nova versão detectada', { newId });
+    // Limpeza leve de caches antes do reload
+    if ('caches' in window) {
+      caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))).catch(() => {}));
+    }
+    // Preserva tokens, remove chaves voláteis
+    const keep = new Set(['auth-token','refresh-token','user-preferences','app-build-id']);
+    try {
+      Object.keys(localStorage).forEach(k => { if (!keep.has(k)) localStorage.removeItem(k); });
+    } catch {}
+    setTimeout(() => {
+      // Atualiza build id local antes de recarregar para evitar loops caso SW atrasado
+      localStorage.setItem('app-build-id', newId);
+      if (hardReload) {
+        // Sem garantia em navegadores modernos, mas tentativa de forçar
+        window.location.href = window.location.href.split('#')[0] + (window.location.search ? '' : '');
+        window.location.reload();
+      } else {
+        window.location.reload();
+      }
+    }, Math.max(500, autoReloadDelayMs));
+  };
 
   // Obter build info atual na inicialização
   useEffect(() => {
@@ -39,6 +70,7 @@ export const UpdateChecker: React.FC<UpdateCheckerProps> = ({
           
           // Armazenar no localStorage para comparação
           localStorage.setItem('app-build-id', buildInfo.buildId);
+          if (log) console.info('[UpdateChecker] Build inicial', buildInfo.buildId);
         }
       } catch (error) {
         console.log('Could not fetch build info:', error);
@@ -68,18 +100,7 @@ export const UpdateChecker: React.FC<UpdateCheckerProps> = ({
           
           if (storedBuildId && buildInfo.buildId !== storedBuildId) {
             setIsUpdateAvailable(true);
-            
-            if (showToast) {
-              toast.info('Nova versão disponível!', {
-                description: 'Clique em "Atualizar" para obter a versão mais recente.',
-                action: {
-                  label: 'Atualizar',
-                  onClick: () => handleUpdate()
-                },
-                duration: 0, // Toast persistente
-                id: 'app-update-available'
-              });
-            }
+            scheduleReload(buildInfo.buildId);
           }
         }
       } catch (error) {
@@ -89,29 +110,10 @@ export const UpdateChecker: React.FC<UpdateCheckerProps> = ({
 
     const interval = setInterval(checkForUpdates, checkInterval);
     return () => clearInterval(interval);
-  }, [currentBuildId, checkInterval, showToast]);
+  }, [currentBuildId, checkInterval]);
 
-  const handleUpdate = () => {
-    // Limpar cache e recarregar
-    if ('caches' in window) {
-      caches.keys().then(names => {
-        names.forEach(name => {
-          caches.delete(name);
-        });
-      });
-    }
-    
-    // Limpar localStorage específico do app
-    const keysToKeep = ['user-preferences', 'auth-token']; // Manter dados importantes
-    Object.keys(localStorage).forEach(key => {
-      if (!keysToKeep.includes(key)) {
-        localStorage.removeItem(key);
-      }
-    });
-    
-    // Recarregar com bypass de cache
-    window.location.reload();
-  };
+  // Retém API para uso externo caso necessário (não exposto agora)
+  const handleUpdate = () => scheduleReload(currentBuildId || '');
 
   // Verificar na visibilidade da página (quando usuário volta ao tab)
   useEffect(() => {
@@ -120,7 +122,7 @@ export const UpdateChecker: React.FC<UpdateCheckerProps> = ({
         // Pequeno delay para evitar múltiplas verificações
         setTimeout(async () => {
           try {
-            const response = await fetch(`/build-info.json?t=${Date.now()}`, {
+              const response = await fetch(`/build-info.json?t=${Date.now()}`, {
               cache: 'no-cache'
             });
             
@@ -130,18 +132,7 @@ export const UpdateChecker: React.FC<UpdateCheckerProps> = ({
               
               if (storedBuildId && buildInfo.buildId !== storedBuildId && !isUpdateAvailable) {
                 setIsUpdateAvailable(true);
-                
-                if (showToast) {
-                  toast.info('Nova versão disponível!', {
-                    description: 'Uma atualização foi detectada.',
-                    action: {
-                      label: 'Atualizar',
-                      onClick: () => handleUpdate()
-                    },
-                    duration: 0,
-                    id: 'app-update-available'
-                  });
-                }
+                scheduleReload(buildInfo.buildId);
               }
             }
           } catch (error) {
@@ -153,7 +144,7 @@ export const UpdateChecker: React.FC<UpdateCheckerProps> = ({
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [currentBuildId, isUpdateAvailable, showToast]);
+  }, [currentBuildId, isUpdateAvailable]);
 
   // Component não retorna JSX, apenas executa lógica
   return null;
