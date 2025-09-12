@@ -46,7 +46,7 @@ class BackendProvider implements UploadProvider {
   name = 'Backend Django';
   
   async upload(file: File): Promise<string> {
-    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+    const API_BASE = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && window.location?.origin.includes('mozsolidaria.org') ? 'https://mozsolidaria.org/api/v1' : 'http://localhost:8000/api/v1');
     
     const formData = new FormData();
     formData.append('image', file);

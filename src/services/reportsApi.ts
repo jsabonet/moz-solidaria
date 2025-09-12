@@ -12,7 +12,7 @@ import {
 
 const API_BASE_URL = (import.meta as any).env?.VITE_API_URL
   ? `${(import.meta as any).env.VITE_API_URL}/reports`
-  : 'http://localhost:8000/api/v1/reports';
+  : (typeof window !== 'undefined' && window.location?.origin.includes('mozsolidaria.org') ? 'https://mozsolidaria.org/api/v1/reports' : 'http://localhost:8000/api/v1/reports');
 
 class ReportsApiService {
   private async makeRequest<T>(

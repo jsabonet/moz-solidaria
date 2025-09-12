@@ -1,4 +1,5 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { getApiBase } from '@/lib/config';
 
 interface User {
   id: number;
@@ -34,7 +35,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Função para fazer login via JWT
 async function jwtLogin(username: string, password: string) {
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+  const API_BASE = getApiBase();
   
   const res = await fetch(`${API_BASE}/auth/token/`, {
     method: 'POST',
@@ -81,7 +82,7 @@ async function jwtLogin(username: string, password: string) {
 
 // Função para refresh do token
 async function jwtRefresh(refreshToken: string) {
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+  const API_BASE = getApiBase();
   
   const res = await fetch(`${API_BASE}/auth/token/refresh/`, {
     method: 'POST',
@@ -159,7 +160,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Para reloads, forçar busca de dados completamente frescos
       console.log('🚀 Buscando dados frescos do usuário...');
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const API_BASE = getApiBase();
       
       const headers: Record<string, string> = {
         'Authorization': `Bearer ${token}`,
