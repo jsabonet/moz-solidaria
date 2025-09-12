@@ -348,7 +348,7 @@ const Blog = () => {
       </section>
 
       {/* Newsletter Section */}
-      <section className="py-16 bg-gradient-to-r from-solidarity-orange to-solidarity-warm text-white">
+      {/* <section className="py-16 bg-gradient-to-r from-solidarity-orange to-solidarity-warm text-white">
         <div className="container mx-auto px-4 lg:px-8 text-center space-y-6">
           <h2 className="text-3xl font-bold">
             Mantenha-se Atualizado
@@ -366,7 +366,7 @@ const Blog = () => {
             </Button>
           </div>
         </div>
-      </section>
+      </section> */}
 
       <Footer />
     </div>
