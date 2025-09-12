@@ -1,4 +1,8 @@
-import requests
+cd /home/ubuntu/moz-solidaria/backend
+git pull origin main
+sudo pkill -f gunicorn ; sudo rm -f /tmp/gunicorn.pid
+source venv/bin/activate
+gunicorn --bind 0.0.0.0:8000 --timeout 120 --log-level debug moz_solidaria_api.wsgi:applicationimport requests
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import BlogPost, Category, Tag, Comment, Newsletter, ImageCredit, Like, Share
@@ -244,8 +248,10 @@ class BlogPostCreateUpdateSerializer(serializers.ModelSerializer):
                         decoded_url = decoded_url.strip()
                         parsed = urlparse(decoded_url)
 
-                        # Se host veio com '%5c' por algum motivo, limpar novamente
-                        host = parsed.netloc.replace('%5c', '').replace('%5C', '')
+                        # Sanitizar host removendo qualquer sequencia estranha (%5c, barras, espaços)
+                        host = parsed.netloc.replace('%5c', '').replace('%5C', '').replace('\\', '').replace(' ', '')
+                        if host.endswith('/'):
+                            host = host.rstrip('/')
 
                         # Reconstruir caminho seguro segmentando e removendo vazios
                         safe_path_parts = [p for p in parsed.path.split('/') if p]
@@ -255,7 +261,7 @@ class BlogPostCreateUpdateSerializer(serializers.ModelSerializer):
                         if parsed.query:
                             clean_url += f"?{parsed.query}"
                         value = clean_url
-                        logger.debug(f"Sanitizada URL imagem: original='{original_value}' -> limpa='{value}'")
+                        logger.debug(f"Sanitizada URL imagem: raw_repr={repr(original_value)} -> limpa='{value}' host='{host}'")
                     except Exception as url_error:
                         logger.warning(f"Erro ao limpar URL {value}: {url_error}")
                     
@@ -269,10 +275,12 @@ class BlogPostCreateUpdateSerializer(serializers.ModelSerializer):
                             if media_root:
                                 local_file_path = os.path.join(media_root, relative_media_path)
                                 if os.path.exists(local_file_path):
-                                    from django.core.files import File
+                                    from django.core.files.base import ContentFile
                                     with open(local_file_path, 'rb') as f:
-                                        data['featured_image'] = File(f, name=os.path.basename(local_file_path))
+                                        content = f.read()
+                                    data['featured_image'] = ContentFile(content, name=os.path.basename(local_file_path))
                                     logger.info(f"✅ Usando arquivo local para featured_image: {local_file_path}")
+                                    print(f"✅ Usando arquivo local para featured_image: {local_file_path}")
                                     return super().to_internal_value(data)
                                 else:
                                     logger.warning(f"Arquivo local não encontrado: {local_file_path}")
@@ -390,14 +398,16 @@ class NewsletterSerializer(serializers.ModelSerializer):
                         decoded_url = decoded_url.replace('\\', '/').replace('%5c', '/').replace('%5C', '/')
                         decoded_url = decoded_url.strip()
                         parsed = urlparse(decoded_url)
-                        host = parsed.netloc.replace('%5c', '').replace('%5C', '')
+                        host = parsed.netloc.replace('%5c', '').replace('%5C', '').replace('\\','').replace(' ', '')
+                        if host.endswith('/'):
+                            host = host.rstrip('/')
                         safe_path_parts = [p for p in parsed.path.split('/') if p]
                         safe_path = '/' + '/'.join(safe_path_parts)
                         clean_url = f"{parsed.scheme}://{host}{safe_path}"
                         if parsed.query:
                             clean_url += f"?{parsed.query}"
                         value = clean_url
-                        logger.debug(f"Sanitizada URL imagem (newsletter): original='{original_value}' -> limpa='{value}'")
+                        logger.debug(f"Sanitizada URL imagem (newsletter): raw_repr={repr(original_value)} host='{host}' -> limpa='{value}'")
                     except Exception as url_error:
                         logger.warning(f"Erro ao limpar URL {value}: {url_error}")
                     
@@ -411,10 +421,12 @@ class NewsletterSerializer(serializers.ModelSerializer):
                             if media_root:
                                 local_file_path = os.path.join(media_root, relative_media_path)
                                 if os.path.exists(local_file_path):
-                                    from django.core.files import File
+                                    from django.core.files.base import ContentFile
                                     with open(local_file_path, 'rb') as f:
-                                        data['featured_image'] = File(f, name=os.path.basename(local_file_path))
+                                        content = f.read()
+                                    data['featured_image'] = ContentFile(content, name=os.path.basename(local_file_path))
                                     logger.info(f"✅ Usando arquivo local para featured_image (newsletter): {local_file_path}")
+                                    print(f"✅ Usando arquivo local para featured_image (newsletter): {local_file_path}")
                                     return super().to_internal_value(data)
                                 else:
                                     logger.warning(f"Arquivo local não encontrado (newsletter): {local_file_path}")
