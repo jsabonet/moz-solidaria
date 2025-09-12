@@ -1,8 +1,3 @@
-cd /home/ubuntu/moz-solidaria/backend
-git pull origin main
-sudo pkill -f gunicorn ; sudo rm -f /tmp/gunicorn.pid
-source venv/bin/activate
-gunicorn --bind 0.0.0.0:8000 --timeout 120 --log-level debug moz_solidaria_api.wsgi:applicationimport requests
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import BlogPost, Category, Tag, Comment, Newsletter, ImageCredit, Like, Share
