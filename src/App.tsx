@@ -295,8 +295,8 @@ const App = () => (
       </TooltipProvider>
       <Toaster />
       <Sonner />
-      {/* Sistema de detecção automática de atualizações */}
-      <UpdateChecker checkInterval={300000} showToast={true} />
+  {/* Sistema de detecção automática de atualizações (silencioso) */}
+  <UpdateChecker checkInterval={300000} />
     </AuthProvider>
   </QueryClientProvider>
 );
