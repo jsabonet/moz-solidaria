@@ -130,7 +130,9 @@ const CreatePost: React.FC = () => {
 
     try {
       // Prevent submitting a blob URL as featured_image (local preview, not uploaded)
-      if (formData.featured_image && formData.featured_image.startsWith('blob:')) {
+      // Allow saving as draft with a local blob preview, but block publishing until
+      // the image is uploaded to a real provider (backend/Cloudinary/ImgBB).
+      if (publishNow && formData.featured_image && formData.featured_image.startsWith('blob:')) {
         alert('Por favor, faça upload de uma imagem real antes de publicar o post.');
         setSaving(false);
         return;
