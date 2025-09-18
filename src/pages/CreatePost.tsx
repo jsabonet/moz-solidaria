@@ -70,6 +70,9 @@ const CreatePost: React.FC = () => {
     hashtags: '',
   });
 
+  // Helper: whether the featured image is a local object URL (blob:)
+  const isBlobImage = !!formData.featured_image && formData.featured_image.startsWith('blob:');
+
   useEffect(() => {
     if (!user) {
       navigate('/dashboard');
@@ -391,14 +394,24 @@ const CreatePost: React.FC = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex flex-col space-y-2">
-                    <Button
-                      onClick={(e) => handleSubmit(e, true)}
-                      disabled={saving || !formData.title || !formData.content}
-                      className="w-full"
-                    >
-                      <Save className="h-4 w-4 mr-2" />
-                      {saving ? 'Publicando...' : 'Publicar Agora'}
-                    </Button>
+                        {isBlobImage && (
+                          <div className="mb-2">
+                            <div className="p-3 rounded bg-yellow-50 border border-yellow-200 text-sm text-yellow-800">
+                              <strong>Atenção:</strong> A imagem destacada está sendo usada a partir de uma pré-visualização local. Faça upload da imagem para um provedor (Backend/Cloudinary/ImgBB) antes de publicar. Você ainda pode salvar o rascunho.
+                            </div>
+                          </div>
+                        )}
+
+                        <Button
+                          onClick={(e) => handleSubmit(e, true)}
+                          disabled={
+                            saving || !formData.title || !formData.content || isBlobImage
+                          }
+                          className="w-full"
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          {saving ? 'Publicando...' : 'Publicar Agora'}
+                        </Button>
                     <Button
                       variant="outline"
                       onClick={(e) => handleSubmit(e, false)}
