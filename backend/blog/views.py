@@ -500,9 +500,19 @@ class ImageUploadView(APIView):
         alt_text = request.data.get('alt_text', '')
         
         # Salva a imagem na pasta MEDIA_ROOT/uploads/
-        path = default_storage.save(f'uploads/{image.name}', image)
-        image_url = settings.MEDIA_URL + path
-        full_image_url = request.build_absolute_uri(image_url)
+        import logging
+        logger = logging.getLogger(__name__)
+        try:
+            path = default_storage.save(f'uploads/{image.name}', image)
+            image_url = settings.MEDIA_URL + path
+            full_image_url = request.build_absolute_uri(image_url)
+        except Exception as e:
+            # Log full exception for server-side diagnosis
+            logger.exception('Erro ao salvar imagem via default_storage')
+            # Return a JSON error; include detail only in DEBUG to avoid leaking internals
+            if getattr(settings, 'DEBUG', False):
+                return Response({'error': 'Falha ao salvar a imagem.', 'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': 'Falha ao salvar a imagem.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         # Preparar resposta com informações de crédito
         response_data = {
