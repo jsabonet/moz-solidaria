@@ -120,6 +120,11 @@ export async function fetchAllPosts() {
   let nextUrl: string | null = `${API_BASE}/blog/posts/`;
   
   while (nextUrl) {
+    // Garantir que a URL sempre use HTTPS em produção
+    if (nextUrl.startsWith('http://') && window.location.protocol === 'https:') {
+      nextUrl = nextUrl.replace('http://', 'https://');
+    }
+    
     const res = await fetch(nextUrl);
     if (!res.ok) throw new Error('Erro ao buscar posts');
     const data = await res.json();
@@ -128,8 +133,11 @@ export async function fetchAllPosts() {
     const posts = data.results || data;
     allPosts = [...allPosts, ...posts];
     
-    // Verificar se há próxima página
+    // Verificar se há próxima página e forçar HTTPS se necessário
     nextUrl = data.next || null;
+    if (nextUrl && nextUrl.startsWith('http://') && window.location.protocol === 'https:') {
+      nextUrl = nextUrl.replace('http://', 'https://');
+    }
   }
   
   return allPosts;
