@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BlogPost, Category, fetchPosts, fetchCategories, deletePost, duplicatePost } from '@/lib/api';
+import { BlogPost, Category, fetchAllPosts, fetchCategories, deletePost, duplicatePost } from '@/lib/api';
 import { toast } from 'sonner';
 import ExportButton from '@/components/reports/ExportButton';
 
@@ -32,7 +32,7 @@ const BlogManagement: React.FC = () => {
     try {
       setLoading(true);
       const [postsData, categoriesData] = await Promise.all([
-        fetchPosts(),
+        fetchAllPosts(), // Buscar TODOS os posts de todas as páginas
         fetchCategories(),
       ]);
 

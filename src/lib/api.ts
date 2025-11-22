@@ -114,6 +114,27 @@ export async function fetchPosts(query?: string) {
   return data.results || data;
 }
 
+// Buscar TODOS os posts (todas as páginas)
+export async function fetchAllPosts() {
+  let allPosts: BlogPost[] = [];
+  let nextUrl: string | null = `${API_BASE}/blog/posts/`;
+  
+  while (nextUrl) {
+    const res = await fetch(nextUrl);
+    if (!res.ok) throw new Error('Erro ao buscar posts');
+    const data = await res.json();
+    
+    // Adicionar posts da página atual
+    const posts = data.results || data;
+    allPosts = [...allPosts, ...posts];
+    
+    // Verificar se há próxima página
+    nextUrl = data.next || null;
+  }
+  
+  return allPosts;
+}
+
 export async function fetchPostDetail(slug: string) {
   const res = await fetch(`${API_BASE}/blog/posts/${slug}/`);
   if (!res.ok) throw new Error('Erro ao buscar post');
