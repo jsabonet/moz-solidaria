@@ -9,7 +9,7 @@ import PostKeywords from "@/components/PostKeywords";
 import PostHashtags from "@/components/PostHashtags";
 import SocialInteractions from "@/components/SocialInteractions";
 import Comments from "@/components/Comments";
-import { Calendar, User, ArrowLeft, Share2, Heart, MessageCircle, ArrowRight, Clock, TrendingUp, Eye, Bookmark } from "lucide-react";
+import { Calendar, User, ArrowLeft, Share2, Heart, MessageCircle, ArrowRight, Clock, TrendingUp, Eye, Bookmark, Menu, X } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
 import { fetchPostDetail, fetchAllPosts } from "@/lib/api";
@@ -20,6 +20,7 @@ const BlogDetail = () => {
   const [relatedPosts, setRelatedPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Função para atualizar post com dados sociais
   // Função para atualizar post com dados sociais (merge parcial)
@@ -231,20 +232,20 @@ const BlogDetail = () => {
       <Header />
       
       {/* Breadcrumb e botão voltar */}
-      <section className="bg-muted/30 py-6">
+      <section className="bg-muted/30 py-4 md:py-6">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <Link to="/" className="hover:text-primary">Início</Link>
-              <span>/</span>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center space-x-2 text-xs md:text-sm text-muted-foreground overflow-hidden">
+              <Link to="/" className="hover:text-primary hidden sm:inline">Início</Link>
+              <span className="hidden sm:inline">/</span>
               <Link to="/blog" className="hover:text-primary">Blog</Link>
               <span>/</span>
-              <span className="text-foreground">{post.title}</span>
+              <span className="text-foreground truncate max-w-[150px] sm:max-w-none">{post.title}</span>
             </div>
-            <Link to="/blog">
+            <Link to="/blog" className="flex-shrink-0">
               <Button variant="outline" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar ao Blog
+                <ArrowLeft className="mr-0 sm:mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Voltar ao Blog</span>
               </Button>
             </Link>
           </div>
@@ -370,6 +371,34 @@ const BlogDetail = () => {
       <section className="py-12">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="max-w-7xl mx-auto">
+            {/* Botão toggle da sidebar - Apenas mobile */}
+            <div className="lg:hidden mb-6 sticky top-16 z-30 bg-background/95 backdrop-blur-sm py-3 -mx-4 px-4 shadow-sm border-b">
+              <Button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                variant={sidebarOpen ? "default" : "outline"}
+                className="w-full justify-between group"
+                size="lg"
+              >
+                <span className="flex items-center gap-2">
+                  {sidebarOpen ? (
+                    <>
+                      <X className="h-5 w-5" />
+                      Fechar menu
+                    </>
+                  ) : (
+                    <>
+                      <Menu className="h-5 w-5" />
+                      Ver menu lateral
+                      <Badge variant="secondary" className="ml-2">
+                        {relatedPosts.length > 0 ? '4 itens' : '3 itens'}
+                      </Badge>
+                    </>
+                  )}
+                </span>
+                <ArrowRight className={`h-5 w-5 transition-transform duration-300 ${sidebarOpen ? 'rotate-90' : ''}`} />
+              </Button>
+            </div>
+            
             <div className="grid lg:grid-cols-[1fr_360px] gap-8 lg:gap-12">
               
               {/* Coluna principal - Conteúdo do artigo */}
@@ -424,8 +453,13 @@ const BlogDetail = () => {
                 />
               </div>
 
-              {/* Sidebar direita - Sticky */}
-              <aside className="lg:sticky lg:top-24 lg:self-start space-y-6 h-fit">
+              {/* Sidebar direita - Sticky no desktop, colapsável no mobile */}
+              <aside className={`
+                lg:sticky lg:top-24 lg:self-start lg:block 
+                space-y-6 h-fit
+                transition-all duration-300 ease-in-out
+                ${sidebarOpen ? 'block animate-in slide-in-from-top-4 fade-in duration-300' : 'hidden'}
+              `}>
                 
                 {/* Card do Autor */}
                 <Card className="overflow-hidden border-2 shadow-lg">
@@ -588,14 +622,14 @@ const BlogDetail = () => {
 
       {/* Artigos relacionados - Apenas 3 cards em destaque */}
       {relatedPosts.length > 0 && (
-        <section className="py-16 bg-muted/30">
+        <section className="py-12 md:py-16 bg-muted/30">
           <div className="container mx-auto px-4 lg:px-8">
             <div className="max-w-7xl mx-auto">
-              <div className="mb-8">
-                <h2 className="text-2xl md:text-3xl font-bold mb-2">Continue Lendo</h2>
-                <p className="text-muted-foreground">Artigos recomendados para você</p>
+              <div className="mb-6 md:mb-8">
+                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-2">Continue Lendo</h2>
+                <p className="text-sm md:text-base text-muted-foreground">Artigos recomendados para você</p>
               </div>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
                 {relatedPosts
                   .filter(relatedPost => relatedPost.status === 'published' || relatedPost.is_published === true)
                   .slice(0, 3)
