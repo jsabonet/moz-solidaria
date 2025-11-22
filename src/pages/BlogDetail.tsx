@@ -9,10 +9,10 @@ import PostKeywords from "@/components/PostKeywords";
 import PostHashtags from "@/components/PostHashtags";
 import SocialInteractions from "@/components/SocialInteractions";
 import Comments from "@/components/Comments";
-import { Calendar, User, ArrowLeft, Share2, Heart, MessageCircle, ArrowRight, Clock } from "lucide-react";
+import { Calendar, User, ArrowLeft, Share2, Heart, MessageCircle, ArrowRight, Clock, TrendingUp, Eye, Bookmark } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
-import { fetchPostDetail, fetchPosts } from "@/lib/api";
+import { fetchPostDetail, fetchAllPosts } from "@/lib/api";
 
 const BlogDetail = () => {
   const { slug } = useParams();
@@ -52,7 +52,7 @@ const BlogDetail = () => {
         
         const [postData, postsData] = await Promise.all([
           fetchPostDetail(slug),
-          fetchPosts()
+          fetchAllPosts() // Buscar TODOS os posts para relacionados
         ]);
         
         console.log("BlogDetail: postData recebido:", postData);
@@ -82,15 +82,13 @@ const BlogDetail = () => {
         }
         
         // Garantir que postsData é um array e filtrar apenas posts publicados
-        const posts = Array.isArray(postsData) ? postsData : postsData.results || [];
+        const posts = Array.isArray(postsData) ? postsData : [];
         console.log("BlogDetail: posts para relacionados:", posts);
         
         // Verificar imagens dos posts relacionados
         posts.forEach((p, index) => {
           console.log(`🖼️ Post relacionado ${index + 1} (${p.title}):`);
           console.log("  - featured_image:", p.featured_image);
-          console.log("  - featured_image_url:", p.featured_image_url);
-          console.log("  - Tipo de dados:", typeof p.featured_image);
         });
         
         const publishedPosts = posts.filter(p => 
@@ -99,7 +97,16 @@ const BlogDetail = () => {
         
         const related = publishedPosts
           .filter((p: any) => p.slug !== slug)
-          .slice(0, 3);
+          .sort((a: any, b: any) => {
+            // Ordenar por mais visualizados primeiro
+            const viewsA = a.views_count || 0;
+            const viewsB = b.views_count || 0;
+            if (viewsB !== viewsA) return viewsB - viewsA;
+            
+            // Se empate, ordenar por mais recentes
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          })
+          .slice(0, 6); // Pegar apenas os 6 posts mais relevantes
         setRelatedPosts(related);
         
       } catch (err: any) {
@@ -245,45 +252,56 @@ const BlogDetail = () => {
       </section>
 
       {/* Hero do artigo */}
-      <section className="py-12">
+      <section className="py-8 md:py-12 bg-muted/30">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-7xl mx-auto">
             {/* Categoria e data */}
-            <div className="flex items-center space-x-4 mb-6">
-              <Badge variant="secondary" className="bg-primary/10 text-primary">
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <Badge className="bg-primary/10 text-primary border-primary/20">
                 {post.category?.name || 'Sem categoria'}
               </Badge>
-              <div className="flex items-center text-sm text-muted-foreground space-x-4">
-                <div className="flex items-center space-x-1">
-                  <Calendar className="h-4 w-4" />
-                  <span>{new Date(post.created_at).toLocaleDateString('pt-BR')}</span>
+              <div className="flex flex-wrap items-center text-xs md:text-sm text-muted-foreground gap-3">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3 md:h-4 md:w-4" />
+                  <span>{new Date(post.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                 </div>
-                <div className="flex items-center space-x-1">
-                  <Clock className="h-4 w-4" />
+                <div className="flex items-center gap-1">
+                  <Clock className="h-3 w-3 md:h-4 md:w-4" />
                   <span>
                     {post.read_time && post.read_time > 0 
-                      ? `${post.read_time} min de leitura`
-                      : '5 min de leitura'
+                      ? `${post.read_time} min`
+                      : '5 min'
                     }
                   </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Eye className="h-3 w-3 md:h-4 md:w-4" />
+                  <span>{post.views_count || 0} visualizações</span>
                 </div>
               </div>
             </div>
 
             {/* Título */}
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-6">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold leading-tight mb-6">
               {post.title}
             </h1>
 
+            {/* Resumo */}
+            {post.excerpt && (
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed mb-6">
+                {post.excerpt}
+              </p>
+            )}
+
             {/* Autor e ações */}
-            <div className="flex items-center justify-between mb-8 pb-6 border-b">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-semibold">
-                  {(post.author?.username || post.author?.full_name || 'A').split(' ').map(n => n[0]).join('')}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-semibold text-sm md:text-base">
+                  {(post.author?.username || post.author?.full_name || 'A').split(' ').map(n => n[0]).join('').slice(0, 2)}
                 </div>
                 <div>
-                  <div className="font-semibold">{post.author?.username || post.author?.full_name || 'Autor'}</div>
-                  <div className="text-sm text-muted-foreground">Autor</div>
+                  <div className="font-semibold text-sm md:text-base">{post.author?.username || post.author?.full_name || 'Autor'}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">Autor</div>
                 </div>
               </div>
               
@@ -304,217 +322,353 @@ const BlogDetail = () => {
                 />
               </div>
             </div>
+          </div>
+        </div>
+      </section>
 
-            {/* Resumo */}
-            {post.excerpt && (
-              <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-                {post.excerpt}
-              </p>
-            )}
-
-            {/* Imagem principal */}
-            {(post.featured_image || post.featured_image_url) && (
-              <div className="mb-8">
-                {(() => {
-                  const imageUrl = getImageUrl(post.featured_image, post.featured_image_url);
-                  console.log("🖼️ Renderizando imagem principal:", imageUrl);
-                  
-                  if (!imageUrl) {
-                    console.log("❌ Nenhuma URL de imagem válida para renderizar");
-                    return (
-                      <div className="w-full max-w-[1200px] mx-auto h-64 bg-muted rounded-lg flex items-center justify-center">
-                        <span className="text-muted-foreground">Imagem não disponível</span>
-                      </div>
-                    );
-                  }
-                  
-                  return (
+      {/* Imagem principal em largura total */}
+      {(post.featured_image || post.featured_image_url) && (
+        <section className="py-0">
+          <div className="container mx-auto px-4 lg:px-8">
+            <div className="max-w-7xl mx-auto">
+              {(() => {
+                const imageUrl = getImageUrl(post.featured_image, post.featured_image_url);
+                
+                if (!imageUrl) {
+                  return null;
+                }
+                
+                return (
+                  <div className="relative aspect-video md:aspect-[21/9] overflow-hidden rounded-lg shadow-xl">
                     <img
                       src={imageUrl}
                       alt={post.featured_image_caption || post.title}
-                      className="w-full max-w-[1200px] mx-auto object-cover rounded-lg"
+                      className="w-full h-full object-cover"
                       onLoad={() => console.log("✅ Imagem principal carregada com sucesso:", imageUrl)}
                       onError={(e) => {
                         console.error("❌ Erro ao carregar imagem principal:", imageUrl);
-                        console.error("Erro completo:", e);
-                        // Fallback para placeholder
-                        e.currentTarget.src = "https://via.placeholder.com/1200x400/e2e8f0/64748b?text=Imagem+não+encontrada";
+                        e.currentTarget.src = "https://images.unsplash.com/photo-1567057420215-0afa9aa9253a?q=80&w=1200&auto=format&fit=crop";
                       }}
                     />
-                  );
-                })()}
-                
-                <div className="flex items-center text-sm text-muted-foreground mt-2 space-x-2">
-                  <p>{post.featured_image_caption}</p>
-                  <span className="text-gray-400">|</span>
-                  <p className="text-xs">Crédito: {post.featured_image_credit}</p>
+                    {post.featured_image_caption && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                        <p className="text-white text-xs md:text-sm">{post.featured_image_caption}</p>
+                        {post.featured_image_credit && (
+                          <p className="text-white/80 text-xs mt-1">Crédito: {post.featured_image_credit}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Layout de duas colunas: Conteúdo principal + Sidebar */}
+      <section className="py-12">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid lg:grid-cols-[1fr_360px] gap-8 lg:gap-12">
+              
+              {/* Coluna principal - Conteúdo do artigo */}
+              <div className="min-w-0">
+                {/* Conteúdo do artigo */}
+                <article className="prose prose-lg max-w-none mb-12">
+                  <div 
+                    dangerouslySetInnerHTML={{ __html: post.content }}
+                    className="space-y-6 text-foreground leading-relaxed 
+                      [&>h2]:text-2xl [&>h2]:font-bold [&>h2]:mt-8 [&>h2]:mb-4 [&>h2]:text-foreground 
+                      [&>h3]:text-xl [&>h3]:font-semibold [&>h3]:mt-6 [&>h3]:mb-3 [&>h3]:text-foreground 
+                      [&>p]:mb-4 [&>p]:leading-relaxed [&>p]:text-base
+                      [&>ul]:my-4 [&>ul>li]:mb-2 [&>ul>li]:ml-6 
+                      [&>ol]:my-4 [&>ol>li]:mb-2 [&>ol>li]:ml-6
+                      [&>blockquote]:border-l-4 [&>blockquote]:border-primary [&>blockquote]:pl-6 [&>blockquote]:italic [&>blockquote]:bg-muted/30 [&>blockquote]:py-4 [&>blockquote]:my-6 [&>blockquote]:rounded-r
+                      [&>blockquote>cite]:block [&>blockquote>cite]:mt-2 [&>blockquote>cite]:text-sm [&>blockquote>cite]:text-muted-foreground [&>blockquote>cite]:not-italic
+                      [&>img]:rounded-lg [&>img]:my-6 [&>img]:shadow-md
+                      [&>a]:text-primary [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary/80"
+                  />
+                </article>
+
+                {/* Keywords e Hashtags */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  <PostKeywords post={post} />
+                  <PostHashtags post={post} />
                 </div>
 
+                <Separator className="my-8" />
 
+                {/* Componente de interações sociais principal */}
+                <div className="mb-8">
+                  <SocialInteractions 
+                    post={{
+                      id: post.id,
+                      slug: post.slug,
+                      title: post.title,
+                      likes_count: post.likes_count || 0,
+                      shares_count: post.shares_count || 0,
+                      comments_count: post.comments_count || 0,
+                      is_liked_by_user: post.is_liked_by_user || false,
+                    }}
+                    onUpdate={handlePostUpdate}
+                    showComments={true}
+                  />
+                </div>
+
+                {/* Seção de comentários */}
+                <Comments 
+                  postSlug={post.slug}
+                  commentsCount={post.comments_count || 0}
+                  onCommentsUpdate={handleCommentsUpdate}
+                />
               </div>
-            )}
 
-            {/* Conteúdo do artigo */}
-            <article className="prose prose-lg max-w-none mb-12">
-              <div 
-                dangerouslySetInnerHTML={{ __html: post.content }}
-                className="space-y-6 text-foreground leading-relaxed [&>h2]:text-2xl [&>h2]:font-bold [&>h2]:mt-8 [&>h2]:mb-4 [&>h2]:text-foreground [&>h3]:text-xl [&>h3]:font-semibold [&>h3]:mt-6 [&>h3]:mb-3 [&>h3]:text-foreground [&>p]:mb-4 [&>p]:leading-relaxed [&>ul]:my-4 [&>ul>li]:mb-2 [&>ul>li]:ml-6 [&>blockquote]:border-l-4 [&>blockquote]:border-primary [&>blockquote]:pl-6 [&>blockquote]:italic [&>blockquote]:bg-muted/30 [&>blockquote]:py-4 [&>blockquote]:my-6 [&>blockquote>cite]:block [&>blockquote>cite]:mt-2 [&>blockquote>cite]:text-sm [&>blockquote>cite]:text-muted-foreground [&>blockquote>cite]:not-italic"
-              />
-            </article>
+              {/* Sidebar direita - Sticky */}
+              <aside className="lg:sticky lg:top-24 lg:self-start space-y-6 h-fit">
+                
+                {/* Card do Autor */}
+                <Card className="overflow-hidden border-2 shadow-lg">
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                      <User className="h-5 w-5 text-primary" />
+                      Sobre o Autor
+                    </h3>
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                        {(post.author?.username || post.author?.full_name || 'A').split(' ').map(n => n[0]).join('').slice(0, 2)}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-base">{post.author?.username || post.author?.full_name || 'Autor'}</div>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          Escritor e colaborador da MOZ SOLIDÁRIA
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Compartilhando histórias que transformam vidas e fortalecem comunidades em Cabo Delgado.
+                    </p>
+                  </CardContent>
+                </Card>
 
-            {/* Keywords e Hashtags */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <PostKeywords post={post} />
-              <PostHashtags post={post} />
+                {/* Card de Estatísticas */}
+                <Card className="overflow-hidden border-2 shadow-lg bg-gradient-to-br from-primary/5 to-secondary/5">
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                      Estatísticas
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Eye className="h-4 w-4" />
+                          <span>Visualizações</span>
+                        </div>
+                        <span className="font-bold text-lg">{post.views_count || 0}</span>
+                      </div>
+                      <Separator />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Heart className="h-4 w-4" />
+                          <span>Curtidas</span>
+                        </div>
+                        <span className="font-bold text-lg">{post.likes_count || 0}</span>
+                      </div>
+                      <Separator />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MessageCircle className="h-4 w-4" />
+                          <span>Comentários</span>
+                        </div>
+                        <span className="font-bold text-lg">{post.comments_count || 0}</span>
+                      </div>
+                      <Separator />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Share2 className="h-4 w-4" />
+                          <span>Compartilhamentos</span>
+                        </div>
+                        <span className="font-bold text-lg">{post.shares_count || 0}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Posts Recomendados/Mais Lidos */}
+                {relatedPosts.length > 0 && (
+                  <Card className="overflow-hidden border-2 shadow-lg">
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-primary" />
+                        Mais Lidos
+                      </h3>
+                      <div className="space-y-4">
+                        {relatedPosts.slice(0, 4).map((relatedPost, index) => {
+                          const cardImageUrl = getImageUrl(
+                            relatedPost.featured_image, 
+                            relatedPost.featured_image_url
+                          );
+                          
+                          return (
+                            <Link 
+                              key={relatedPost.id} 
+                              to={`/blog/${relatedPost.slug}`}
+                              className="block group"
+                            >
+                              <div className="flex gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                                <div className="relative w-20 h-20 flex-shrink-0 rounded-md overflow-hidden bg-muted">
+                                  {cardImageUrl ? (
+                                    <img 
+                                      src={cardImageUrl}
+                                      alt={relatedPost.title}
+                                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                      onError={(e) => {
+                                        e.currentTarget.src = "https://images.unsplash.com/photo-1567057420215-0afa9aa9253a?q=80&w=200&auto=format&fit=crop";
+                                      }}
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                                      Sem imagem
+                                    </div>
+                                  )}
+                                  <div className="absolute top-1 left-1 bg-primary text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                                    {index + 1}
+                                  </div>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-sm line-clamp-2 group-hover:text-primary transition-colors mb-1">
+                                    {relatedPost.title}
+                                  </h4>
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <span className="flex items-center gap-1">
+                                      <Eye className="h-3 w-3" />
+                                      {relatedPost.views_count || 0}
+                                    </span>
+                                    <span>•</span>
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="h-3 w-3" />
+                                      {relatedPost.read_time || 5} min
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* CTA Newsletter */}
+                <Card className="overflow-hidden border-2 shadow-lg bg-gradient-to-br from-primary to-secondary text-white">
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-bold mb-2">📬 Newsletter</h3>
+                    <p className="text-sm text-white/90 mb-4">
+                      Receba novos artigos e histórias de impacto direto no seu email
+                    </p>
+                    <div className="space-y-2">
+                      <input 
+                        type="email"
+                        placeholder="Seu email" 
+                        className="w-full px-3 py-2 rounded-md text-foreground text-sm"
+                      />
+                      <Button className="w-full bg-white text-primary hover:bg-white/90">
+                        Inscrever-se
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </aside>
+
             </div>
-
-            {/* Tags */}
-            {/* <div className="mb-8">
-              <h3 className="text-lg font-semibold mb-3">Categoria</h3>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline">
-                  {post.category?.name || 'Sem categoria'}
-                </Badge>
-              </div>
-            </div> */}
-
-            {/* <Separator className="my-8" /> */}
-
-            {/* Componente de interações sociais principal */}
-            <SocialInteractions 
-              post={{
-                id: post.id,
-                slug: post.slug,
-                title: post.title,
-                likes_count: post.likes_count || 0,
-                shares_count: post.shares_count || 0,
-                comments_count: post.comments_count || 0,
-                is_liked_by_user: post.is_liked_by_user || false,
-              }}
-              onUpdate={handlePostUpdate}
-              showComments={true}
-            />
-
-            {/* Seção de comentários */}
-            <Comments 
-              postSlug={post.slug}
-              commentsCount={post.comments_count || 0}
-              onCommentsUpdate={handleCommentsUpdate}
-            />
           </div>
         </div>
       </section>
 
-      {/* Artigos relacionados */}
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="mab-8">
-            <h2 className="text-2xl font-bold mb-2">Artigos Relacionados</h2>
-            <div className="w-20 h-1 bg-secondary mb-8"></div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {relatedPosts
-                .filter(relatedPost => relatedPost.status === 'published' || relatedPost.is_published === true)
-                .map((relatedPost) => {
-                  console.log(`🖼️ Processando card do post: ${relatedPost.title}`);
-                  console.log("  - featured_image:", relatedPost.featured_image);
-                  console.log("  - featured_image_url:", relatedPost.featured_image_url);
-                  
-                  const cardImageUrl = getImageUrl(
-                    relatedPost.featured_image, 
-                    relatedPost.featured_image_url
-                  );
-                  
-                  return (
-                    <Card key={relatedPost.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                      {cardImageUrl ? (
-                        <div className="h-48 overflow-hidden">
-                          <img 
-                            src={cardImageUrl}
-                            alt={relatedPost.title}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                            onLoad={() => console.log(`✅ Imagem do card carregada: ${relatedPost.title}`)}
-                            onError={(e) => {
-                              console.error(`❌ Erro ao carregar imagem do card: ${relatedPost.title}`, cardImageUrl);
-                              e.currentTarget.src = "https://via.placeholder.com/400x200/e2e8f0/64748b?text=Sem+imagem";
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <div className="h-48 bg-muted flex items-center justify-center text-muted-foreground">
-                          <span>Sem imagem</span>
-                        </div>
-                      )}
-                      <CardContent className="p-6">
-                        <Badge variant="secondary" className="mb-3">
-                          {relatedPost.category?.name || 'Sem categoria'}
-                        </Badge>
-                        <h3 className="text-xl font-semibold mb-3 line-clamp-2">
-                          {relatedPost.title}
-                        </h3>
-                        <p className="text-muted-foreground mb-4 line-clamp-3">
-                          {relatedPost.excerpt || relatedPost.content.replace(/<[^>]*>/g, '').substring(0, 150) + '...'}
-                        </p>
-                        <div className="flex items-center text-sm text-muted-foreground mb-4 space-x-4">
-                          <div className="flex items-center space-x-1">
-                            <User className="h-3 w-3" />
-                            <span>{relatedPost.author?.username || relatedPost.author?.full_name || 'Autor'}</span>
+      {/* Artigos relacionados - Apenas 3 cards em destaque */}
+      {relatedPosts.length > 0 && (
+        <section className="py-16 bg-muted/30">
+          <div className="container mx-auto px-4 lg:px-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="mb-8">
+                <h2 className="text-2xl md:text-3xl font-bold mb-2">Continue Lendo</h2>
+                <p className="text-muted-foreground">Artigos recomendados para você</p>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                {relatedPosts
+                  .filter(relatedPost => relatedPost.status === 'published' || relatedPost.is_published === true)
+                  .slice(0, 3)
+                  .map((relatedPost) => {
+                    const cardImageUrl = getImageUrl(
+                      relatedPost.featured_image, 
+                      relatedPost.featured_image_url
+                    );
+                    
+                    return (
+                      <Card key={relatedPost.id} className="group hover:shadow-xl transition-all duration-500 overflow-hidden border hover:border-primary/50">
+                        {cardImageUrl ? (
+                          <div className="aspect-video overflow-hidden relative">
+                            <img 
+                              src={cardImageUrl}
+                              alt={relatedPost.title}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                              onError={(e) => {
+                                e.currentTarget.src = "https://images.unsplash.com/photo-1567057420215-0afa9aa9253a?q=80&w=600&auto=format&fit=crop";
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            <Badge className="absolute top-3 left-3 shadow-lg">{relatedPost.category?.name || 'Sem categoria'}</Badge>
                           </div>
-                          <span>
-                            {relatedPost.read_time && relatedPost.read_time > 0 
-                              ? `${relatedPost.read_time} min de leitura`
-                              : '5 min de leitura'
-                            }
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            {new Date(relatedPost.created_at).toLocaleDateString('pt-BR')}
-                          </span>
+                        ) : (
+                          <div className="aspect-video bg-muted flex items-center justify-center text-muted-foreground">
+                            <span>Sem imagem</span>
+                          </div>
+                        )}
+                        <CardContent className="p-4 md:p-6">
                           <Link to={`/blog/${relatedPost.slug}`}>
-                            <Button variant="ghost" size="sm">
-                              Ler mais
-                              <ArrowRight className="ml-1 h-3 w-3" />
+                            <h3 className="text-lg md:text-xl font-semibold mb-3 line-clamp-2 group-hover:text-primary transition-colors min-h-[3.5rem]">
+                              {relatedPost.title}
+                            </h3>
+                          </Link>
+                          <p className="text-muted-foreground text-sm md:text-base mb-4 line-clamp-2 min-h-[2.5rem]">
+                            {relatedPost.excerpt || relatedPost.content.replace(/<[^>]*>/g, '').substring(0, 120) + '...'}
+                          </p>
+                          <div className="flex flex-wrap items-center text-xs md:text-sm text-muted-foreground mb-4 gap-2 md:gap-3">
+                            <div className="flex items-center gap-1">
+                              <User className="h-3 w-3 flex-shrink-0" />
+                              <span className="truncate max-w-[100px] md:max-w-[120px]">{relatedPost.author?.username || relatedPost.author?.full_name || 'Autor'}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Eye className="h-3 w-3 flex-shrink-0" />
+                              <span>{relatedPost.views_count || 0}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3 flex-shrink-0" />
+                              <span>
+                                {relatedPost.read_time && relatedPost.read_time > 0 
+                                  ? `${relatedPost.read_time} min`
+                                  : '5 min'
+                                }
+                              </span>
+                            </div>
+                          </div>
+                          <Link to={`/blog/${relatedPost.slug}`}>
+                            <Button variant="outline" size="sm" className="w-full group/btn">
+                              <span className="mr-1">Ler artigo</span>
+                              <ArrowRight className="h-3 w-3 group-hover/btn:translate-x-1 transition-transform" />
                             </Button>
                           </Link>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-            </div>
-            
-            {/* Mensagem se não houver posts relacionados publicados */}
-            {relatedPosts.filter(p => p.status === 'published' || p.is_published === true).length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">Nenhum artigo relacionado encontrado.</p>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
               </div>
-            )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* CTA Newsletter */}
-      {/* <section className="py-16 bg-gradient-to-r from-solidarity-orange to-solidarity-warm text-white">
-        <div className="container mx-auto px-4 lg:px-8 text-center space-y-6">
-          <h2 className="text-3xl font-bold">
-            Não Perca Nenhuma História
-          </h2>
-          <p className="text-xl text-white/90 max-w-2xl mx-auto">
-            Inscreva-se em nossa newsletter e receba as últimas notícias e histórias de impacto da MOZ SOLIDÁRIA
-          </p>
-          <div className="max-w-md mx-auto flex gap-3">
-            <input 
-              type="email"
-              placeholder="Seu email" 
-              className="flex-1 px-4 py-2 rounded-md text-foreground"
-            />
-            <Button className="bg-white text-solidarity-orange hover:bg-white/90 px-6">
-              Inscrever
-            </Button>
-          </div>
-        </div>
-      </section>
- */}
       <Footer />
     </div>
   );
