@@ -52,6 +52,8 @@ export interface BlogPost {
   seo_score?: number;
   readability_score?: number;
   views_count?: number;
+  likes_count?: number;
+  comments_count?: number;
   read_time?: number;
   
   // Timestamps

@@ -21,6 +21,7 @@ import UserManagement from '@/components/admin/UserManagement';
 import ReportsCenter from '@/components/reports/ReportsCenter';
 import AdvancedStats from '@/components/reports/AdvancedStats';
 import ExportButton from '@/components/reports/ExportButton';
+import BlogManagement from '@/components/admin/BlogManagement';
 import {
   BarChart3,
   Users,
@@ -482,127 +483,7 @@ const Dashboard: React.FC = () => {
 
           {/* Blog Tab */}
           <TabsContent value="blog" className="space-y-4 md:space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <h2 className="text-xl md:text-2xl font-bold">Gerenciar Blog</h2>
-              <div className="flex space-x-2">
-                <ExportButton 
-                  data={Array.isArray(posts) ? posts : []} 
-                  filename="blog-posts" 
-                  type="blog" 
-                  variant="outline" 
-                  size="sm"
-                />
-                <Button size="sm" className="w-full sm:w-auto" asChild>
-                  <Link to="/dashboard/posts/new">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo Post
-                  </Link>
-                </Button>
-              </div>
-            </div>
-            {Array.isArray(posts) && posts.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Título</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Autor</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {posts.map((post) => (
-                    <TableRow key={post.id}>
-                      <TableCell className="font-medium">{post.title}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">
-                          {typeof post.category === 'object' && post.category
-                            ? post.category.name
-                            : typeof post.category === 'string' && post.category
-                              ? post.category
-                              : 'Sem categoria'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={post.is_published ? "default" : "secondary"}>
-                          {post.is_published ? 'Publicado' : 'Rascunho'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {post.author?.username || post.author?.full_name || 'Autor'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="h-3 w-3" />
-                          <span>
-                            {post.published_at
-                              ? new Date(post.published_at).toLocaleDateString('pt-BR')
-                              : new Date(post.created_at).toLocaleDateString('pt-BR')}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button variant="outline" size="sm" asChild>
-                            <Link to={`/dashboard/posts/edit/${post.slug}`}>
-                              <Edit className="h-3 w-3" />
-                            </Link>
-                          </Button>
-                          
-                          {/* Duplicate Button */}
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleDuplicatePost(post.slug)}
-                            title="Duplicar post"
-                          >
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                          
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Deletar Post</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Tem certeza que deseja deletar o post "{post.title}"? 
-                                  Esta ação não pode ser desfeita.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={() => handleDeletePost(post.slug)}
-                                  className="bg-destructive text-destructive-foreground"
-                                >
-                                  Deletar
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">Nenhum post encontrado</p>
-                <Button asChild>
-                  <Link to="/dashboard/posts/new">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Criar Primeiro Post
-                  </Link>
-                </Button>
-              </div>
-            )}
+            <BlogManagement />
           </TabsContent>
 
           {/* Projects Tab */}
