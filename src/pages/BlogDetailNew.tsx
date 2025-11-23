@@ -50,15 +50,91 @@ const BlogDetailNew = () => {
         const posts = Array.isArray(postsData) ? postsData : [];
         const publishedPosts = posts.filter(p => p.status === 'published' || p.is_published === true);
         
+        // Algoritmo inteligente de posts relacionados baseado em múltiplos critérios
+        const calculateRelevance = (candidate: any, current: any): number => {
+          let score = 0;
+          
+          // 1. Mesma categoria: +100 pontos (alta relevância)
+          if (candidate.category?.id === current.category?.id) {
+            score += 100;
+          }
+          
+          // 2. Tags compartilhadas: +30 pontos por tag
+          if (candidate.tags && current.tags && Array.isArray(candidate.tags) && Array.isArray(current.tags)) {
+            const sharedTags = candidate.tags.filter((t: any) => 
+              current.tags.some((ct: any) => ct.id === t.id)
+            );
+            score += sharedTags.length * 30;
+          }
+          
+          // 3. Hashtags compartilhadas: +20 pontos por hashtag
+          if (candidate.hashtags && current.hashtags) {
+            const candidateHashtags = candidate.hashtags.toLowerCase().split(',').map((h: string) => h.trim());
+            const currentHashtags = current.hashtags.toLowerCase().split(',').map((h: string) => h.trim());
+            const sharedHashtags = candidateHashtags.filter((h: string) => currentHashtags.includes(h));
+            score += sharedHashtags.length * 20;
+          }
+          
+          // 4. Mesmo autor: +50 pontos
+          if (candidate.author?.id === current.author?.id) {
+            score += 50;
+          }
+          
+          // 5. Popularidade (views): +1 ponto por cada 100 views
+          score += (candidate.views_count || 0) / 100;
+          
+          // 6. Engajamento (likes + shares + comments): +0.5 por interação
+          const engagement = (candidate.likes_count || 0) + 
+                           (candidate.shares_count || 0) + 
+                           (candidate.comments_count || 0);
+          score += engagement * 0.5;
+          
+          // 7. Recência: Posts mais recentes ganham pontos (até 8 semanas)
+          const weeksDiff = Math.abs(
+            (new Date(candidate.created_at).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)
+          );
+          score += Math.max(0, 40 - weeksDiff * 5);
+          
+          // 8. Similaridade no título (palavras-chave comuns): +15 por palavra
+          if (candidate.title && current.title) {
+            const candidateWords = candidate.title.toLowerCase()
+              .split(/\s+/)
+              .filter((w: string) => w.length > 4); // Palavras com mais de 4 letras
+            const currentWords = current.title.toLowerCase()
+              .split(/\s+/)
+              .filter((w: string) => w.length > 4);
+            const sharedWords = candidateWords.filter((w: string) => currentWords.includes(w));
+            score += sharedWords.length * 15;
+          }
+          
+          // 9. Featured posts ganham bônus: +25 pontos
+          if (candidate.is_featured) {
+            score += 25;
+          }
+          
+          return score;
+        };
+        
         const related = publishedPosts
           .filter((p: any) => p.slug !== slug)
+          .map((p: any) => ({
+            ...p,
+            relevanceScore: calculateRelevance(p, postData)
+          }))
           .sort((a: any, b: any) => {
-            const viewsA = a.views_count || 0;
-            const viewsB = b.views_count || 0;
-            if (viewsB !== viewsA) return viewsB - viewsA;
+            // Ordenar por score de relevância (descendente)
+            if (b.relevanceScore !== a.relevanceScore) {
+              return b.relevanceScore - a.relevanceScore;
+            }
+            // Desempate: views
+            if ((b.views_count || 0) !== (a.views_count || 0)) {
+              return (b.views_count || 0) - (a.views_count || 0);
+            }
+            // Desempate final: data
             return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
           })
           .slice(0, 6);
+        
         setRelatedPosts(related);
         
       } catch (err: any) {
