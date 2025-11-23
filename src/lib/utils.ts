@@ -22,16 +22,11 @@ export function formatCurrency(value: number): string {
 }
 
 /**
- * Formatar números grandes de forma amigável (ex: 1.2K, 1.5M)
+ * Formatar números grandes com separadores de milhares
+ * Exibe valores completos sem abreviações (acessível para usuários com baixa alfabetização)
  */
 export function formatNumber(value: number): string {
-  if (value >= 1000000) {
-    return (value / 1000000).toFixed(1) + 'M';
-  }
-  if (value >= 1000) {
-    return (value / 1000).toFixed(1) + 'K';
-  }
-  return value.toString();
+  return new Intl.NumberFormat('pt-PT').format(value);
 }
 
 /**
