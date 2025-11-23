@@ -1190,8 +1190,9 @@ class ExportViewSet(viewsets.ViewSet):
         # Obter nome amigável
         friendly_name = header_map.get(header.lower(), header.replace('_', ' ').title())
         
-        # Aplicar quebra inteligente se o título for muito longo
-        if len(friendly_name) > 15:
+        # Aplicar quebra inteligente MAIS AGRESSIVA se o título for longo
+        # Reduzir limite de 15 para 12 caracteres para quebrar mais cedo
+        if len(friendly_name) > 12:
             # Quebrar em palavras para melhor legibilidade nos cabeçalhos
             words = friendly_name.split()
             if len(words) > 2:
@@ -1199,10 +1200,21 @@ class ExportViewSet(viewsets.ViewSet):
                 mid_point = len(words) // 2
                 line1 = ' '.join(words[:mid_point])
                 line2 = ' '.join(words[mid_point:])
+                
+                # Se as linhas ainda são muito longas, cortar
+                if len(line1) > 18:
+                    line1 = line1[:16] + ".."
+                if len(line2) > 18:
+                    line2 = line2[:16] + ".."
+                
                 return f"{line1}\n{line2}"
-            elif len(words) == 2 and len(friendly_name) > 20:
-                # Para 2 palavras muito longas, quebrar
+            elif len(words) == 2:
+                # Para 2 palavras, sempre quebrar se exceder 12 caracteres total
                 return f"{words[0]}\n{words[1]}"
+            elif len(words) == 1 and len(friendly_name) > 15:
+                # Palavra única muito longa: forçar quebra por caracteres
+                mid = len(friendly_name) // 2
+                return f"{friendly_name[:mid]}-\n{friendly_name[mid:]}"
         
         return friendly_name
 
@@ -1227,35 +1239,35 @@ class ExportViewSet(viewsets.ViewSet):
             except:
                 pass
         
-        # === QUEBRA OTIMIZADA PARA LAYOUT HORIZONTAL ===
+        # === QUEBRA OTIMIZADA PARA LAYOUT HORIZONTAL COM LIMITES MAIS CONSERVADORES ===
         header_lower = header.lower()
         
-        # Determinar limite baseado no tipo de coluna
+        # Determinar limite baseado no tipo de coluna (REDUZIDOS para evitar sobreposição)
         if any(keyword in header_lower for keyword in ['id', 'código', 'num']):
             # IDs e códigos: sem quebra, manter compacto
-            max_length = 12
+            max_length = 10
             if len(value) > max_length:
-                return value[:max_length-3] + "..."
+                return value[:max_length-2] + ".."
         
         elif any(keyword in header_lower for keyword in ['nome', 'title', 'titulo']):
-            # Nomes e títulos: quebra moderada
-            max_length = 35
-            max_line_length = 18
+            # Nomes e títulos: quebra moderada COM LIMITE MAIS APERTADO
+            max_length = 30  # Reduzido de 35
+            max_line_length = 15  # Reduzido de 18
         
         elif any(keyword in header_lower for keyword in ['descri', 'observ', 'coment', 'habilidades']):
-            # Descrições: quebra mais permissiva para aproveitar espaço horizontal
-            max_length = 60
-            max_line_length = 30
+            # Descrições: quebra mais permissiva mas COM CONTROLE
+            max_length = 50  # Reduzido de 60
+            max_line_length = 25  # Reduzido de 30
         
         elif any(keyword in header_lower for keyword in ['email', 'endereço']):
-            # Emails e endereços: quebra inteligente por palavras
-            max_length = 45
-            max_line_length = 22
+            # Emails e endereços: quebra inteligente COM LIMITE
+            max_length = 35  # Reduzido de 45
+            max_line_length = 18  # Reduzido de 22
         
         else:
-            # Campos padrão: quebra equilibrada
-            max_length = 30
-            max_line_length = 15
+            # Campos padrão: quebra equilibrada MAS MAIS CONSERVADORA
+            max_length = 25  # Reduzido de 30
+            max_line_length = 13  # Reduzido de 15
         
         # === APLICAR QUEBRA INTELIGENTE ===
         if len(value) <= max_length:
@@ -1359,8 +1371,25 @@ class ExportViewSet(viewsets.ViewSet):
         # Larguras adaptativas premium
         col_widths = self._calculate_column_widths_premium(table_data, page_width, num_cols)
         
+        # === CALCULAR ALTURAS DE LINHA DINÂMICAS ===
+        # Altura mínima por linha para evitar sobreposição de texto
+        min_row_height = 0.8*cm  # Altura mínima segura
+        header_height = 1.2*cm   # Altura do cabeçalho (mais espaço)
+        
+        # Criar lista de alturas: primeira linha (header) + demais linhas
+        row_heights = [header_height]  # Header
+        for i in range(1, len(table_data)):
+            # Estimar altura baseada no conteúdo
+            # Se houver muitas colunas ou texto longo, aumentar altura
+            if num_cols > 8:
+                row_heights.append(min_row_height * 1.3)  # Mais altura para muitas colunas
+            elif num_cols > 5:
+                row_heights.append(min_row_height * 1.1)  # Altura média
+            else:
+                row_heights.append(min_row_height)  # Altura padrão
+        
         # === CRIAR TABELA PREMIUM COM CONTROLE DE ALTURA ===
-        table = Table(table_data, colWidths=col_widths, repeatRows=1, rowHeights=None)
+        table = Table(table_data, colWidths=col_widths, repeatRows=1, rowHeights=row_heights)
         
         # === ESTILO CORPORATIVO NEUTRO COM CONTROLE RIGOROSO ===
         table_style = TableStyle([
@@ -1512,16 +1541,34 @@ class ExportViewSet(viewsets.ViewSet):
         for width_type in smart_widths:
             calculated_widths.append(width_map[width_type])
         
-        # === NORMALIZAR PARA NÃO EXCEDER LARGURA TOTAL ===
+        # === NORMALIZAR PARA NÃO EXCEDER LARGURA TOTAL (GARANTIA 100%) ===
         total_calculated = sum(calculated_widths)
-        if total_calculated > safe_width:
-            # Reduzir proporcionalmente
-            scale_factor = safe_width / total_calculated
-            calculated_widths = [w * scale_factor for w in calculated_widths]
-        elif total_calculated < safe_width * 0.85:
+        
+        # SEMPRE normalizar para garantir que não exceda a largura disponível
+        # Usar 98% para margem de segurança extra
+        target_width = safe_width * 0.98
+        
+        if total_calculated > target_width:
+            # Reduzir proporcionalmente COM MARGEM DE SEGURANÇA
+            scale_factor = target_width / total_calculated
+            calculated_widths = [w * scale_factor * 0.99 for w in calculated_widths]  # 1% extra de segurança
+        elif total_calculated < safe_width * 0.80:
             # Se sobrar muito espaço, distribuir proporcionalmente
-            scale_factor = (safe_width * 0.95) / total_calculated
+            # Mas nunca exceder o target_width
+            scale_factor = target_width / total_calculated
+            calculated_widths = [w * scale_factor * 0.99 for w in calculated_widths]
+        else:
+            # Mesmo em casos intermediários, aplicar normalização suave
+            scale_factor = target_width / total_calculated
             calculated_widths = [w * scale_factor for w in calculated_widths]
+        
+        # === VALIDAÇÃO FINAL (SEGURANÇA) ===
+        final_total = sum(calculated_widths)
+        if final_total > safe_width:
+            # Última linha de defesa: forçar proporcionalidade
+            emergency_factor = (safe_width * 0.95) / final_total
+            calculated_widths = [w * emergency_factor for w in calculated_widths]
+            logger.warning(f"⚠️ Larguras de colunas ajustadas emergencialmente: {final_total:.2f} > {safe_width:.2f}")
         
         return calculated_widths
 
