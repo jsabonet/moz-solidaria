@@ -75,7 +75,7 @@ export const LazyBlog = lazy(() =>
 );
 
 export const LazyBlogDetail = lazy(() => 
-  import('@/pages/BlogDetail').then(module => ({ 
+  import('@/pages/BlogDetailNew').then(module => ({ 
     default: module.default 
   }))
 );

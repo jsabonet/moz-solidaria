@@ -245,6 +245,9 @@ class BlogPost(models.Model):
         return unique_slug
     
     def save(self, *args, **kwargs):
+        # Extract update_fields from kwargs
+        update_fields = kwargs.get('update_fields', None)
+        
         if not self.slug:
             self.slug = self.generate_unique_slug()
         
@@ -291,13 +294,17 @@ class BlogPost(models.Model):
                 old_readability_score != self.readability_score):
                 super().save(update_fields=['seo_score', 'readability_score'])
         
-        # Resize featured image if it exists
-        if self.featured_image:
-            self.resize_image()
+        # Only resize images if we're not doing a simple update_fields save
+        # (e.g., incrementing views_count)
+        if not update_fields or 'featured_image' in update_fields:
+            # Resize featured image if it exists
+            if self.featured_image:
+                self.resize_image()
         
-        # Resize OG image if it exists
-        if self.og_image:
-            self.resize_og_image()
+        if not update_fields or 'og_image' in update_fields:
+            # Resize OG image if it exists
+            if self.og_image:
+                self.resize_og_image()
     
     def resize_image(self):
         """Resize featured image to optimize for web"""

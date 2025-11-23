@@ -221,7 +221,7 @@ const BlogDetail = () => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-b from-muted/20 to-background">
       <SEOHead 
         post={post}
         title={post.meta_title || post.title}
@@ -231,21 +231,21 @@ const BlogDetail = () => {
       />
       <Header />
       
-      {/* Breadcrumb e botão voltar */}
-      <section className="bg-muted/30 py-4 md:py-6">
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center space-x-2 text-xs md:text-sm text-muted-foreground overflow-hidden">
-              <Link to="/" className="hover:text-primary hidden sm:inline">Início</Link>
-              <span className="hidden sm:inline">/</span>
-              <Link to="/blog" className="hover:text-primary">Blog</Link>
+      {/* Breadcrumb */}
+      <section className="border-b bg-background/80 backdrop-blur-sm">
+        <div className="container mx-auto px-4 max-w-[1440px]">
+          <div className="flex items-center justify-between py-3">
+            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+              <Link to="/" className="hover:text-primary transition-colors">Início</Link>
               <span>/</span>
-              <span className="text-foreground truncate max-w-[150px] sm:max-w-none">{post.title}</span>
+              <Link to="/blog" className="hover:text-primary transition-colors">Blog</Link>
+              <span>/</span>
+              <span className="text-foreground font-medium truncate max-w-[200px] lg:max-w-[400px]">{post.title}</span>
             </div>
-            <Link to="/blog" className="flex-shrink-0">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="mr-0 sm:mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Voltar ao Blog</span>
+            <Link to="/blog">
+              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar
               </Button>
             </Link>
           </div>
