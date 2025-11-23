@@ -584,10 +584,24 @@ class ExportViewSet(viewsets.ViewSet):
             
         except ImportError as e:
             logger.warning(f"⚠️ ReportLab não disponível: {e}")
+            import traceback
+            logger.error(f"ImportError traceback: {traceback.format_exc()}")
             return self._generate_pdf_fallback(data, options, filename)
         except Exception as e:
             logger.error(f"❌ Erro ao gerar PDF premium: {e}")
-            return self._generate_pdf_fallback(data, options, filename)
+            import traceback
+            logger.error(f"Exception traceback completo: {traceback.format_exc()}")
+            logger.error(f"Tipo de dados recebidos: {type(data)}")
+            logger.error(f"Primeiro item (se existir): {data[0] if data else 'Sem dados'}")
+            logger.error(f"Número de registros: {len(data) if data else 0}")
+            
+            # Tentar retornar erro mais específico
+            return Response({
+                'error': 'Erro ao gerar PDF',
+                'details': str(e),
+                'traceback': traceback.format_exc(),
+                'type': 'pdf_generation_error'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def _generate_pdf_fallback(self, data, options, filename):
         """Fallback quando PDF não pode ser gerado - retorna dados estruturados"""
@@ -1085,73 +1099,109 @@ class ExportViewSet(viewsets.ViewSet):
     def _prepare_table_data(self, data):
         """Preparar dados para tabela com formatação inteligente e quebra de texto"""
         if not data:
+            logger.warning("⚠️ _prepare_table_data recebeu dados vazios")
             return []
         
-        # Limitar a 50 registros para melhor performance
-        limited_data = data[:50]
-        
-        # Obter headers e formatá-los
-        headers = list(limited_data[0].keys())
-        formatted_headers = [self._format_header(h) for h in headers]
-        
-        # Import necessário para Paragraph
-        from reportlab.platypus import Paragraph
-        from reportlab.lib.styles import ParagraphStyle
-        from reportlab.lib import colors
-        
-        # Estilo para células com texto longo - ULTRA COMPACTO
-        cell_style = ParagraphStyle(
-            'CellStyle',
-            fontSize=7,         # Ainda menor
-            leading=8,          # Espaçamento menor entre linhas
-            textColor=colors.black,
-            wordWrap='LTR',     # Quebra mais agressiva
-            alignment=0,        # Alinhamento à esquerda
-            leftIndent=1,       # Menos indentação
-            rightIndent=1,      # Menos indentação
-            splitLongWords=1,   # Quebrar palavras longas
-            allowWidows=0,      # Evitar linhas órfãs
-            allowOrphans=0      # Evitar linhas órfãs
-        )
-        
-        # Estilo especial para cabeçalhos - COMPACTO
-        header_style = ParagraphStyle(
-            'HeaderStyle',
-            fontSize=8,         # Menor
-            leading=9,          # Menor
-            textColor=colors.whitesmoke,
-            wordWrap='LTR',     # Quebra agressiva
-            alignment=1,        # Centralizado
-            fontName='Helvetica-Bold',
-            leftIndent=1,       # Menos indentação
-            rightIndent=1,      # Menos indentação
-            splitLongWords=1,   # Quebrar palavras longas
-            allowWidows=0,
-            allowOrphans=0
-        )
-        
-        # Processar cabeçalhos com quebra de texto AGRESSIVA
-        header_row = []
-        for header_text in formatted_headers:
-            # Usar Paragraph para TODOS os headers para controle total
-            header_content = Paragraph(header_text.replace('\n', '<br/>'), header_style)
-            header_row.append(header_content)
-        
-        # Preparar linhas de dados com controle rigoroso
-        table_data = [header_row]
-        
-        for item in limited_data:
-            row = []
-            for header in headers:
-                value = item.get(header, 'N/A')
-                formatted_value = self._format_cell_value(str(value), header)
-                
-                # Usar Paragraph para TODOS os valores para controle total de quebra
-                cell_content = Paragraph(formatted_value.replace('\n', '<br/>'), cell_style)
-                row.append(cell_content)
-            table_data.append(row)
-        
-        return table_data
+        try:
+            # Limitar a 50 registros para melhor performance
+            limited_data = data[:50]
+            
+            # Validar que temos dados e que são dicionários
+            if not limited_data or not isinstance(limited_data[0], dict):
+                logger.error(f"❌ Dados inválidos: tipo={type(limited_data[0]) if limited_data else 'vazio'}")
+                return []
+            
+            # Obter headers e formatá-los
+            headers = list(limited_data[0].keys())
+            if not headers:
+                logger.error("❌ Nenhum header encontrado nos dados")
+                return []
+            
+            logger.info(f"📋 Preparando tabela com {len(headers)} colunas e {len(limited_data)} linhas")
+            formatted_headers = [self._format_header(h) for h in headers]
+            
+            # Import necessário para Paragraph
+            from reportlab.platypus import Paragraph
+            from reportlab.lib.styles import ParagraphStyle
+            from reportlab.lib import colors
+            
+            # Estilo para células com texto longo - ULTRA COMPACTO
+            cell_style = ParagraphStyle(
+                'CellStyle',
+                fontSize=7,         # Ainda menor
+                leading=8,          # Espaçamento menor entre linhas
+                textColor=colors.black,
+                wordWrap='LTR',     # Quebra mais agressiva
+                alignment=0,        # Alinhamento à esquerda
+                leftIndent=1,       # Menos indentação
+                rightIndent=1,      # Menos indentação
+                splitLongWords=1,   # Quebrar palavras longas
+                allowWidows=0,      # Evitar linhas órfãs
+                allowOrphans=0      # Evitar linhas órfãs
+            )
+            
+            # Estilo especial para cabeçalhos - COMPACTO
+            header_style = ParagraphStyle(
+                'HeaderStyle',
+                fontSize=8,         # Menor
+                leading=9,          # Menor
+                textColor=colors.whitesmoke,
+                wordWrap='LTR',     # Quebra agressiva
+                alignment=1,        # Centralizado
+                fontName='Helvetica-Bold',
+                leftIndent=1,       # Menos indentação
+                rightIndent=1,      # Menos indentação
+                splitLongWords=1,   # Quebrar palavras longas
+                allowWidows=0,
+                allowOrphans=0
+            )
+            
+            # Processar cabeçalhos com quebra de texto AGRESSIVA
+            header_row = []
+            for header_text in formatted_headers:
+                try:
+                    # Usar Paragraph para TODOS os headers para controle total
+                    header_content = Paragraph(header_text.replace('\n', '<br/>'), header_style)
+                    header_row.append(header_content)
+                except Exception as e:
+                    logger.error(f"❌ Erro ao formatar header '{header_text}': {e}")
+                    # Fallback para texto simples
+                    header_row.append(str(header_text))
+            
+            # Preparar linhas de dados com controle rigoroso
+            table_data = [header_row]
+            
+            for idx, item in enumerate(limited_data):
+                try:
+                    row = []
+                    for header in headers:
+                        try:
+                            value = item.get(header, 'N/A')
+                            # Garantir que value é string
+                            str_value = str(value) if value is not None else 'N/A'
+                            formatted_value = self._format_cell_value(str_value, header)
+                            
+                            # Usar Paragraph para TODOS os valores para controle total de quebra
+                            cell_content = Paragraph(formatted_value.replace('\n', '<br/>'), cell_style)
+                            row.append(cell_content)
+                        except Exception as e:
+                            logger.error(f"❌ Erro ao formatar célula [{idx}][{header}]: {e}")
+                            # Fallback para N/A
+                            row.append(Paragraph('N/A', cell_style))
+                    
+                    table_data.append(row)
+                except Exception as e:
+                    logger.error(f"❌ Erro ao processar linha {idx}: {e}")
+                    continue
+            
+            logger.info(f"✅ Tabela preparada: {len(table_data)} linhas (incluindo header)")
+            return table_data
+            
+        except Exception as e:
+            logger.error(f"❌ Erro crítico em _prepare_table_data: {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            return []
 
     def _format_header(self, header):
         """Formatar cabeçalho da coluna com quebra inteligente"""
