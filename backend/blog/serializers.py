@@ -289,7 +289,7 @@ class BlogPostCreateUpdateSerializer(serializers.ModelSerializer):
                     
                     logger.info(f"📥 Baixando imagem de: {value}")
                     print(f"📥 Baixando imagem de: {value}")
-                    resp = requests.get(value, timeout=30, headers=headers)
+                    resp = requests.get(value, timeout=30, headers=headers, verify=False)
                     
                     if resp.status_code == 200:
                         # Tenta obter extensão do mimetype
