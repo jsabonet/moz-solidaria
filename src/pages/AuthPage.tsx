@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { registerUser } from "@/lib/clientAreaApi";
-import { Heart, Loader2, User, UserPlus, Users, Building, HandHeart } from "lucide-react";
+import { Heart, Loader2, User, UserPlus, Users, Building, HandHeart, Eye, EyeOff } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -18,6 +18,9 @@ type UserType = "donor" | "volunteer" | "beneficiary" | "partner";
 
 const AuthPage = () => {
   const [activeTab, setActiveTab] = useState("login");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   // Login state
   const [loginData, setLoginData] = useState({
@@ -207,13 +210,29 @@ const AuthPage = () => {
 
                     <div className="space-y-2">
                       <Label htmlFor="password">Senha</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        value={loginData.password}
-                        onChange={(e) => setLoginData({...loginData, password: e.target.value})}
-                        required
-                      />
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          value={loginData.password}
+                          onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                          required
+                          className="pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
 
                     <Button type="submit" className="w-full" disabled={loading}>
@@ -340,23 +359,55 @@ const AuthPage = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="regPassword">Senha</Label>
-                        <Input
-                          id="regPassword"
-                          type="password"
-                          value={registerData.password}
-                          onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
-                          required
-                        />
+                        <div className="relative">
+                          <Input
+                            id="regPassword"
+                            type={showRegPassword ? "text" : "password"}
+                            value={registerData.password}
+                            onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
+                            required
+                            className="pr-10"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowRegPassword(!showRegPassword)}
+                          >
+                            {showRegPassword ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </Button>
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-                        <Input
-                          id="confirmPassword"
-                          type="password"
-                          value={registerData.confirmPassword}
-                          onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
-                          required
-                        />
+                        <div className="relative">
+                          <Input
+                            id="confirmPassword"
+                            type={showConfirmPassword ? "text" : "password"}
+                            value={registerData.confirmPassword}
+                            onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
+                            required
+                            className="pr-10"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     </div>
 
