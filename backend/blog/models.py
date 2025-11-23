@@ -309,20 +309,38 @@ class BlogPost(models.Model):
     def resize_image(self):
         """Resize featured image to optimize for web"""
         if self.featured_image:
-            img = Image.open(self.featured_image.path)
-            if img.height > 800 or img.width > 1200:
-                output_size = (1200, 800)
-                img.thumbnail(output_size, Image.Resampling.LANCZOS)
-                img.save(self.featured_image.path, quality=85, optimize=True)
+            try:
+                # Verificar se o arquivo existe antes de tentar abrir
+                if not self.featured_image.path or not os.path.exists(self.featured_image.path):
+                    print(f"⚠️ Arquivo de imagem não encontrado: {self.featured_image.path if self.featured_image.path else 'path vazio'}")
+                    return
+                
+                img = Image.open(self.featured_image.path)
+                if img.height > 800 or img.width > 1200:
+                    output_size = (1200, 800)
+                    img.thumbnail(output_size, Image.Resampling.LANCZOS)
+                    img.save(self.featured_image.path, quality=85, optimize=True)
+            except Exception as e:
+                print(f"❌ Erro ao redimensionar imagem: {e}")
+                # Não propagar o erro, apenas logar
     
     def resize_og_image(self):
         """Resize Open Graph image to optimal dimensions"""
         if self.og_image:
-            img = Image.open(self.og_image.path)
-            if img.height != 630 or img.width != 1200:
-                # Resize to exact OG dimensions
-                img = img.resize((1200, 630), Image.Resampling.LANCZOS)
-                img.save(self.og_image.path, quality=90, optimize=True)
+            try:
+                # Verificar se o arquivo existe antes de tentar abrir
+                if not self.og_image.path or not os.path.exists(self.og_image.path):
+                    print(f"⚠️ Arquivo OG image não encontrado: {self.og_image.path if self.og_image.path else 'path vazio'}")
+                    return
+                
+                img = Image.open(self.og_image.path)
+                if img.height != 630 or img.width != 1200:
+                    # Resize to exact OG dimensions
+                    img = img.resize((1200, 630), Image.Resampling.LANCZOS)
+                    img.save(self.og_image.path, quality=90, optimize=True)
+            except Exception as e:
+                print(f"❌ Erro ao redimensionar OG image: {e}")
+                # Não propagar o erro, apenas logar
     
     def calculate_seo_score(self):
         """Calculate SEO score based on various factors"""
