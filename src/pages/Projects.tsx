@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
+import { Loading } from "@/components/ui/Loading";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchPublicProjects, fetchProjectCategories } from "@/lib/api";
@@ -151,7 +152,9 @@ const Projects = () => {
         {/* Projects grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading ? (
-            <div className="col-span-full text-center py-12">Carregando projetos...</div>
+            <div className="col-span-full">
+              <Loading variant="card" message="Carregando projetos..." size="lg" />
+            </div>
           ) : current.length === 0 ? (
             <div className="col-span-full text-center py-12">Nenhum projeto encontrado.</div>
           ) : (

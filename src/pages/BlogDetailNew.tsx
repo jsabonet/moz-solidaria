@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Loading } from "@/components/ui/Loading";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
@@ -180,11 +181,8 @@ const BlogDetailNew = () => {
     return (
       <div className="min-h-screen bg-gradient-to-b from-muted/10 to-background">
         <Header />
-        <div className="container mx-auto px-4 py-16 text-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            <span className="text-muted-foreground">Carregando artigo...</span>
-          </div>
+        <div className="container mx-auto px-4 py-16">
+          <Loading variant="page" message="Carregando artigo..." size="lg" />
         </div>
         <Footer />
       </div>

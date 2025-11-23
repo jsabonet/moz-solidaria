@@ -1,16 +1,6 @@
 // src/components/LazyComponents.tsx
 import { lazy } from 'react';
-import { Loader2 } from 'lucide-react';
-
-// Componente de Loading padrão
-export const ComponentLoader = () => (
-  <div className="flex items-center justify-center min-h-[200px]">
-    <div className="flex flex-col items-center space-y-4">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      <span className="text-sm text-muted-foreground">Carregando...</span>
-    </div>
-  </div>
-);
+export { ComponentLoader, Loading } from '@/components/ui/Loading';
 
 // Lazy loading dos componentes do Portal de Comunidade
 export const LazyClientArea = lazy(() => 

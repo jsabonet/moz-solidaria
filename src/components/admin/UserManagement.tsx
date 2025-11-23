@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import { Loading } from '@/components/ui/Loading';
 import { 
   Users, 
   UserCheck, 
@@ -642,11 +643,8 @@ const UserManagement: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-        {loadingProgress && (
-          <p className="text-sm text-muted-foreground">{loadingProgress}</p>
-        )}
+      <div className="flex flex-col items-center justify-center h-64">
+        <Loading variant="card" message={loadingProgress || "Carregando usuários..."} size="xl" />
       </div>
     );
   }
