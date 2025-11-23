@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Loading } from '@/components/ui/Loading';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -507,12 +508,11 @@ const ProjectDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Carregando projeto...</p>
-        </div>
-      </div>
+      <Loading 
+        variant="fullscreen" 
+        message="Carregando detalhes do projeto..." 
+        size="xl" 
+      />
     );
   }
 

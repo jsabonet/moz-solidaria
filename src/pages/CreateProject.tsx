@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Loading } from '@/components/ui/Loading';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -551,12 +552,11 @@ const CreateProject: React.FC = () => {
   // Loading state
   if (loadingData) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Carregando dados do projeto...</p>
-        </div>
-      </div>
+      <Loading 
+        variant="fullscreen" 
+        message="Carregando dados do projeto..." 
+        size="lg" 
+      />
     );
   }
 
@@ -1206,7 +1206,7 @@ const CreateProject: React.FC = () => {
                   >
                     {isSubmitting ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                        <Loading variant="inline" size="sm" className="mr-2" />
                         {isEditing ? 'Atualizando...' : 'Criando...'}
                       </>
                     ) : (

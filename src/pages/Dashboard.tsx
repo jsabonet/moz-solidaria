@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useParams, useNavigate } from 'react-router-dom';
 import { Plus, Edit, Tag, Trash2, Eye, Calendar, TrendingUp, Copy, MessageCircle, Heart, Settings, DollarSign, MapPin, Bell, UserCheck } from 'lucide-react';
+import { Loading } from '@/components/ui/Loading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -227,12 +228,11 @@ const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Carregando dados...</p>
-        </div>
-      </div>
+      <Loading 
+        variant="fullscreen" 
+        message="Carregando dados do dashboard..." 
+        size="lg" 
+      />
     );
   }
 

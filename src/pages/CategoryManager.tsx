@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Loading } from '@/components/ui/Loading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -284,9 +285,12 @@ const CategoryManager: React.FC = () => {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p>Carregando categorias...</p>
+                <div className="py-8">
+                  <Loading 
+                    variant="card" 
+                    message="Carregando categorias..." 
+                    size="md" 
+                  />
                 </div>
               ) : categories.length > 0 ? (
                 <Table>

@@ -1,6 +1,7 @@
 // src/pages/ClientArea.tsx
 import React, { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import { Loading } from '@/components/ui/Loading';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -97,11 +98,12 @@ const ClientArea: React.FC = () => {
     return (
       <div className="min-h-screen">
         <Header />
-        <div className="container mx-auto px-4 py-16 text-center">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            <span className="text-muted-foreground">Carregando portal de comunidade..</span>
-          </div>
+        <div className="container mx-auto px-4 py-16">
+          <Loading 
+            variant="page" 
+            message="Carregando portal de comunidade..." 
+            size="lg" 
+          />
         </div>
         <Footer />
       </div>

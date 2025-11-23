@@ -236,9 +236,7 @@ const AuthPage = () => {
                     </div>
 
                     <Button type="submit" className="w-full" disabled={loading}>
-                      {loading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : null}
+                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Entrar
                     </Button>
                   </form>
@@ -423,9 +421,7 @@ const AuthPage = () => {
                     </div>
 
                     <Button type="submit" className="w-full" disabled={registerLoading}>
-                      {registerLoading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : null}
+                      {registerLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Criar Conta
                     </Button>
                   </form>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save, Heart, Settings, Eye, Clock, Trash2, Copy } from 'lucide-react';
+import { Loading } from '@/components/ui/Loading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -385,12 +386,11 @@ const EditPost: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Carregando post...</p>
-        </div>
-      </div>
+      <Loading 
+        variant="fullscreen" 
+        message="Carregando post..." 
+        size="lg" 
+      />
     );
   }
 

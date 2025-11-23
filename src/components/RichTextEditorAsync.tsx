@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Loading } from '@/components/ui/Loading';
 import { Maximize2, Minimize2, X, Image as ImageIcon, Info } from 'lucide-react';
 import ImageCreditModal from '@/components/ImageCreditModal';
 import './RichTextEditor.css';
@@ -320,9 +321,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </Label>
         )}
         <div className="quill-wrapper border rounded-md">
-          <div className="p-4 text-center text-muted-foreground">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
-            Carregando editor...
+          <div className="p-4">
+            <Loading 
+              variant="inline" 
+              message="Carregando editor..." 
+              size="sm" 
+            />
           </div>
         </div>
       </div>
