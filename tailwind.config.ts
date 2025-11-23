@@ -104,6 +104,24 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out'
+			},
+			fontFamily: {
+				'sans': ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+				'serif': ['Merriweather', 'Georgia', 'Cambria', 'Times New Roman', 'serif'],
+				'reading': ['Literata', 'Source Serif Pro', 'Georgia', 'serif']
+			},
+			typography: {
+				DEFAULT: {
+					css: {
+						maxWidth: '70ch',
+						fontSize: '18px',
+						lineHeight: '1.7',
+						'@media (min-width: 1024px)': {
+							fontSize: '20px',
+							lineHeight: '1.75'
+						}
+					}
+				}
 			}
 		}
 	},

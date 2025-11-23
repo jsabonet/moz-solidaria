@@ -175,18 +175,19 @@ const BlogDetailNew = () => {
           {/* LINHA 1: Título, Metadados e Imagem Hero - Full Width */}
           <div className="w-full max-w-[1008px] mx-auto mb-10 sm:mb-12 lg:mb-16">
               
-              {/* Título em Destaque - Responsivo */}
-              <h1 className="text-[28px] sm:text-[32px] md:text-[38px] lg:text-[44px] xl:text-[52px] 
-                font-bold leading-[1.15] sm:leading-[1.2] 
-                mb-5 sm:mb-6 lg:mb-8 
-                text-foreground tracking-tight">
+              {/* Título em Destaque - Sistema Tipográfico Otimizado */}
+              <h1 className="text-[42px] sm:text-[45px] md:text-[48px] lg:text-[48px] xl:text-[52px] 
+                font-bold leading-[1.2] 
+                mb-6 sm:mb-7 lg:mb-8 
+                text-foreground tracking-tight antialiased">
                 {post.title}
               </h1>
 
-              {/* Metadados: Autor, Data, Categoria, Tempo de Leitura - Responsivo */}
+              {/* Metadados: Autor, Data, Categoria, Tempo de Leitura - Tipografia Refinada */}
               <div className="flex flex-wrap items-center gap-3 sm:gap-4 
                 mb-6 sm:mb-8 lg:mb-10 
                 pb-5 sm:pb-6 lg:pb-8 
+                text-[14px] sm:text-[15px] lg:text-[15px] font-medium text-muted-foreground/80 antialiased
                 border-b-2 border-border/60">
                 {/* Autor */}
                 <div className="flex items-center gap-2.5 sm:gap-3">
@@ -246,6 +247,18 @@ const BlogDetailNew = () => {
                 </div>
               </div>
 
+              {/* Resumo/Excerpt - ANTES da Imagem */}
+              {post.excerpt && (
+                <div className="bg-gradient-to-r from-primary/5 to-secondary/5 border-l-4 border-primary 
+                  p-5 sm:p-6 lg:p-8 rounded-r-xl mb-6 sm:mb-8 lg:mb-10 shadow-sm">
+                  <p className="text-[18px] sm:text-[19px] lg:text-[20px] 
+                    leading-[1.7] sm:leading-[1.75] lg:leading-[1.75] 
+                    text-foreground/90 italic font-normal antialiased">
+                    {post.excerpt}
+                  </p>
+                </div>
+              )}
+
               {/* Imagem Hero - Responsiva */}
               {(post.featured_image || post.featured_image_url) && (() => {
                 const imageUrl = getImageUrl(post.featured_image, post.featured_image_url);
@@ -285,66 +298,85 @@ const BlogDetailNew = () => {
             {/* COLUNA ESQUERDA - Conteúdo do Artigo */}
             <article className="w-full max-w-[680px] mx-auto lg:mx-0">
 
-              {/* Resumo/Excerpt - Responsivo */}
-              {post.excerpt && (
-                <div className="bg-gradient-to-r from-primary/5 to-secondary/5 border-l-4 border-primary 
-                  p-5 sm:p-6 lg:p-8 rounded-r-xl mb-8 sm:mb-10 lg:mb-12 shadow-sm">
-                  <p className="text-[17px] sm:text-[18px] lg:text-[20px] 
-                    leading-[1.7] sm:leading-[1.75] lg:leading-[1.8] 
-                    text-foreground/90 italic font-light">
-                    {post.excerpt}
-                  </p>
-                </div>
-              )}
-
-              {/* Conteúdo do Artigo - Tipografia Editorial Profissional */}
+              {/* Conteúdo do Artigo - Sistema Tipográfico Otimizado para Leitura Profunda */}
               <div 
-                className="prose prose-base sm:prose-lg lg:prose-xl max-w-none mb-10 sm:mb-12 lg:mb-16
-                  prose-headings:font-bold prose-headings:text-foreground prose-headings:scroll-mt-20 prose-headings:tracking-tight
-                  prose-h1:text-[28px] sm:prose-h1:text-[32px] lg:prose-h1:text-[38px] prose-h1:leading-[1.2] prose-h1:mb-6
-                  prose-h2:text-[22px] sm:prose-h2:text-[26px] lg:prose-h2:text-[30px] xl:prose-h2:text-[34px] 
-                  prose-h2:leading-[1.3] prose-h2:mt-10 sm:prose-h2:mt-12 lg:prose-h2:mt-16 
-                  prose-h2:mb-5 sm:prose-h2:mb-6 lg:prose-h2:mb-7
-                  prose-h2:border-b prose-h2:border-border/40 prose-h2:pb-3 lg:prose-h2:pb-4
-                  prose-h3:text-[18px] sm:prose-h3:text-[20px] lg:prose-h3:text-[24px] xl:prose-h3:text-[26px]
-                  prose-h3:leading-[1.4] prose-h3:mt-8 sm:prose-h3:mt-9 lg:prose-h3:mt-12 
-                  prose-h3:mb-4 sm:prose-h3:mb-5 lg:prose-h3:mb-6
-                  prose-h4:text-[16px] sm:prose-h4:text-[18px] lg:prose-h4:text-[20px]
-                  prose-h4:leading-[1.5] prose-h4:mt-6 sm:prose-h4:mt-7 lg:prose-h4:mt-8 
-                  prose-h4:mb-3 sm:prose-h4:mb-4
-                  prose-p:text-foreground/90 
-                  prose-p:leading-[1.7] sm:prose-p:leading-[1.75] lg:prose-p:leading-[1.8]
-                  prose-p:mb-7 sm:prose-p:mb-8 lg:prose-p:mb-9
-                  prose-p:mt-0
-                  prose-p:text-[16px] sm:prose-p:text-[17px] lg:prose-p:text-[18px] xl:prose-p:text-[19px]
-                  prose-a:text-primary prose-a:font-medium prose-a:no-underline hover:prose-a:underline 
-                  prose-a:underline-offset-4 prose-a:decoration-2
+                className="prose prose-base sm:prose-lg lg:prose-xl max-w-[70ch] mb-12 sm:mb-14 lg:mb-16
+                  antialiased
+                  
+                  prose-headings:font-bold prose-headings:text-foreground 
+                  prose-headings:scroll-mt-20 prose-headings:tracking-tight prose-headings:antialiased
+                  
+                  prose-h1:text-[42px] sm:prose-h1:text-[45px] lg:prose-h1:text-[48px] 
+                  prose-h1:leading-[1.2] prose-h1:mb-8 prose-h1:mt-0
+                  
+                  prose-h2:text-[32px] sm:prose-h2:text-[34px] lg:prose-h2:text-[36px] 
+                  prose-h2:leading-[1.3] prose-h2:mt-12 sm:prose-h2:mt-14 lg:prose-h2:mt-16 
+                  prose-h2:mb-7 sm:prose-h2:mb-8 lg:prose-h2:mb-9
+                  prose-h2:border-b-2 prose-h2:border-border/30 prose-h2:pb-4
+                  
+                  prose-h3:text-[26px] sm:prose-h3:text-[27px] lg:prose-h3:text-[28px]
+                  prose-h3:leading-[1.4] prose-h3:mt-10 sm:prose-h3:mt-11 lg:prose-h3:mt-12 
+                  prose-h3:mb-6 sm:prose-h3:mb-7 lg:prose-h3:mb-8
+                  
+                  prose-h4:text-[22px] sm:prose-h4:text-[23px] lg:prose-h4:text-[24px]
+                  prose-h4:leading-[1.5] prose-h4:mt-8 sm:prose-h4:mt-9 lg:prose-h4:mt-10 
+                  prose-h4:mb-5 sm:prose-h4:mb-6
+                  
+                  prose-h5:text-[18px] sm:prose-h5:text-[19px] lg:prose-h5:text-[20px]
+                  prose-h5:leading-[1.5] prose-h5:mt-7 prose-h5:mb-4
+                  
+                  prose-h6:text-[16px] sm:prose-h6:text-[17px] lg:prose-h6:text-[18px]
+                  prose-h6:leading-[1.5] prose-h6:mt-6 prose-h6:mb-3
+                  
+                  prose-p:text-foreground/95 prose-p:font-normal
+                  prose-p:text-[18px] sm:prose-p:text-[19px] lg:prose-p:text-[20px]
+                  prose-p:leading-[1.7] sm:prose-p:leading-[1.75] lg:prose-p:leading-[1.75]
+                  prose-p:mb-[2em] prose-p:mt-0
+                  prose-p:text-left prose-p:hyphens-none
+                  
+                  prose-a:text-primary prose-a:font-medium prose-a:no-underline 
+                  hover:prose-a:underline hover:prose-a:decoration-2
+                  prose-a:underline-offset-4 prose-a:transition-all
+                  
                   prose-strong:text-foreground prose-strong:font-semibold
-                  prose-em:text-foreground/80 prose-em:italic
-                  prose-ul:my-5 sm:prose-ul:my-6 lg:prose-ul:my-8 prose-ul:space-y-2.5 sm:prose-ul:space-y-3
-                  prose-ol:my-5 sm:prose-ol:my-6 lg:prose-ol:my-8 prose-ol:space-y-2.5 sm:prose-ol:space-y-3
-                  prose-li:text-foreground/90 prose-li:leading-[1.7] sm:prose-li:leading-[1.75]
-                  prose-li:text-[16px] sm:prose-li:text-[17px] lg:prose-li:text-[18px]
-                  prose-li:mb-2 sm:prose-li:mb-2.5
-                  prose-img:rounded-xl sm:prose-img:rounded-2xl 
-                  prose-img:shadow-lg sm:prose-img:shadow-xl lg:prose-img:shadow-2xl 
-                  prose-img:my-8 sm:prose-img:my-10 lg:prose-img:my-12
-                  prose-blockquote:border-l-4 prose-blockquote:border-primary 
-                  prose-blockquote:bg-muted/40 
-                  prose-blockquote:py-4 sm:prose-blockquote:py-5 lg:prose-blockquote:py-6
-                  prose-blockquote:px-5 sm:prose-blockquote:px-6 lg:prose-blockquote:px-8 
-                  prose-blockquote:my-6 sm:prose-blockquote:my-8 lg:prose-blockquote:my-10
-                  prose-blockquote:italic prose-blockquote:text-muted-foreground 
-                  prose-blockquote:rounded-r-xl prose-blockquote:leading-[1.75]
-                  prose-blockquote:text-[15px] sm:prose-blockquote:text-base lg:prose-blockquote:text-lg
-                  prose-code:bg-muted prose-code:px-2 sm:prose-code:px-2.5 prose-code:py-1 
-                  prose-code:rounded-md prose-code:text-[13px] sm:prose-code:text-sm
-                  prose-code:font-mono prose-code:font-normal
-                  prose-pre:bg-muted prose-pre:p-4 sm:prose-pre:p-5 lg:prose-pre:p-6 
-                  prose-pre:rounded-xl prose-pre:shadow-lg 
-                  prose-pre:my-6 sm:prose-pre:my-8 lg:prose-pre:my-10 
-                  prose-pre:text-[13px] sm:prose-pre:text-sm
-                  prose-pre:leading-relaxed prose-pre:overflow-x-auto"
+                  prose-em:text-foreground/85 prose-em:italic
+                  
+                  prose-ul:my-9 sm:prose-ul:my-10 lg:prose-ul:my-12
+                  prose-ul:space-y-5 sm:prose-ul:space-y-6 lg:prose-ul:space-y-7
+                  prose-ul:list-disc prose-ul:pl-6
+                  
+                  prose-ol:my-9 sm:prose-ol:my-10 lg:prose-ol:my-12
+                  prose-ol:space-y-5 sm:prose-ol:space-y-6 lg:prose-ol:space-y-7
+                  prose-ol:list-decimal prose-ol:pl-6
+                  
+                  prose-li:text-foreground/95
+                  prose-li:text-[18px] sm:prose-li:text-[19px] lg:prose-li:text-[20px]
+                  prose-li:leading-[1.7] sm:prose-li:leading-[1.75]
+                  prose-li:mb-4
+                  
+                  prose-img:rounded-2xl prose-img:shadow-2xl 
+                  prose-img:my-12 sm:prose-img:my-14 lg:prose-img:my-16
+                  
+                  prose-blockquote:border-l-[5px] prose-blockquote:border-primary/60
+                  prose-blockquote:bg-muted/30 
+                  prose-blockquote:py-6 sm:prose-blockquote:py-7 lg:prose-blockquote:py-8
+                  prose-blockquote:pl-8 sm:prose-blockquote:pl-10 lg:prose-blockquote:pl-12
+                  prose-blockquote:pr-6 sm:prose-blockquote:pr-8
+                  prose-blockquote:my-10 sm:prose-blockquote:my-12 lg:prose-blockquote:my-14
+                  prose-blockquote:italic prose-blockquote:text-muted-foreground/90
+                  prose-blockquote:rounded-r-2xl prose-blockquote:leading-[1.75]
+                  prose-blockquote:text-[19px] sm:prose-blockquote:text-[20px] lg:prose-blockquote:text-[21px]
+                  
+                  prose-code:bg-muted/60 prose-code:px-2.5 prose-code:py-1.5
+                  prose-code:rounded-md prose-code:text-[15px] sm:prose-code:text-[15px]
+                  prose-code:font-mono prose-code:font-normal prose-code:text-foreground/90
+                  
+                  prose-pre:bg-muted/80 prose-pre:p-5 sm:prose-pre:p-6 lg:prose-pre:p-7
+                  prose-pre:rounded-2xl prose-pre:shadow-xl 
+                  prose-pre:my-10 sm:prose-pre:my-12 lg:prose-pre:my-14
+                  prose-pre:text-[14px] sm:prose-pre:text-[15px]
+                  prose-pre:leading-relaxed prose-pre:overflow-x-auto
+                  prose-pre:border prose-pre:border-border/40"
                 dangerouslySetInnerHTML={{ __html: post.content }}
               />
 
@@ -389,8 +421,8 @@ const BlogDetailNew = () => {
                 />
               </div>
 
-              {/* Mobile: Sidebar Content Inline (≤640px) */}
-              <div className="block sm:hidden mt-10 space-y-6">
+              {/* Mobile: Sidebar Content Inline (≤640px) - REMOVIDO */}
+              <div className="hidden">
                 
                 {/* Mobile: Partilhar Card */}
                 <Card className="shadow-lg border-2 overflow-hidden">
