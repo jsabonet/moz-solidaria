@@ -133,7 +133,7 @@ const PartnerCommunication: React.FC<PartnerCommunicationProps> = ({ onPartnerSe
       }));
       setPartners(mapped.sort((a,b) => b.unread_messages - a.unread_messages));
     } catch (error) {
-      console.error('Erro ao carregar parceiros:', error);
+      // Error handled silently - empty partners list
     } finally {
       setLoading(false);
     }
@@ -157,7 +157,7 @@ const PartnerCommunication: React.FC<PartnerCommunicationProps> = ({ onPartnerSe
       const sorted = normalized.sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
       setMessages(sorted);
     } catch (error) {
-      console.error('Erro ao carregar mensagens:', error);
+      // Error handled silently - empty messages list
     } finally {
       setLoadingMessages(false);
     }
@@ -170,7 +170,7 @@ const PartnerCommunication: React.FC<PartnerCommunicationProps> = ({ onPartnerSe
       setMessages(prev => prev.map(m => ({ ...m, read: true })));
       setPartners(prev => prev.map(p => p.id === selectedPartner.id ? { ...p, unread_messages: 0 } : p));
     } catch (error) {
-      console.error('Erro ao marcar todas como lidas:', error);
+      // Error handled silently - action not completed
     }
   };
 
@@ -200,7 +200,7 @@ const PartnerCommunication: React.FC<PartnerCommunicationProps> = ({ onPartnerSe
       });
       setMessageContent('');
     } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
+      // Error handled silently - message not sent
     } finally { setSending(false); }
   };
 

@@ -151,7 +151,6 @@ const ProjectNotifications: React.FC<ProjectNotificationsProps> = ({ projectId, 
       setTemplates(mockTemplates);
       setNotifications(mockNotifications);
     } catch (error) {
-      console.error('Erro ao carregar dados de notificações:', error);
       toast.error('Erro ao carregar configurações de notificação');
     } finally {
       setLoading(false);
@@ -195,7 +194,6 @@ const ProjectNotifications: React.FC<ProjectNotificationsProps> = ({ projectId, 
       
       toast.success(`Notificação enviada para ${newNotification.recipients} pessoas!`);
     } catch (error) {
-      console.error('Erro ao enviar notificação:', error);
       toast.error('Erro ao enviar notificação');
     }
   };

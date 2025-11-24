@@ -67,7 +67,6 @@ const SocialInteractions: React.FC<SocialInteractionsProps> = ({
       }
     } catch (error) {
       toast({ title: 'Erro', description: 'Não foi possível curtir o post. Tente novamente.' });
-      console.error('Like error', error);
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +92,6 @@ const SocialInteractions: React.FC<SocialInteractionsProps> = ({
       toast({ title: 'Link copiado!', description: 'O link do post foi copiado para sua área de transferência.' });
     } catch (error) {
       toast({ title: 'Erro', description: 'Não foi possível compartilhar o post. Tente novamente.' });
-      console.error('Share error', error);
     } finally {
       setIsLoading(false);
     }

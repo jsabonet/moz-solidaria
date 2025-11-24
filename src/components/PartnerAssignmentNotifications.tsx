@@ -68,7 +68,7 @@ const PartnerAssignmentNotifications: React.FC<PartnerAssignmentNotificationsPro
       const res = await api.get('/partnerships/assignments/?status=pending');
       setPendingAssignments(res.data.results || res.data || []);
     } catch (error) {
-      console.error('Erro ao carregar atribuições pendentes:', error);
+      // Error handled silently - empty assignments list
     } finally {
       setLoading(false);
     }
@@ -97,7 +97,6 @@ const PartnerAssignmentNotifications: React.FC<PartnerAssignmentNotificationsPro
       
       onAssignmentResponse?.();
     } catch (error: any) {
-      console.error('Erro ao responder atribuição:', error);
       // Extrair mensagem detalhada do backend
       const detail = error?.response?.data;
       if (detail) {

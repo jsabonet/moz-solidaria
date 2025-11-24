@@ -75,7 +75,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         await import('react-quill');
         setIsLoaded(true);
       } catch (error) {
-        console.error('Erro ao carregar React Quill:', error);
+        // Error handled silently - editor won't load
       }
     };
 
@@ -130,7 +130,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             setShowImageModal(true);
           }
         } catch (error) {
-          console.error('Erro no upload da imagem:', error);
           alert('Erro ao fazer upload da imagem. Tente novamente.');
         }
       }

@@ -90,7 +90,7 @@ const ProjectAssignmentModal: React.FC<ProjectAssignmentModalProps> = ({
           const rawPub = publicRes.data;
           projectsData = rawPub.results || rawPub || [];
         } catch (publicErr) {
-          console.error('Falha ao carregar projetos (admin e público):', publicErr);
+          // Error handled silently - empty projects list
         }
       }
 
@@ -105,14 +105,10 @@ const ProjectAssignmentModal: React.FC<ProjectAssignmentModalProps> = ({
         priority: p.priority || p.project_priority || null,
       }));
 
-      if (normalizedProjects.length === 0) {
-        console.warn('Nenhum projeto retornado pelos endpoints de projetos.');
-      }
-
       setProjects(normalizedProjects as any);
       setPartners(partnersRes.data || []);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+      // Error handled silently - empty data
     } finally {
       setLoading(false);
     }
@@ -139,7 +135,7 @@ const ProjectAssignmentModal: React.FC<ProjectAssignmentModalProps> = ({
       resetForm();
       onAssignmentCreated?.();
     } catch (error) {
-      console.error('Erro ao criar atribuição:', error);
+      // Error handled silently - assignment not created
     } finally {
       setSubmitting(false);
     }

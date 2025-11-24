@@ -84,7 +84,7 @@ const PartnerAssignmentsList: React.FC<PartnerAssignmentsListProps> = ({
       const res = await api.get(`/partnerships/assignments/?${params.toString()}`);
       setAssignments(res.data.results || res.data || []);
     } catch (error) {
-      console.error('Erro ao carregar atribuições:', error);
+      // Error handled silently - empty assignments list
     } finally {
       setLoading(false);
     }
@@ -97,7 +97,7 @@ const PartnerAssignmentsList: React.FC<PartnerAssignmentsListProps> = ({
       await fetchAssignments();
       onAssignmentUpdate?.();
     } catch (error) {
-      console.error('Erro ao marcar como completo:', error);
+      // Error handled silently - action not completed
     } finally {
       setActionLoading(null);
     }

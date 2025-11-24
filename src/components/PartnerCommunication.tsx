@@ -134,7 +134,7 @@ const PartnerCommunication: React.FC<PartnerCommunicationProps> = ({ onPartnerSe
       }));
       setPartners(mapped.sort((a,b) => b.unread_messages - a.unread_messages));
     } catch (error) {
-      console.error('Erro ao carregar parceiros:', error);
+      // Error handled silently - empty partners list
     } finally {
       setLoading(false);
     }
@@ -161,7 +161,7 @@ const PartnerCommunication: React.FC<PartnerCommunicationProps> = ({ onPartnerSe
         try { await api.post('/partnerships/messages/mark_multiple_as_read/', { message_ids: unreadIds }); } catch {}
       }
     } catch (error) {
-      console.error('Erro ao carregar mensagens:', error);
+      // Error handled silently - empty messages list
     } finally {
       setLoadingMessages(false);
     }
@@ -192,7 +192,7 @@ const PartnerCommunication: React.FC<PartnerCommunicationProps> = ({ onPartnerSe
       });
       setMessageContent('');
     } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
+      // Error handled silently - message not sent
     } finally { setSending(false); }
   };
 
