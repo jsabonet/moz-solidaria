@@ -55,7 +55,6 @@ const Blog = () => {
         setCategories(["Todos", ...categories.map((c: any) => c.name)]);
         
       } catch (err: any) {
-        console.error('Blog: Erro ao carregar dados:', err);
         setError(`Erro ao carregar dados do blog: ${err.message || 'Erro desconhecido'}`);
       } finally {
         setLoading(false);
@@ -104,7 +103,6 @@ const Blog = () => {
         );
         setBlogPosts(filtered);
       } catch (err:any) {
-        console.error('Erro na busca:', err);
         setError('Erro ao buscar posts');
       } finally {
         setSearching(false);

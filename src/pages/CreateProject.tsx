@@ -269,11 +269,6 @@ const CreateProject: React.FC = () => {
   const mappedCategories = (categoriesData || []).map((c: any) => ({ id: c.id, name: c.name }));
   setCategories(mappedCategories);
         
-        // Log para debug
-        console.log('📋 Programas carregados:', programsData);
-        console.log('👥 Usuários carregados:', usersData);
-  console.log('🏷️ Categorias do blog carregadas para usar nos projetos:', mappedCategories);
-        
       } catch (error) {
         toast.error('Erro ao carregar dados. Usando valores padrão.');
         

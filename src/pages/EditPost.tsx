@@ -73,8 +73,6 @@ const EditPost: React.FC = () => {
     } catch (e) {
       // In non-browser environments or if document is unavailable, ignore
       // This try/catch keeps SSR/build from failing.
-      // eslint-disable-next-line no-console
-      console.warn('Unable to update document.title', e);
     }
 
     return () => {

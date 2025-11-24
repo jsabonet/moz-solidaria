@@ -106,7 +106,7 @@ const ProjectAnalytics: React.FC<ProjectAnalyticsProps> = ({
       
       setAnalytics(mockAnalytics);
     } catch (error) {
-      console.error('Erro ao carregar analytics:', error);
+      // Error handled silently - fallback data already set
     } finally {
       setLoading(false);
     }

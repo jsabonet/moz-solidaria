@@ -77,7 +77,6 @@ const MyDonations: React.FC<MyDonationsProps> = ({ onViewDetails }) => {
       setDonations(response.data.results || response.data);
     } catch (error: any) {
       setError('Erro ao carregar doações');
-      console.error('Erro ao carregar doações:', error);
     } finally {
       setLoading(false);
     }

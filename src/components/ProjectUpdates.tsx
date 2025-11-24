@@ -116,7 +116,6 @@ const ProjectUpdates: React.FC<ProjectUpdatesProps> = ({ projectId, projectName 
       
       setUpdates(mockUpdates);
     } catch (error) {
-      console.error('Erro ao carregar atualizações:', error);
       toast.error('Erro ao carregar atualizações do projeto');
     } finally {
       setLoading(false);
@@ -197,7 +196,6 @@ const ProjectUpdates: React.FC<ProjectUpdatesProps> = ({ projectId, projectName 
       
       closeDialog();
     } catch (error) {
-      console.error('Erro ao salvar atualização:', error);
       toast.error('Erro ao salvar atualização');
     } finally {
       setSubmitting(false);
@@ -210,7 +208,6 @@ const ProjectUpdates: React.FC<ProjectUpdatesProps> = ({ projectId, projectName 
       setUpdates(prev => prev.filter(u => u.id !== updateId));
       toast.success('Atualização removida com sucesso!');
     } catch (error) {
-      console.error('Erro ao remover atualização:', error);
       toast.error('Erro ao remover atualização');
     }
   };

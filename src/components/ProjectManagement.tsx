@@ -248,7 +248,6 @@ const ProjectManagement: React.FC = () => {
         });
 
       } catch (error) {
-        console.error('Erro ao carregar projetos:', error);
         setTimeout(() => {
           toast.error('Erro ao carregar projetos. Usando dados de demonstração.');
         }, 100);
@@ -442,7 +441,6 @@ const ProjectManagement: React.FC = () => {
       
       toast.success('Projeto removido com sucesso!');
     } catch (error) {
-      console.error('Erro ao remover projeto:', error);
       toast.error('Erro ao remover projeto. Tente novamente.');
     }
   };
