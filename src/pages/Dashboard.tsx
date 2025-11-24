@@ -149,7 +149,6 @@ const Dashboard: React.FC = () => {
       setPosts(Array.isArray(postsData) ? postsData : []);
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
       setPosts([]);
       setCategories([]);
     } finally {
@@ -162,7 +161,7 @@ const Dashboard: React.FC = () => {
       await deletePost(postSlug);
       setPosts(Array.isArray(posts) ? posts.filter((post) => post.slug !== postSlug) : []);
     } catch (error) {
-      console.error('Erro ao deletar post:', error);
+      // Error handled by toast
     }
   };
 
@@ -183,7 +182,6 @@ const Dashboard: React.FC = () => {
       }
       
     } catch (error: any) {
-      console.error('Erro ao duplicar post:', error);
       toast.error(error.message || 'Erro ao duplicar post');
     }
   };
@@ -215,11 +213,7 @@ const Dashboard: React.FC = () => {
         duration: 2000,
       });
       
-      // Log para debug
-      console.log('🌐 Navegando para o site principal:', siteUrl);
-      
     } catch (error) {
-      console.error('❌ Erro ao abrir site principal:', error);
       toast.error('❌ Erro ao abrir o site principal. Verifique a configuração da URL.', {
         duration: 4000,
       });

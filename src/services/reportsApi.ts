@@ -205,7 +205,6 @@ class ReportsApiService {
       });
       return response.results || response.data || [];
     } catch (error) {
-      console.error('Erro ao carregar dados de doações:', error);
       return [];
     }
   }
@@ -218,7 +217,6 @@ class ReportsApiService {
       });
       return response.results || response.data || [];
     } catch (error) {
-      console.error('Erro ao carregar dados de voluntários:', error);
       return [];
     }
   }
@@ -231,7 +229,6 @@ class ReportsApiService {
       });
       return response.results || response.data || [];
     } catch (error) {
-      console.error('Erro ao carregar dados de beneficiários:', error);
       return [];
     }
   }
@@ -244,7 +241,6 @@ class ReportsApiService {
       });
       return response.results || response.data || [];
     } catch (error) {
-      console.error('Erro ao carregar dados de parcerias:', error);
       return [];
     }
   }
@@ -257,7 +253,6 @@ class ReportsApiService {
       });
       return response.results || response.data || [];
     } catch (error) {
-      console.error('Erro ao carregar dados de projetos:', error);
       return [];
     }
   }
@@ -270,7 +265,6 @@ class ReportsApiService {
       });
       return response.results || response.data || [];
     } catch (error) {
-      console.error('Erro ao carregar dados do blog:', error);
       return [];
     }
   }
@@ -295,5 +289,4 @@ export const downloadFile = (blob: Blob, filename: string, format: string) => {
 export const handleApiError = (error: any, defaultMessage: string = 'Erro na operação') => {
   const message = error?.message || defaultMessage;
   toast.error(message);
-  console.error('API Error:', error);
 };

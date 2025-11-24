@@ -126,7 +126,6 @@ const EditPost: React.FC = () => {
   useEffect(() => {
     // Verificar se o slug existe antes de tentar carregar dados
     if (!slug) {
-      console.error('EditPost: Slug não encontrado nos parâmetros da URL');
       navigate('/dashboard');
       return;
     }
@@ -134,7 +133,6 @@ const EditPost: React.FC = () => {
     const loadData = async () => {
       try {
         setLoading(true);
-        console.log('EditPost: Carregando dados para slug:', slug);
         
         const [postData, categoriesData] = await Promise.all([
           fetchPostDetail(slug), // Usa o slug verificado
@@ -145,7 +143,6 @@ const EditPost: React.FC = () => {
         const categories = Array.isArray(categoriesData) ? categoriesData : [];
         
         if (!post) {
-          console.error('EditPost: Post não encontrado para slug:', slug);
           navigate('/dashboard');
           return;
         }
@@ -194,7 +191,6 @@ const EditPost: React.FC = () => {
         
         setCategories(categories);
       } catch (error) {
-        console.error('EditPost: Erro ao carregar dados:', error);
         setError('Erro ao carregar os dados do post. Verifique se o post existe.');
         // Não navegar automaticamente para permitir que o usuário veja o erro
       } finally {
@@ -274,8 +270,6 @@ const EditPost: React.FC = () => {
         hashtags: seoData.hashtags,
       };
 
-      console.log('EditPost: Updating post data:', postData);
-
       await updatePost(slug, postData); // Usar slug verificado
       
       // Clear auto-save after successful update
@@ -307,7 +301,6 @@ const EditPost: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('EditPost: Erro ao atualizar post:', error);
       toast.error('Erro ao salvar alterações. Tente novamente.');
     } finally {
       setSaving(false);
@@ -326,7 +319,7 @@ const EditPost: React.FC = () => {
         } 
       });
     } catch (error) {
-      console.error('EditPost: Erro ao excluir post:', error);
+      // Error handled by toast
     }
   };
 
@@ -343,7 +336,6 @@ const EditPost: React.FC = () => {
       });
       
     } catch (error: any) {
-      console.error('EditPost: Erro ao duplicar post:', error);
       toast.error(error.message || 'Erro ao duplicar post');
     }
   };

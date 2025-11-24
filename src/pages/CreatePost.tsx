@@ -82,7 +82,6 @@ const CreatePost: React.FC = () => {
         const categoriesData = await fetchCategories();
         setCategories(Array.isArray(categoriesData) ? categoriesData : []);
       } catch (error) {
-        console.error('Erro ao carregar categorias:', error);
         setCategories([]); // Ensure categories is always an array
       } finally {
         setLoadingCategories(false);
@@ -112,7 +111,7 @@ const CreatePost: React.FC = () => {
         const draftData = JSON.parse(savedDraft);
         setFormData(draftData);
       } catch (error) {
-        console.error('Erro ao carregar rascunho:', error);
+        // Error loading draft
       }
     }
   }, []);
@@ -165,8 +164,6 @@ const CreatePost: React.FC = () => {
         hashtags: seoData.hashtags,
       };
 
-      console.log('Sending post data:', postData);
-
       await createPost(postData);
       
       // Clear draft after successful creation
@@ -178,7 +175,6 @@ const CreatePost: React.FC = () => {
         } 
       });
     } catch (error) {
-      console.error('Erro ao criar post:', error);
       alert('Erro ao criar post. Tente novamente.');
     } finally {
       setSaving(false);
