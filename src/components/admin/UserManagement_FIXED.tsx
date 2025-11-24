@@ -318,18 +318,6 @@ const UserManagement: React.FC = () => {
 
   const debugUserComparison = (currentUserData: any, userData: any, action: string) => {
     // Debug logging removed for production
-      promoted_user_data: userData,
-      currentUser_id: currentUserData?.id,
-      currentUser_id_type: typeof currentUserData?.id,
-      promoted_user_id: userData.id,
-      promoted_user_id_type: typeof userData.id,
-      comparison_result: currentUserData && currentUserData.id === userData.id,
-      string_comparison: String(currentUserData?.id) === String(userData.id),
-      number_comparison: Number(currentUserData?.id) === Number(userData.id),
-      strict_comparison: currentUserData?.id === userData.id,
-      currentUser_exists: !!currentUserData,
-      promotion_will_trigger: !!(currentUserData && currentUserData.id === userData.id)
-    });
   };
 
   const promoteUser = async (user: User, toStaff: boolean, toSuperuser: boolean = false) => {
@@ -445,7 +433,11 @@ const UserManagement: React.FC = () => {
                 body: JSON.stringify({ user_id: user.id }),
               });
               
-              // 3. Atualizar contexto localram atualizadas. Redirecionando...', {
+              // 3. Atualizar contexto local
+              await refreshUserData();
+              
+              // 4. Mostrar toast informativo
+              toast.info('Suas permissões foram atualizadas. Redirecionando...', {
                 duration: 3000,
               });
               
