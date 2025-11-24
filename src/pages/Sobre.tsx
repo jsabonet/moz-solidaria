@@ -67,47 +67,56 @@ const Sobre = () => {
     {
       name: "Momade Sualé",
       role: "Presidente",
-      description: "Lidera o conselho da ONG, representa oficialmente e garante cumprimento da missão."
+      description: "Lidera o conselho da ONG, representa oficialmente e garante cumprimento da missão.",
+      photo: null
     },
     {
       name: "Abubacar Apadre",
       role: "Vice-Presidente",
-      description: "Auxilia o Presidente e assume liderança na sua ausência."
+      description: "Auxilia o Presidente e assume liderança na sua ausência.",
+      photo: null
     },
     {
       name: "Muemede Mbaraca",
       role: "Financeiro",
-      description: "Gerencia orçamento, receitas e despesas, elabora relatórios financeiros."
+      description: "Gerencia orçamento, receitas e despesas, elabora relatórios financeiros.",
+      photo: "/Foto 3 Muemede Mbaraca.png"
     },
     {
       name: "Abdala Issa",
       role: "Coordenador Logístico",
-      description: "Organiza todo procurement e transporte para os projectos."
+      description: "Organiza todo procurement e transporte para os projectos.",
+      photo: null
     },
     {
       name: "Badrudine Ija",
       role: "Coordenador de Projectos",
-      description: "Planeja, implementa e monitora projectos comunitários."
+      description: "Planeja, implementa e monitora projectos comunitários.",
+      photo: null
     },
     {
       name: "Ochapo Sataca",
       role: "Técnico do Campo",
-      description: "Supervisiona actividades em campo e colecta dados de projectos."
+      description: "Supervisiona actividades em campo e colecta dados de projectos.",
+      photo: null
     },
     {
       name: "Lucman Atumane",
       role: "Oficial de Direitos",
-      description: "Assegura respeito a direitos humanos e normas legais nos projectos."
+      description: "Assegura respeito a direitos humanos e normas legais nos projectos.",
+      photo: null
     },
     {
       name: "Isa Momade",
       role: "Nutricionista",
-      description: "Planeja e acompanha programas de alimentação e nutrição."
+      description: "Planeja e acompanha programas de alimentação e nutrição.",
+      photo: "/Foto 2 Isa Momade.png"
     },
     {
       name: "Abdala Issa",
       role: "Coordenador de Voluntariado e Parcerias",
-      description: "Recruta e treina voluntários, estabelece parcerias e promove integração comunitária."
+      description: "Recruta e treina voluntários, estabelece parcerias e promove integração comunitária.",
+      photo: null
     }
   ];
 
@@ -284,8 +293,12 @@ const Sobre = () => {
           <div className="max-w-3xl mx-auto">
             <Card className="text-center">
               <CardContent className="p-8 space-y-6">
-                <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                  <Users className="h-12 w-12 text-primary" />
+                <div className="w-32 h-32 rounded-full overflow-hidden mx-auto border-4 border-primary/20">
+                  <img 
+                    src="/Foto1 Adamo Abdala.jpg" 
+                    alt="Adamo Ernesto Abdala" 
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold mb-2">Adamo Ernesto Abdala</h3>
@@ -355,9 +368,19 @@ const Sobre = () => {
             {team.map((member, index) => (
               <Card key={index} className="text-center hover:shadow-lg transition-shadow duration-300">
                 <CardContent className="p-6 space-y-4">
-                  <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full flex items-center justify-center mx-auto">
-                    <Users className="h-10 w-10 text-primary" />
-                  </div>
+                  {member.photo ? (
+                    <div className="w-24 h-24 rounded-full overflow-hidden mx-auto border-4 border-primary/20">
+                      <img 
+                        src={member.photo} 
+                        alt={member.name} 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full flex items-center justify-center mx-auto">
+                      <Users className="h-10 w-10 text-primary" />
+                    </div>
+                  )}
                   <div>
                     <h3 className="text-xl font-semibold">{member.name}</h3>
                     <p className="text-primary font-medium mb-2">{member.role}</p>
