@@ -86,14 +86,12 @@ export const useNotifications = (): UseNotificationsReturn => {
     try {
       const token = localStorage.getItem('auth_token');
       if (!token) {
-        console.warn('No auth token found, cannot connect to notifications');
         return;
       }
 
       wsRef.current = new WebSocket(`${getWebSocketUrl()}?token=${token}`);
 
       wsRef.current.onopen = () => {
-        console.log('✅ Connected to notifications WebSocket');
         setIsConnected(true);
         reconnectAttempts.current = 0;
         
@@ -121,25 +119,21 @@ export const useNotifications = (): UseNotificationsReturn => {
               break;
               
             case 'error':
-              console.error('WebSocket error:', data.message);
               toast.error('Erro de notificação', {
                 description: data.message
               });
               break;
           }
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
         }
       };
 
       wsRef.current.onclose = (event) => {
-        console.log('❌ Disconnected from notifications WebSocket');
         setIsConnected(false);
         
         // Tentar reconectar se não foi fechamento intencional
         if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
           const delay = Math.pow(2, reconnectAttempts.current) * 1000; // Exponential backoff
-          console.log(`🔄 Attempting to reconnect in ${delay}ms...`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttempts.current++;
@@ -149,12 +143,10 @@ export const useNotifications = (): UseNotificationsReturn => {
       };
 
       wsRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
         setIsConnected(false);
       };
 
     } catch (error) {
-      console.error('Failed to connect to WebSocket:', error);
       setIsConnected(false);
     }
   }, [showNotificationToast]);
@@ -215,7 +207,6 @@ export const useNotifications = (): UseNotificationsReturn => {
       setUnreadCount(0);
     })
     .catch(error => {
-      console.error('Error marking all notifications as read:', error);
       toast.error('Erro ao marcar notificações como lidas');
     });
   }, []);

@@ -86,7 +86,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         logout();
       }
     } catch (error) {
-      console.error('Erro ao buscar perfil do usuário:', error);
+      // Error handled silently
     } finally {
       setIsLoading(false);
     }
@@ -116,11 +116,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return true;
       } else {
         const error = await response.json();
-        console.error('Erro no login:', error);
         return false;
       }
     } catch (error) {
-      console.error('Erro ao fazer login:', error);
       return false;
     }
   };

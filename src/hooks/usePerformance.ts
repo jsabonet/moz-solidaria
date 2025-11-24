@@ -35,15 +35,6 @@ export const usePerformance = (componentName: string) => {
       memoryUsage
     }));
 
-    // Log de performance em desenvolvimento
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`📊 Performance [${componentName}]:`, {
-        loadTime: `${loadTime}ms`,
-        mounts: mountCountRef.current,
-        memory: memoryUsage ? `${memoryUsage.toFixed(2)}MB` : 'N/A'
-      });
-    }
-
     return () => {
       const renderTime = Date.now() - renderStartRef.current;
       setMetrics(prev => ({ ...prev, renderTime }));
@@ -57,14 +48,9 @@ export const usePerformance = (componentName: string) => {
       const result = await action();
       const duration = performance.now() - start;
       
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`⚡ Action [${actionName}]: ${duration.toFixed(2)}ms`);
-      }
-      
       return result;
     } catch (error) {
       const duration = performance.now() - start;
-      console.error(`❌ Action [${actionName}] failed after ${duration.toFixed(2)}ms:`, error);
       throw error;
     }
   };
@@ -88,8 +74,6 @@ export const usePerformance = (componentName: string) => {
             TTI: navigation.domInteractive - navigation.fetchStart,
             CLS: 0 // Seria necessário calcular com observadores
           };
-          
-          console.log('🎯 Web Vitals:', metrics);
         }
       });
     }

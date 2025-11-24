@@ -20,7 +20,6 @@ export const usePWA = () => {
     const handleBeforeInstallPrompt = (e: Event) => {
       // Importante: preventDefault() para capturar o evento
       e.preventDefault();
-      console.log('PWA: beforeinstallprompt event captured and prevented');
       
       setInstallPrompt(e as any);
       setIsInstallable(true);
@@ -41,13 +40,7 @@ export const usePWA = () => {
 
     // Register service worker
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then((registration) => {
-          console.log('SW registered: ', registration);
-        })
-        .catch((registrationError) => {
-          console.log('SW registration failed: ', registrationError);
-        });
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
 
     return () => {
@@ -58,31 +51,24 @@ export const usePWA = () => {
 
   const install = async () => {
     if (!installPrompt) {
-      console.log('PWA: No install prompt available');
       return false;
     }
 
     try {
-      console.log('PWA: Showing install prompt');
       // Aqui chamamos prompt() para mostrar o banner de instalação
       await installPrompt.prompt();
       
       const choiceResult = await installPrompt.userChoice;
-      console.log('PWA: User choice result:', choiceResult);
       
       if (choiceResult.outcome === 'accepted') {
-        console.log('PWA: User accepted installation');
         setIsInstalled(true);
         setIsInstallable(false);
         setInstallPrompt(null);
         return true;
-      } else {
-        console.log('PWA: User dismissed installation');
       }
       
       return false;
     } catch (error) {
-      console.error('PWA: Install failed:', error);
       return false;
     }
   };

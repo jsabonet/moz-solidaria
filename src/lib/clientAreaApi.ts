@@ -249,7 +249,6 @@ export async function fetchCauses(): Promise<Cause[]> {
   if (!res.ok) throw new Error('Erro ao buscar causas');
   
   const data = await res.json();
-  console.log('API response for causes:', data);
   
   // Check if it's a paginated response
   if (data.results && Array.isArray(data.results)) {

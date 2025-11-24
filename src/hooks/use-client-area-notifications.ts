@@ -12,7 +12,6 @@ export const useClientAreaNotifications = () => {
         label: 'Ver Doações',
         onClick: () => {
           // Implementar navegação para lista de doações
-          console.log('Navegar para minhas doações');
         }
       }
     });
@@ -25,7 +24,7 @@ export const useClientAreaNotifications = () => {
       action: {
         label: 'Tentar Novamente',
         onClick: () => {
-          console.log('Tentar novamente');
+          // Action placeholder
         }
       }
     });

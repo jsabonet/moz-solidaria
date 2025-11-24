@@ -82,8 +82,6 @@ class LocalProvider implements UploadProvider {
     // Simulate upload delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    console.warn('⚠️ Usando upload local - a imagem será perdida ao recarregar a página');
-    
     return url;
   }
 }
@@ -143,13 +141,9 @@ class ImageUploadService {
 
     for (const provider of this.providers) {
       try {
-        console.log(`📤 Tentando upload com ${provider.name}...`);
         const url = await provider.upload(file);
-        console.log(`✅ Upload realizado com sucesso via ${provider.name}`);
-        console.log(`🔗 URL: ${url}`);
         return { url, provider: provider.name };
       } catch (error) {
-        console.warn(`❌ Falha no upload via ${provider.name}:`, error);
         lastError = error as Error;
         continue;
       }

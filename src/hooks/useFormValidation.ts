@@ -72,7 +72,7 @@ export function useFormValidation<T extends Record<string, any>>({
           }));
           toast.info('Dados recuperados do salvamento automático');
         } catch (error) {
-          console.warn('Erro ao carregar dados salvos:', error);
+          // Error handled silently
         }
       }
     }
