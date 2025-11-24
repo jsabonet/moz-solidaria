@@ -43,39 +43,22 @@ const BlogDetail = () => {
   useEffect(() => {
     async function loadData() {
       if (!slug) {
-        console.warn("BlogDetail: slug não encontrado na URL.");
         return;
       }
       
       try {
         setLoading(true);
-        console.log("BlogDetail: Buscando post detail para slug:", slug);
         
         const [postData, postsData] = await Promise.all([
           fetchPostDetail(slug),
           fetchAllPosts() // Buscar TODOS os posts para relacionados
         ]);
-        
-        console.log("BlogDetail: postData recebido:", postData);
-        console.log("BlogDetail: postsData recebido:", postsData);
-
-        // Verificar dados da imagem principal
-        if (postData && postData.featured_image) {
-          console.log("🖼️ BlogDetail - Imagem principal encontrada:");
-          console.log("  - featured_image:", postData.featured_image);
-          console.log("  - featured_image_url:", postData.featured_image_url);
-          console.log("  - Tipo de dados:", typeof postData.featured_image);
-        } else {
-          console.log("❌ BlogDetail - Nenhuma imagem principal encontrada no post");
-        }
 
         // Verificar se o post existe e está publicado
         if (!postData || Object.keys(postData).length === 0) {
-          console.warn("BlogDetail: postData vazio ou nulo.", postData);
           setError("Artigo não encontrado.");
           setPost(null);
         } else if (postData.status !== 'published' && !postData.is_published) {
-          console.warn("BlogDetail: Post não publicado:", postData.status);
           setError("Artigo não encontrado.");
           setPost(null);
         } else {
@@ -84,13 +67,6 @@ const BlogDetail = () => {
         
         // Garantir que postsData é um array e filtrar apenas posts publicados
         const posts = Array.isArray(postsData) ? postsData : [];
-        console.log("BlogDetail: posts para relacionados:", posts);
-        
-        // Verificar imagens dos posts relacionados
-        posts.forEach((p, index) => {
-          console.log(`🖼️ Post relacionado ${index + 1} (${p.title}):`);
-          console.log("  - featured_image:", p.featured_image);
-        });
         
         const publishedPosts = posts.filter(p => 
           p.status === 'published' || p.is_published === true
@@ -111,7 +87,6 @@ const BlogDetail = () => {
         setRelatedPosts(related);
         
       } catch (err: any) {
-        console.error('BlogDetail: Erro detalhado no BlogDetail:', err);
         setError("Erro ao carregar o artigo");
         setPost(null);
       } finally {
@@ -133,7 +108,7 @@ const BlogDetail = () => {
         document.title = siteTitle;
       }
     } catch (e) {
-      console.warn('BlogDetail: unable to update document.title', e);
+      // ignore
     }
 
     return () => {
@@ -143,7 +118,6 @@ const BlogDetail = () => {
 
   // Função para processar URL da imagem
   const getImageUrl = (imageData: any, fallbackUrl?: string) => {
-    console.log("🔍 getImageUrl - Processando:", { imageData, fallbackUrl, type: typeof imageData });
     
   // If VITE_API_URL isn't provided at build time, use the runtime origin (the host serving the assets)
   const API_BASE = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || (typeof window !== 'undefined' && window.location?.origin.includes('mozsolidaria.org') ? 'https://mozsolidaria.org' : (typeof window !== 'undefined' && window.location ? window.location.origin : 'http://localhost:8000'));
@@ -152,40 +126,33 @@ const BlogDetail = () => {
     if (typeof imageData === 'string') {
       // Se já é uma URL completa
       if (imageData.startsWith('http')) {
-        console.log("✅ URL completa encontrada:", imageData);
         return imageData;
       }
       // Se é um caminho relativo, construir URL completa
       if (imageData.startsWith('/')) {
         const fullUrl = `${API_BASE}${imageData}`;
-        console.log("🔗 Construindo URL completa:", fullUrl);
         return fullUrl;
       }
       // Se é apenas o nome do arquivo
       const fullUrl = `${API_BASE}/media/${imageData}`;
-      console.log("📁 Construindo URL do media:", fullUrl);
       return fullUrl;
     }
     
     // Se é um objeto com propriedades de imagem
     if (typeof imageData === 'object' && imageData) {
       if (imageData.url) {
-        console.log("✅ URL do objeto encontrada:", imageData.url);
         return imageData.url;
       }
       if (imageData.featured_image_url) {
-        console.log("✅ featured_image_url encontrada:", imageData.featured_image_url);
         return imageData.featured_image_url;
       }
     }
     
     // Fallback
     if (fallbackUrl) {
-      console.log("🔄 Usando fallback URL:", fallbackUrl);
       return fallbackUrl;
     }
     
-    console.log("❌ Nenhuma imagem válida encontrada");
     return null;
   };
 
@@ -345,9 +312,7 @@ const BlogDetail = () => {
                       src={imageUrl}
                       alt={post.featured_image_caption || post.title}
                       className="w-full h-full object-cover"
-                      onLoad={() => console.log("✅ Imagem principal carregada com sucesso:", imageUrl)}
                       onError={(e) => {
-                        console.error("❌ Erro ao carregar imagem principal:", imageUrl);
                         e.currentTarget.src = "https://images.unsplash.com/photo-1567057420215-0afa9aa9253a?q=80&w=1200&auto=format&fit=crop";
                       }}
                     />

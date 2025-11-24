@@ -254,13 +254,11 @@ const formatDate = (date: string | Date | null | undefined) => {
     
     // Verificar se a data é válida
     if (isNaN(dateObj.getTime())) {
-      console.warn('Data inválida recebida:', date);
       return 'Data inválida';
     }
 
     return format(dateObj, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   } catch (error) {
-    console.error('Erro ao formatar data:', error, 'Valor recebido:', date);
     return 'Data inválida';
   }
 };
@@ -293,69 +291,17 @@ const ProjectDetail: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      console.log('🔍 ProjectDetail - Iniciando carregamento do projeto:', slug);
-      
       // Tentar buscar dados completos primeiro
       let projectData;
       try {
-        console.log('📊 ProjectDetail - Tentando fetchCompleteProjectData...');
         projectData = await fetchCompleteProjectData(slug);
-        console.log('✅ ProjectDetail - fetchCompleteProjectData sucesso:', projectData);
-        
-        // Log específico para debugging
-        if (projectData.metrics) {
-          console.log('📈 ProjectDetail - Métricas encontradas:', {
-            peopleImpacted: projectData.metrics.peopleImpacted,
-            progressPercentage: projectData.metrics.progressPercentage,
-            completedMilestones: projectData.metrics.completedMilestones,
-            totalMilestones: projectData.metrics.totalMilestones
-          });
-        } else {
-          console.warn('⚠️ ProjectDetail - Sem métricas no projeto');
-        }
-        
       } catch (error) {
-        console.error('❌ ProjectDetail - fetchCompleteProjectData falhou:', error);
         // Fallback para busca básica
-        console.log('📋 ProjectDetail - Tentando fetchProjectDetail como fallback...');
         projectData = await fetchProjectDetail(slug);
-        console.log('✅ ProjectDetail - fetchProjectDetail sucesso:', projectData);
       }
       
-      console.log('🎯 ProjectDetail - Projeto final carregado:', projectData);
-      console.log('🔍 ProjectDetail - Verificando target_beneficiaries:', {
-        target_beneficiaries: projectData.target_beneficiaries,
-        type: typeof projectData.target_beneficiaries,
-        hasProperty: 'target_beneficiaries' in projectData
-      });
-      console.log('🖼️ ProjectDetail - Verificando imagens:', {
-        featured_image: projectData.featured_image,
-        gallery_images_count: projectData.gallery_images?.length || 0,
-        first_gallery_image: projectData.gallery_images?.[0]
-      });
-      console.log('📝 ProjectDetail - Verificando updates:', {
-        updates_count: projectData.updates?.length || 0,
-        first_update: projectData.updates?.[0],
-        activities_count: projectData.activities?.length || 0
-      });
-      console.log('📅 ProjectDetail - Verificando datas:', {
-        start_date: projectData.start_date,
-        end_date: projectData.end_date,
-        created_at: projectData.created_at,
-        updated_at: projectData.updated_at,
-        milestone_dates: projectData.milestones?.slice(0, 2).map(m => ({
-          target_date: m.target_date,
-          completion_date: m.completion_date
-        }))
-      });
-      console.log('🎯 ProjectDetail - Teste formatDate:', {
-        start_date_formatted: formatDate(projectData.start_date),
-        created_at_formatted: formatDate(projectData.created_at),
-        test_date_formatted: formatDate('2025-08-06T23:30:24.511638+02:00')
-      });
       setProject(projectData);
     } catch (error: any) {
-      console.error('❌ Erro ao carregar projeto:', error);
       setError('Projeto não encontrado ou erro ao carregar dados');
       toast.error('Erro ao carregar projeto');
     } finally {
@@ -408,11 +354,6 @@ const ProjectDetail: React.FC = () => {
   const getCurrentBeneficiaries = () => {
     // Priorizar peopleImpacted do ProjectTracker (mais atualizado)
     const result = project?.metrics?.peopleImpacted ?? project?.current_beneficiaries ?? 0;
-    console.log('🎯 getCurrentBeneficiaries:', {
-      metricsValue: project?.metrics?.peopleImpacted,
-      currentValue: project?.current_beneficiaries,
-      result: result
-    });
     return result;
   };
 
@@ -437,12 +378,6 @@ const ProjectDetail: React.FC = () => {
       result = 0;
     }
     
-    console.log('🎯 getCompletedMilestones:', {
-      metricsValue: project?.metrics?.completedMilestones,
-      milestonesArray: project?.milestones?.length,
-      result: result
-    });
-    
     return result;
   };
 
@@ -455,12 +390,6 @@ const ProjectDetail: React.FC = () => {
     } else {
       result = 0;
     }
-    
-    console.log('🎯 getTotalMilestones:', {
-      metricsValue: project?.metrics?.totalMilestones,
-      milestonesArray: project?.milestones?.length,
-      result: result
-    });
     
     return result;
   };

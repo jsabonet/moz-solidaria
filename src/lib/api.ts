@@ -914,7 +914,6 @@ export async function fetchProjectManagers() {
     const user = await response.json();
     return user ? [user] : [];
   } catch (error) {
-    console.warn('Usando dados mock para gestores:', error);
     return [];
   }
 }
@@ -948,7 +947,6 @@ export async function uploadImage(file: File): Promise<string> {
 
   if (!res.ok) {
     const errorData = await res.text();
-    console.error('Upload Error Response:', errorData);
     throw new Error(`Erro no upload da imagem: ${res.status} - ${errorData}`);
   }
 
@@ -973,7 +971,6 @@ export async function duplicatePost(slug: string) {
   
   if (!res.ok) {
     const errorData = await res.text();
-    console.error('API Error Response:', errorData);
     throw new Error(`Erro ao duplicar post: ${res.status} - ${errorData}`);
   }
 
@@ -1168,12 +1165,10 @@ export async function fetchProjectEvidences(projectId: string | number) {
       res = await fetch(`${API_BASE}/projects/admin/projects/${projectId}/evidences/`);
     }
     if (!res.ok) {
-      console.warn(`Evidences endpoint not found for project ${projectId}`);
       return [];
     }
     return await res.json();
   } catch (error) {
-    console.warn('Erro ao buscar evidências do projeto:', error);
     return [];
   }
 }
@@ -1188,7 +1183,6 @@ export async function fetchProjectGallery(projectId: string | number) {
       res = await fetch(`${API_BASE}/projects/admin/projects/${projectId}/gallery/`);
     }
     if (!res.ok) {
-      console.warn(`Gallery endpoint not found for project ${projectId}`);
       return [];
     }
     return await res.json();
@@ -1320,7 +1314,6 @@ export async function fetchTrackingMetricsBySlug(slug: string) {
       lastUpdate: m.last_updated || m.lastUpdate || null,
     };
   } catch (e) {
-    console.warn('Erro ao buscar métricas (tracking) por slug:', e);
     return empty;
   }
 }
@@ -1458,8 +1451,6 @@ export async function fetchCompleteProjectData(slug: string) {
       throw new Error('Projeto não encontrado');
     }
 
-    console.log('📦 Dados básicos do projeto carregados:', project);
-
     // Tentar buscar dados complementares (opcional, não bloqueia se não existir)
     const [updates, evidences, gallery, milestones, metrics] = await Promise.allSettled([
       fetchProjectUpdates(project.id),
@@ -1516,22 +1507,18 @@ export async function fetchProjectDetailForEdit(slug: string) {
     const results = data.results || data;
     
     if (Array.isArray(results) && results.length > 0) {
-      console.log('✅ API - Projeto encontrado para edição:', results[0]);
       return results[0];
     } else if (!Array.isArray(results) && results.id) {
-      console.log('✅ API - Projeto encontrado para edição:', results);
       return results;
     }
 
     throw new Error('Projeto não encontrado');
     
   } catch (error) {
-    console.error('❌ Erro ao buscar projeto para edição:', error);
     // Fallback: tentar buscar como público para pelo menos preencher parte dos campos
     try {
       const publicProject = await fetchProjectDetail(slug);
       if (publicProject) {
-        console.warn('Usando dados públicos como fallback para edição (campos limitados)');
         return publicProject;
       }
     } catch {}

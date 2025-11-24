@@ -145,8 +145,6 @@ async function apiRequest(url: string, options: RequestInit = {}) {
     defaultHeaders['Authorization'] = `Bearer ${token}`;
   }
 
-  console.log('🔄 API Request:', { url, method: options.method || 'GET', headers: defaultHeaders });
-
   try {
     const response = await fetch(url, {
       ...options,
@@ -156,15 +154,8 @@ async function apiRequest(url: string, options: RequestInit = {}) {
       },
     });
 
-    console.log('📡 API Response:', { 
-      status: response.status, 
-      statusText: response.statusText,
-      url: response.url 
-    });
-
     // Se recebemos 401 e temos refresh token, tentar renovar
     if (response.status === 401 && refreshToken) {
-      console.log('🔄 Token expirado, tentando renovar...');
       
       try {
         const refreshResponse = await fetch(`${API_BASE_URL}/api/v1/auth/token/refresh/`, {
@@ -178,8 +169,6 @@ async function apiRequest(url: string, options: RequestInit = {}) {
         if (refreshResponse.ok) {
           const newTokens = await refreshResponse.json();
           localStorage.setItem('authToken', newTokens.access);
-          
-          console.log('✅ Token renovado com sucesso');
           
           // Repetir requisição original com novo token
           const retryHeaders = {
@@ -195,14 +184,12 @@ async function apiRequest(url: string, options: RequestInit = {}) {
 
           if (retryResponse.ok) {
             const retryData = await retryResponse.json();
-            console.log('✅ API Success (após renovação):', { url, data: retryData });
             return retryData;
           } else {
             const retryErrorText = await retryResponse.text();
             throw new Error(`API Error (após renovação): ${retryResponse.status} ${retryResponse.statusText} - ${retryErrorText}`);
           }
         } else {
-          console.error('❌ Falha ao renovar token');
           // Limpar tokens inválidos
           localStorage.removeItem('authToken');
           localStorage.removeItem('refreshToken');
@@ -210,7 +197,6 @@ async function apiRequest(url: string, options: RequestInit = {}) {
           throw new Error('Token expirado e não foi possível renovar. Faça login novamente.');
         }
       } catch (refreshError) {
-        console.error('❌ Erro ao renovar token:', refreshError);
         localStorage.removeItem('authToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('userData');
@@ -220,13 +206,11 @@ async function apiRequest(url: string, options: RequestInit = {}) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ Erro na requisição para', url + ':', errorText);
       throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     // Para status 204 (No Content) ou métodos DELETE bem-sucedidos, não tentar parsear JSON
     if (response.status === 204 || (options.method === 'DELETE' && response.ok)) {
-      console.log('✅ API Success (No Content):', { url, status: response.status });
       return null; // ou return true, dependendo da sua preferência
     }
 
@@ -234,16 +218,13 @@ async function apiRequest(url: string, options: RequestInit = {}) {
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
       const data = await response.json();
-      console.log('✅ API Success:', { url, data });
       return data;
     } else {
       // Se não é JSON, retornar texto
       const text = await response.text();
-      console.log('✅ API Success (Text):', { url, text });
       return text;
     }
   } catch (error) {
-    console.error('❌ Erro na requisição para', url + ':', error);
     throw error;
   }
 }
@@ -298,8 +279,6 @@ export const useProjectDataStore = create<ProjectDataStore>()(
 
         return normalizedData;
       } catch (error) {
-        console.error(`Erro ao buscar dados do projeto ${slug}:`, error);
-        
         set(state => ({
           errors: new Map([...state.errors, [slug, error instanceof Error ? error.message : 'Erro desconhecido']]),
           loading: new Set([...state.loading].filter(s => s !== slug))
@@ -334,15 +313,12 @@ export const useProjectDataStore = create<ProjectDataStore>()(
 
         return true;
       } catch (error) {
-        console.error('Erro ao atualizar métricas:', error);
         return false;
       }
     },
 
     addProjectUpdate: async (slug: string, updateData) => {
       try {
-        console.log('🔄 Adicionando atualização:', { slug, updateData });
-        
         // Validate required fields
         if (!updateData.title || !updateData.description) {
           throw new Error('Título e descrição são obrigatórios');
@@ -359,29 +335,22 @@ export const useProjectDataStore = create<ProjectDataStore>()(
           ...(updateData.progress_percentage !== undefined && { progress_percentage: Number(updateData.progress_percentage) })
         };
 
-        console.log('🔄 Dados limpos para envio:', cleanUpdateData);
-
         const newUpdate = await apiRequest(API_ENDPOINTS.projectUpdates(slug), {
           method: 'POST',
           body: JSON.stringify(cleanUpdateData),
         });
 
         // Ao invés de atualizar manualmente, forçar um refresh completo dos dados
-        console.log('✅ Atualização criada, fazendo refresh dos dados...');
         await get().fetchProjectData(slug, true);
 
-        console.log('✅ Atualização adicionada com sucesso:', newUpdate);
         return newUpdate;
       } catch (error) {
-        console.error('❌ Erro ao adicionar atualização:', error);
         throw error;
       }
     },
 
     addProjectMilestone: async (slug: string, milestoneData) => {
       try {
-        console.log('🎯 Adicionando marco:', { slug, milestoneData });
-        
         // Validate required fields
         if (!milestoneData.title || !milestoneData.description || !milestoneData.target_date) {
           throw new Error('Título, descrição e data alvo são obrigatórios');
@@ -397,21 +366,16 @@ export const useProjectDataStore = create<ProjectDataStore>()(
           order: milestoneData.order || 0,
         };
 
-        console.log('🎯 Dados limpos para envio:', cleanMilestoneData);
-
         const newMilestone = await apiRequest(API_ENDPOINTS.projectMilestones(slug), {
           method: 'POST',
           body: JSON.stringify(cleanMilestoneData),
         });
 
         // Atualizar dados do projeto
-        console.log('✅ Marco criado, fazendo refresh dos dados...');
         await get().fetchProjectData(slug, true);
 
-        console.log('✅ Marco adicionado com sucesso:', newMilestone);
         return newMilestone;
       } catch (error) {
-        console.error('❌ Erro ao adicionar marco:', error);
         throw error;
       }
     },
@@ -456,7 +420,6 @@ export const useProjectDataStore = create<ProjectDataStore>()(
 
         return newImage;
       } catch (error) {
-        console.error('Erro ao adicionar imagem à galeria:', error);
         return null;
       }
     },
@@ -490,7 +453,6 @@ export const useProjectDataStore = create<ProjectDataStore>()(
 
         return true;
       } catch (error) {
-        console.error('Erro ao alterar destaque da imagem:', error);
         return false;
       }
     },
@@ -525,15 +487,12 @@ export const useProjectDataStore = create<ProjectDataStore>()(
 
         return true;
       } catch (error) {
-        console.error('Erro ao completar milestone:', error);
         return false;
       }
     },
 
     addProjectEvidence: async (slug: string, evidenceData: FormData) => {
       try {
-        console.log('🎯 Adicionando evidência:', { slug });
-        
         const response = await fetch(API_ENDPOINTS.projectEvidence(slug), {
           method: 'POST',
           headers: {
@@ -550,21 +509,16 @@ export const useProjectDataStore = create<ProjectDataStore>()(
         const newEvidence = await response.json();
 
         // Atualizar dados do projeto
-        console.log('✅ Evidência criada, fazendo refresh dos dados...');
         await get().fetchProjectData(slug, true);
 
-        console.log('✅ Evidência adicionada com sucesso:', newEvidence);
         return newEvidence;
       } catch (error) {
-        console.error('❌ Erro ao adicionar evidência:', error);
         throw error;
       }
     },
 
     deleteProjectEvidence: async (slug: string, evidenceId: number) => {
       try {
-        console.log('🗑️ Deletando evidência:', { slug, evidenceId });
-        
         await apiRequest(
           `${API_ENDPOINTS.projectEvidence(slug)}${evidenceId}/`,
           { method: 'DELETE' }
@@ -583,15 +537,10 @@ export const useProjectDataStore = create<ProjectDataStore>()(
           return { projects: newProjects };
         });
 
-        console.log('✅ Evidência deletada com sucesso');
         return true;
       } catch (error) {
-        console.error('❌ Erro ao deletar evidência:', error);
-        
         // Verificar se é erro 404 (evidência já foi deletada)
         if (error instanceof Error && error.message.includes('404')) {
-          console.log('ℹ️ Evidência não encontrada (possivelmente já deletada), removendo do estado local...');
-          
           // Mesmo assim, remover do estado local
           set(state => {
             const newProjects = new Map(state.projects);
