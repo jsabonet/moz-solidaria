@@ -81,7 +81,7 @@ const AdvancedStats: React.FC<AdvancedStatsProps> = ({
         throw new Error('Dados não disponíveis na resposta da API');
       }
     } catch (error) {
-      console.warn('API não disponível, usando dados mockados para estatísticas');
+      // API not available, using mock data fallback
       
       // Fallback para dados mock se a API não estiver disponível
       setStats({

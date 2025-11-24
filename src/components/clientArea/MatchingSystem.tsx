@@ -68,7 +68,6 @@ const MatchingSystem: React.FC = () => {
       setCauses(causesData);
       setSkills(skillsData);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar dados do sistema de matching');
     } finally {
       setLoading(false);
@@ -98,7 +97,6 @@ const MatchingSystem: React.FC = () => {
       });
       toast.success('Solicitação criada com sucesso!');
     } catch (error) {
-      console.error('Erro ao criar solicitação:', error);
       toast.error('Erro ao criar solicitação');
     }
   };
@@ -111,7 +109,6 @@ const MatchingSystem: React.FC = () => {
       );
       toast.success('Solicitação aceita com sucesso!');
     } catch (error) {
-      console.error('Erro ao aceitar solicitação:', error);
       toast.error('Erro ao aceitar solicitação');
     }
   };

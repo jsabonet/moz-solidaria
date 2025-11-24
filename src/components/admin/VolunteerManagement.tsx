@@ -150,7 +150,6 @@ const VolunteerManagement: React.FC = () => {
       setOpportunities(opportunitiesRes.data.results || opportunitiesRes.data || []);
       setPendingApplications(applicationsRes.data.results || applicationsRes.data || []);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar dados de voluntários');
     } finally {
       setLoading(false);
@@ -172,7 +171,6 @@ const VolunteerManagement: React.FC = () => {
       setAdjustVolunteer(null);
       loadData();
     } catch (error:any) {
-      console.error(error);
       toast.error(error.response?.data?.detail || 'Erro ao aplicar ajuste');
     }
   };
@@ -241,7 +239,6 @@ const VolunteerManagement: React.FC = () => {
       toast.success('Oportunidade excluída');
       loadData();
     } catch (error) {
-      console.error(error);
       toast.error('Erro ao excluir oportunidade');
     } finally {
       setDeletingId(null);

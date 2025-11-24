@@ -46,7 +46,6 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ userProfile, onUpdate
       onUpdate(updatedProfile);
       toast.success('Perfil atualizado com sucesso!');
     } catch (error) {
-      console.error('Erro ao atualizar perfil:', error);
       toast.error('Erro ao atualizar perfil');
     } finally {
       setLoading(false);

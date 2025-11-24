@@ -69,7 +69,6 @@ const ReportsCenter: React.FC = () => {
           }
         });
       } catch (error) {
-        console.error('Erro ao carregar analytics:', error);
         toast.error('Erro ao carregar dados analíticos');
       } finally {
         setLoading(false);
@@ -160,7 +159,7 @@ const ReportsCenter: React.FC = () => {
           throw new Error(`Erro na API: ${response.status}`);
         }
       } catch (apiError) {
-        console.warn('API não disponível, gerando arquivo simulado:', apiError);
+        // API not available, generating simulated file
         
         // Fallback: gerar arquivo simulado
         const simulatedData = generateSimulatedData(area, format);
@@ -177,7 +176,6 @@ const ReportsCenter: React.FC = () => {
         toast.success(`Exportação simulada de ${area} concluída!`);
       }
     } catch (error) {
-      console.error('Erro na exportação:', error);
       toast.error(`Erro ao exportar ${area}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     } finally {
       setIsGenerating(false);
