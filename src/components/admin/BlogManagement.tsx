@@ -40,7 +40,6 @@ const BlogManagement: React.FC = () => {
       setPosts(Array.isArray(postsData) ? postsData : []);
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar posts');
       setPosts([]);
       setCategories([]);
@@ -55,7 +54,6 @@ const BlogManagement: React.FC = () => {
       setPosts(posts.filter((post) => post.slug !== postSlug));
       toast.success('Post deletado com sucesso');
     } catch (error) {
-      console.error('Erro ao deletar post:', error);
       toast.error('Erro ao deletar post');
     }
   };
@@ -66,7 +64,6 @@ const BlogManagement: React.FC = () => {
       await loadData();
       toast.success('Post duplicado com sucesso!');
     } catch (error: any) {
-      console.error('Erro ao duplicar post:', error);
       toast.error(error.message || 'Erro ao duplicar post');
     }
   };

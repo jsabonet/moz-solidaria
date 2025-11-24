@@ -71,7 +71,6 @@ const ReportsCenter: React.FC = () => {
           }
         });
       } catch (error) {
-        console.error('Erro ao carregar analytics:', error);
         toast.error('Erro ao carregar dados analíticos');
       } finally {
         setLoading(false);
@@ -171,7 +170,6 @@ const ReportsCenter: React.FC = () => {
           }
         }
       } catch (apiError) {
-        console.warn('Backend não disponível, usando fallback simulado:', apiError);
         toast.warning(`Backend indisponível. Gerando ${format.toUpperCase()} simulado para demonstração.`);
         
         // Fallback: gerar arquivo simulado apenas quando API não funciona
@@ -197,7 +195,6 @@ const ReportsCenter: React.FC = () => {
         toast.info(`Arquivo simulado de ${area} gerado. Para dados reais, verifique se o servidor Django está rodando.`);
       }
     } catch (error) {
-      console.error('Erro na exportação:', error);
       toast.error(`Erro ao exportar ${area}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     } finally {
       setIsGenerating(false);

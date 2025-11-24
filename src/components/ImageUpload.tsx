@@ -67,14 +67,10 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       
       // Show success message with provider info
       setTimeout(() => {
-        if (result.provider === 'Local (Desenvolvimento)') {
-          console.warn('⚠️ Upload realizado localmente. Configure um provider de produção para uso real.');
-        }
         setUploadProgress('');
       }, 2000);
       
     } catch (error) {
-      console.error('Erro no upload:', error);
       setUploadProgress('Erro no upload');
       
       // Mensagem de erro mais detalhada

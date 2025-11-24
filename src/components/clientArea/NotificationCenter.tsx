@@ -53,7 +53,6 @@ const NotificationCenter: React.FC = () => {
       const data = await fetchNotifications();
       setNotifications(data);
     } catch (error) {
-      console.error('Erro ao carregar notificações:', error);
       toast.error('Erro ao carregar notificações');
     } finally {
       setLoading(false);
@@ -65,7 +64,7 @@ const NotificationCenter: React.FC = () => {
       const data = await getNotificationStats();
       setStats(data);
     } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error);
+      // Error handled silently
     }
   };
 
@@ -78,7 +77,6 @@ const NotificationCenter: React.FC = () => {
       loadStats(); // Reload stats
       toast.success('Notificação marcada como lida');
     } catch (error) {
-      console.error('Erro ao marcar como lida:', error);
       toast.error('Erro ao marcar como lida');
     }
   };
@@ -92,7 +90,6 @@ const NotificationCenter: React.FC = () => {
       loadStats();
       toast.success('Todas as notificações foram marcadas como lidas');
     } catch (error) {
-      console.error('Erro ao marcar todas como lidas:', error);
       toast.error('Erro ao marcar todas como lidas');
     }
   };
@@ -124,7 +121,6 @@ const NotificationCenter: React.FC = () => {
       setSelectedNotifications(new Set());
       loadStats();
     } catch (error) {
-      console.error('Erro na ação em massa:', error);
       toast.error('Erro ao executar ação');
     }
   };
