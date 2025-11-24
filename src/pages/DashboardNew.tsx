@@ -46,7 +46,6 @@ const Dashboard: React.FC = () => {
       setPosts(Array.isArray(postsData) ? postsData : []);
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
       setPosts([]);
       setCategories([]);
     } finally {
@@ -59,7 +58,7 @@ const Dashboard: React.FC = () => {
       await deletePost(postSlug);
       setPosts(Array.isArray(posts) ? posts.filter(post => post.slug !== postSlug) : []);
     } catch (error) {
-      console.error('Erro ao deletar post:', error);
+      // Error handled silently - post not deleted
     }
   };
 
