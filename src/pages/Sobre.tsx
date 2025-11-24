@@ -65,24 +65,54 @@ const Sobre = () => {
 
   const team = [
     {
-      name: "Maria Santos",
-      role: "Diretora Executiva",
-      description: "10 anos de experiência em desenvolvimento comunitário e gestão de ONGs."
+      name: "Momade Sualé",
+      role: "Presidente",
+      description: "Lidera o conselho da ONG, representa oficialmente e garante cumprimento da missão."
     },
     {
-      name: "João Mabunda",
-      role: "Coordenador de Programas",
-      description: "Especialista em agricultura sustentável e desenvolvimento rural."
+      name: "Abubacar Apadre",
+      role: "Vice-Presidente",
+      description: "Auxilia o Presidente e assume liderança na sua ausência."
     },
     {
-      name: "Ana Mussa",
-      role: "Responsável de Comunicação",
-      description: "Jornalista com foco em questões sociais e desenvolvimento humano."
+      name: "Adamo Ernesto Abdala",
+      role: "Diretor Executivo / Sócio Fundador",
+      description: "Coordena projectos, supervisiona equipe e toma decisões estratégicas."
     },
     {
-      name: "Dr. Carlos Nhamirre",
-      role: "Coordenador de Saúde",
-      description: "Médico com especialização em saúde pública e medicina preventiva."
+      name: "Muemede Mbaraca",
+      role: "Financeiro",
+      description: "Gerencia orçamento, receitas e despesas, elabora relatórios financeiros."
+    },
+    {
+      name: "Abdala Issa",
+      role: "Coordenador Logístico",
+      description: "Organiza todo procurement e transporte para os projectos."
+    },
+    {
+      name: "Badrudine Ija",
+      role: "Coordenador de Projectos",
+      description: "Planeja, implementa e monitora projectos comunitários."
+    },
+    {
+      name: "Ochapo Sataca",
+      role: "Técnico do Campo",
+      description: "Supervisiona actividades em campo e colecta dados de projectos."
+    },
+    {
+      name: "Lucman Atumane",
+      role: "Oficial de Direitos",
+      description: "Assegura respeito a direitos humanos e normas legais nos projectos."
+    },
+    {
+      name: "Isa Momade",
+      role: "Nutricionista",
+      description: "Planeja e acompanha programas de alimentação e nutrição."
+    },
+    {
+      name: "Abdala Issa",
+      role: "Coordenador de Voluntariado e Parcerias",
+      description: "Recruta e treina voluntários, estabelece parcerias e promove integração comunitária."
     }
   ];
 
@@ -322,22 +352,22 @@ const Sobre = () => {
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">Nossa Equipe</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Profissionais dedicados ao desenvolvimento das comunidades de Cabo Delgado
+              Membros fundadores e colaboradores dedicados à transformação de Cabo Delgado
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
             {team.map((member, index) => (
               <Card key={index} className="text-center hover:shadow-lg transition-shadow duration-300">
                 <CardContent className="p-6 space-y-4">
-                  <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full flex items-center justify-center mx-auto">
-                    <Users className="h-10 w-10 text-primary" />
+                  <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full flex items-center justify-center mx-auto">
+                    <Users className="h-8 w-8 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold">{member.name}</h3>
-                    <p className="text-primary font-medium">{member.role}</p>
+                    <h3 className="text-lg font-semibold">{member.name}</h3>
+                    <p className="text-primary font-medium text-sm mb-2">{member.role}</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">{member.description}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{member.description}</p>
                 </CardContent>
               </Card>
             ))}
