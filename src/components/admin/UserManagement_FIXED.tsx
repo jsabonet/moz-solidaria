@@ -171,8 +171,6 @@ const UserManagement: React.FC = () => {
         }
 
         const data = await response.json();
-        console.log(`🔍 Página ${pageNumber} carregada:`, nextUrl);
-        console.log(`🔍 Usuários nesta página: ${data.results?.length || 0}`);
         
         // Verificar se a resposta é paginada (tem 'results') ou uma lista direta
         if (data.results && Array.isArray(data.results)) {
@@ -190,7 +188,6 @@ const UserManagement: React.FC = () => {
           allUsers = [...allUsers, ...data];
           nextUrl = null; // Não há paginação
         } else {
-          console.error('❌ Formato de resposta inesperado:', data);
           toast.error('Formato de dados inesperado');
           break;
         }
@@ -199,17 +196,14 @@ const UserManagement: React.FC = () => {
         
         // Evitar loop infinito - máximo 10 páginas
         if (pageNumber > 10) {
-          console.warn('⚠️ Limite de páginas atingido');
           break;
         }
       }
       
-      console.log('✅ Total de usuários carregados:', allUsers.length);
       setUsers(allUsers);
       setLoadingProgress('');
       
     } catch (error) {
-      console.error('Erro ao buscar usuários:', error);
       toast.error('Erro ao conectar com o servidor');
       setLoadingProgress('');
     } finally {
@@ -293,7 +287,6 @@ const UserManagement: React.FC = () => {
         toast.error('Erro ao atualizar usuário');
       }
     } catch (error) {
-      console.error('Erro ao atualizar usuário:', error);
       toast.error('Erro ao conectar com o servidor');
     }
   };
@@ -319,15 +312,12 @@ const UserManagement: React.FC = () => {
         toast.error('Erro ao alterar status do usuário');
       }
     } catch (error) {
-      console.error('Erro ao alterar status:', error);
       toast.error('Erro ao conectar com o servidor');
     }
   };
 
   const debugUserComparison = (currentUserData: any, userData: any, action: string) => {
-    console.log('🔍 DEBUG COMPLETO - Comparação de usuário:', {
-      action_type: action,
-      currentUser_data: currentUserData,
+    // Debug logging removed for production
       promoted_user_data: userData,
       currentUser_id: currentUserData?.id,
       currentUser_id_type: typeof currentUserData?.id,
@@ -366,19 +356,13 @@ const UserManagement: React.FC = () => {
         toast.success(`Usuário promovido para ${role} com sucesso!`);
         fetchUsers();
         
-        console.log('🔍 Verificando atualização de permissões após promoção staff...');
-        
         // 🔄 ATUALIZAÇÃO IMEDIATA E ROBUSTA DAS PERMISSÕES
         if (currentUser && currentUser.id === user.id) {
-          console.log('🎯 Executando atualização de permissões para o próprio usuário...');
-          
           try {
             // 1. Invalidar cache local
-            console.log('1️⃣ Invalidando cache local...');
             invalidatePermissionsCache();
             
             // 2. Forçar refresh das permissões via API
-            console.log('2️⃣ Fazendo refresh via API...');
             const refreshResponse = await fetch(`${API_BASE}/auth/sessions/force_permission_refresh/`, {
               method: 'POST',
               headers: {
@@ -388,14 +372,7 @@ const UserManagement: React.FC = () => {
               body: JSON.stringify({ user_id: user.id }),
             });
             
-            if (refreshResponse.ok) {
-              console.log('✅ API refresh executado com sucesso');
-            } else {
-              console.log('⚠️ API refresh falhou, mas continuando...');
-            }
-            
             // 3. Atualizar contexto local
-            console.log('3️⃣ Atualizando contexto local...');
             await refreshUserData();
             
             // 4. Mostrar toast de sucesso
@@ -403,11 +380,7 @@ const UserManagement: React.FC = () => {
               duration: 4000,
             });
             
-            console.log('🎉 Atualização completa finalizada!');
-            
           } catch (refreshError) {
-            console.error('❌ Erro na atualização robusta:', refreshError);
-            
             // Fallback: forçar reload se a atualização falhar
             toast.info('Recarregando página para aplicar mudanças...', {
               duration: 2000,
@@ -417,21 +390,16 @@ const UserManagement: React.FC = () => {
               window.location.reload();
             }, 2000);
           }
-        } else {
-          console.log('ℹ️ Promoção não é do próprio usuário, não atualizando permissões locais');
         }
       } else {
         toast.error('Erro ao promover usuário');
       }
     } catch (error) {
-      console.error('Erro ao promover usuário:', error);
       toast.error('Erro ao conectar com o servidor');
     }
   };
 
   const promoteToProfile = async (user: User, profileCode: string) => {
-    console.log('🔄 promoteToProfile chamada:', { username: user.username, profileCode });
-    
     debugUserComparison(currentUser, user, `profile_promotion_${profileCode}`);
     
     try {
@@ -439,7 +407,6 @@ const UserManagement: React.FC = () => {
       const token = localStorage.getItem('authToken');
       
       if (!token) {
-        console.error('❌ Token não encontrado');
         toast.error('Erro de autenticação. Faça login novamente.');
         return;
       }
@@ -458,17 +425,12 @@ const UserManagement: React.FC = () => {
           }),
         });
 
-        console.log('📉 Resposta rebaixamento:', response.status);
         if (response.ok) {
           toast.success(`${user.username} rebaixado para Usuário comum com sucesso!`);
           fetchUsers();
           
-          console.log('🔍 Verificando atualização após rebaixamento...');
-          
           // 🔄 ATUALIZAÇÃO IMEDIATA E ROBUSTA DAS PERMISSÕES PARA REBAIXAMENTO
           if (currentUser && currentUser.id === user.id) {
-            console.log('🎯 Atualizando permissões após rebaixamento...');
-            
             try {
               // 1. Invalidar cache local
               invalidatePermissionsCache();
@@ -483,15 +445,7 @@ const UserManagement: React.FC = () => {
                 body: JSON.stringify({ user_id: user.id }),
               });
               
-              if (refreshResponse.ok) {
-                console.log('✅ Permissões sincronizadas via API após rebaixamento');
-              }
-              
-              // 3. Atualizar contexto local
-              await refreshUserData();
-              
-              // 4. Mostrar toast informativo
-              toast.info('Suas permissões foram atualizadas. Redirecionando...', {
+              // 3. Atualizar contexto localram atualizadas. Redirecionando...', {
                 duration: 3000,
               });
               
@@ -501,8 +455,6 @@ const UserManagement: React.FC = () => {
               }, 3000);
               
             } catch (refreshError) {
-              console.error('❌ Erro na atualização após rebaixamento:', refreshError);
-              
               // Fallback: forçar reload
               setTimeout(() => {
                 window.location.reload();
@@ -510,7 +462,6 @@ const UserManagement: React.FC = () => {
             }
           }
         } else {
-          console.error('❌ Erro no rebaixamento:', await response.text());
           toast.error('Erro ao rebaixar usuário');
         }
         return;
@@ -526,20 +477,14 @@ const UserManagement: React.FC = () => {
         body: JSON.stringify({ profile: profileCode }),
       });
 
-      console.log('📈 Resposta promoção:', response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Dados da promoção:', data);
         const profileName = userRoles.find(r => r.value === profileCode)?.label || 'perfil específico';
         toast.success(`${user.username} promovido para ${profileName} com sucesso!`);
         fetchUsers();
         
-        console.log('🔍 Verificando atualização após promoção para perfil específico...');
-        
         // 🔄 ATUALIZAÇÃO IMEDIATA E ROBUSTA DAS PERMISSÕES PARA PERFIS ESPECÍFICOS
         if (currentUser && currentUser.id === user.id) {
-          console.log('🎯 Atualizando permissões após promoção para perfil específico...');
-          
           try {
             // 1. Invalidar cache local
             invalidatePermissionsCache();
@@ -554,10 +499,6 @@ const UserManagement: React.FC = () => {
               body: JSON.stringify({ user_id: user.id }),
             });
             
-            if (refreshResponse.ok) {
-              console.log('✅ Permissões sincronizadas via API para perfil específico');
-            }
-            
             // 3. Atualizar contexto local
             await refreshUserData();
             
@@ -566,11 +507,7 @@ const UserManagement: React.FC = () => {
               duration: 5000,
             });
             
-            console.log('🎉 Atualização de perfil específico finalizada!');
-            
           } catch (refreshError) {
-            console.error('❌ Erro na atualização de perfil específico:', refreshError);
-            
             // Fallback: forçar reload se a atualização falhar
             toast.info('Recarregando página para aplicar as novas permissões...', {
               duration: 2000,
@@ -583,11 +520,9 @@ const UserManagement: React.FC = () => {
         }
       } else {
         const errorData = await response.json();
-        console.error('❌ Erro na promoção:', errorData);
         toast.error(errorData.error || 'Erro ao promover usuário');
       }
     } catch (error) {
-      console.error('Erro ao promover usuário:', error);
       toast.error('Erro ao conectar com o servidor');
     }
   };
