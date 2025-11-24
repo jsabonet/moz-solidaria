@@ -38,7 +38,6 @@ const ClientArea: React.FC = () => {
         // Verificar se o token está disponível antes de fazer requisições
         const token = localStorage.getItem('authToken');
         if (!token) {
-          console.log('Token não encontrado, aguardando...');
           return;
         }
 
@@ -74,13 +73,12 @@ const ClientArea: React.FC = () => {
         } as UserProfile;
 
         if (!['donor','beneficiary','volunteer','partner'].includes(profileData.user_type as any)) {
-          console.warn('[ClientArea] user_type desconhecido recebido:', profileDataRaw);
+          // Unknown user type, using fallback
         }
 
         setUserProfile(profileData);
         setDashboardStats(statsData);
       } catch (error) {
-        console.error('Erro ao carregar dados:', error);
         toast.error('Erro ao carregar dados Portal da Comunidade');
       } finally {
         setLoading(false);

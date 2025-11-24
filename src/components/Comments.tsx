@@ -89,7 +89,6 @@ const Comments: React.FC<CommentsProps> = ({
         title: "Erro",
         description: "Não foi possível carregar os comentários.",
       });
-      console.error('Comentários - fetch error:', error);
     } finally {
       setLoading(false);
     }
@@ -147,7 +146,6 @@ const Comments: React.FC<CommentsProps> = ({
         title: "Erro",
         description: msg,
       });
-      console.error('Comentários - submit error:', error);
     } finally {
       setSubmitting(false);
     }

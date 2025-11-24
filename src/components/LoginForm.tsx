@@ -19,7 +19,6 @@ const LoginForm = () => {
 
   // Redirecionamento após login bem-sucedido
   useEffect(() => {
-    console.log('🔍 LoginForm - Estado auth:', { isAuthenticated, user });
     if (isAuthenticated && user) {
       // Verificar se há uma página de origem para redirecionar
       let targetPath = location.state?.from?.pathname;
@@ -33,7 +32,6 @@ const LoginForm = () => {
         }
       }
       
-      console.log('🚀 LoginForm - Redirecionando para:', targetPath);
       navigate(targetPath, { replace: true });
     }
   }, [isAuthenticated, user, navigate, location.state]);

@@ -85,7 +85,6 @@ const CommentManagement: React.FC = () => {
         pending: allCommentsData.filter((c: Comment) => !c.is_approved).length,
       });
     } catch (error) {
-      console.error('Erro ao carregar comentários:', error);
       toast({
         title: "Erro",
         description: "Não foi possível carregar os comentários.",
@@ -120,7 +119,6 @@ const CommentManagement: React.FC = () => {
       });
       loadComments();
     } catch (error) {
-      console.error('Erro ao aprovar comentário:', error);
       toast({
         title: "Erro",
         description: "Não foi possível aprovar o comentário.",
@@ -137,7 +135,6 @@ const CommentManagement: React.FC = () => {
       });
       loadComments();
     } catch (error) {
-      console.error('Erro ao rejeitar comentário:', error);
       toast({
         title: "Erro",
         description: "Não foi possível rejeitar o comentário.",
@@ -154,7 +151,6 @@ const CommentManagement: React.FC = () => {
       });
       loadComments();
     } catch (error) {
-      console.error('Erro ao excluir comentário:', error);
       toast({
         title: "Erro",
         description: "Não foi possível excluir o comentário.",
@@ -184,7 +180,6 @@ const CommentManagement: React.FC = () => {
       setSelectedComments([]);
       loadComments();
     } catch (error) {
-      console.error(`Erro na ação em massa (${action}):`, error);
       toast({
         title: "Erro",
         description: `Não foi possível executar a ação em massa.`,
