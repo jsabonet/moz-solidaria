@@ -107,8 +107,6 @@ const VolunteerDashboard: React.FC<VolunteerDashboardProps> = ({ stats }) => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        console.log('🔄 Carregando dados do voluntário...');
-        
         const [opportunitiesRes, skillsRes, profileRes, participationsRes, achievementsRes] = await Promise.all([
           api.get('/volunteers/opportunities/?status=open'),
           api.get('/volunteers/skills/'),
@@ -117,19 +115,10 @@ const VolunteerDashboard: React.FC<VolunteerDashboardProps> = ({ stats }) => {
           api.get('/volunteers/achievements/')
         ]);
         
-        console.log('📊 Respostas recebidas:', {
-          opportunities: opportunitiesRes.data,
-          skills: skillsRes.data,
-          profile: profileRes.data,
-          participations: participationsRes.data,
-          achievements: achievementsRes.data
-        });
-        
         setOpportunities(opportunitiesRes.data.results || opportunitiesRes.data || []);
         
-        // Debug específico para skills
+        // Process skills data
         const skillsData = skillsRes.data.results || skillsRes.data || [];
-        console.log('🔧 Skills processadas:', skillsData);
         setAllSkills(skillsData);
         
         setVolunteerProfile(profileRes.data);
@@ -141,7 +130,6 @@ const VolunteerDashboard: React.FC<VolunteerDashboardProps> = ({ stats }) => {
           setSelectedSkills(profileRes.data.skills.map((skill: Skill) => skill.id));
         }
       } catch (error) {
-        console.error('❌ Erro ao carregar dados:', error);
         toast.error('Erro ao carregar dados do voluntário');
       } finally {
         setLoading(false);

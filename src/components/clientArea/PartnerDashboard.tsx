@@ -116,7 +116,6 @@ const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ stats }) => {
       }
       setNextMessagesUrl(data.next || null);
     } catch (err: any) {
-      console.error('[PartnerDashboard] Erro ao carregar mensagens', err);
       setMessageError('Não foi possível carregar mensagens agora.');
     } finally {
       setLoadingMessages(false);
@@ -140,7 +139,7 @@ const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ stats }) => {
       }
       setNextMessagesUrl(data.next || null);
     } catch (err) {
-      console.warn('[PartnerDashboard] Falha ao carregar mais mensagens');
+      // Error handled silently
     } finally {
       setLoadingMore(false);
     }
@@ -197,7 +196,7 @@ const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ stats }) => {
         setProjects(list);
       }
     } catch (err) {
-      console.warn('[PartnerDashboard] Falha ao buscar atribuições para derivar projetos vinculados');
+      // Error handled silently
     } finally {
       setLoadingProjects(false);
     }
@@ -322,7 +321,6 @@ const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ stats }) => {
       setMessageContent('');
       setSelectedFile(null);
     } catch (err: any) {
-      console.error('[PartnerDashboard] Erro ao enviar mensagem', err);
       setMessageError('Falha ao enviar mensagem.');
     } finally {
       setSending(false);

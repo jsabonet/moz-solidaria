@@ -179,11 +179,9 @@ const BeneficiaryDashboard: React.FC<BeneficiaryDashboardProps> = ({ stats: pare
 						setLoading(false);
 						return;
 					} catch (err2: any) {
-						console.error('[BeneficiaryDashboard] Falha também no endpoint alternativo', err2);
 						setError(err2?.response?.data?.error || 'Não foi possível carregar dados do beneficiário.');
 					}
 						} else {
-					console.error('[BeneficiaryDashboard] Erro ao obter stats', err);
 					setError(err?.response?.data?.error || 'Não foi possível carregar dados do beneficiário.');
 				}
 			} finally {
@@ -213,7 +211,6 @@ const BeneficiaryDashboard: React.FC<BeneficiaryDashboardProps> = ({ stats: pare
 			setNoProfile(false);
 			await fetchBeneficiaryStats();
 		} catch (err: any) {
-			console.error('[BeneficiaryDashboard] Erro ao completar perfil', err);
 			setError(err?.response?.data?.detail || 'Falha ao completar perfil. Contacte o suporte.');
 		} finally {
 			setCompleting(false);
@@ -256,7 +253,6 @@ const BeneficiaryDashboard: React.FC<BeneficiaryDashboardProps> = ({ stats: pare
 			const res = await api.get('/beneficiaries/support-requests/');
 			setAllRequests(res.data.results || res.data);
 		} catch (err: any) {
-			console.error('[BeneficiaryDashboard] Erro ao carregar solicitações', err);
 			setError('Não foi possível carregar suas solicitações.');
 		} finally {
 			setLoadingRequests(false);
@@ -280,7 +276,6 @@ const BeneficiaryDashboard: React.FC<BeneficiaryDashboardProps> = ({ stats: pare
 			});
 			await Promise.all([fetchBeneficiaryStats(), fetchAllRequests()]);
 		} catch (err: any) {
-			console.error('[BeneficiaryDashboard] Erro ao criar solicitação', err);
 			setError('Falha ao criar solicitação. Tente novamente.');
 		} finally {
 			setCreatingRequest(false);
@@ -293,7 +288,7 @@ const BeneficiaryDashboard: React.FC<BeneficiaryDashboardProps> = ({ stats: pare
 			const res = await api.get(`/beneficiaries/communications/?support_request=${requestId}`);
 			setMessages(res.data.results || res.data);
 		} catch (err: any) {
-			console.error('[BeneficiaryDashboard] Erro ao carregar mensagens', err);
+			// Error handled silently
 		} finally {
 			setLoadingMessages(false);
 		}
@@ -313,7 +308,6 @@ const BeneficiaryDashboard: React.FC<BeneficiaryDashboardProps> = ({ stats: pare
 			setNewMessage('');
 			await fetchRequestMessages(selectedRequest.id);
 		} catch (err: any) {
-			console.error('[BeneficiaryDashboard] Erro ao enviar mensagem', err);
 			setError('Falha ao enviar mensagem. Tente novamente.');
 		} finally {
 			setSendingMessage(false);

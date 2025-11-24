@@ -43,8 +43,6 @@ const DonorDashboard: React.FC<DonorDashboardProps> = ({ stats: initialStats }) 
   const [donorStats, setDonorStats] = useState<DonorStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
 
-  console.log('🔍 DonorDashboard - causes state:', causes, 'isArray:', Array.isArray(causes));
-
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -57,14 +55,10 @@ const DonorDashboard: React.FC<DonorDashboardProps> = ({ stats: initialStats }) 
           fetchDashboardStatsWithDonorInfo()
         ]);
         
-        console.log('✅ Causas carregadas:', causesData);
-        console.log('✅ Estatísticas carregadas:', statsData);
-        
         // Garantir que sempre seja um array
         if (Array.isArray(causesData)) {
           setCauses(causesData);
         } else {
-          console.warn('⚠️ Resposta não é array:', causesData);
           setCauses([]);
         }
         
@@ -73,7 +67,6 @@ const DonorDashboard: React.FC<DonorDashboardProps> = ({ stats: initialStats }) 
         setDonorStats(statsData.donorStats);
         
       } catch (error) {
-        console.error('❌ Erro ao carregar dados:', error);
         setCauses([]); // Garantir array vazio em caso de erro
       } finally {
         setLoading(false);
@@ -91,9 +84,7 @@ const DonorDashboard: React.FC<DonorDashboardProps> = ({ stats: initialStats }) 
     try {
       const updatedStats = await refreshDonorStats();
       setDonorStats(updatedStats);
-      console.log('✅ Estatísticas atualizadas:', updatedStats);
     } catch (error) {
-      console.error('❌ Erro ao atualizar estatísticas:', error);
     } finally {
       setStatsLoading(false);
     }
