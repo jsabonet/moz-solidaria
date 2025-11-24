@@ -130,23 +130,13 @@ const ProjectGallery = () => {
           } as Project;
         });
 
-        // Debug (remover em produção se quiser)
-        if (typeof window !== 'undefined') {
-          // eslint-disable-next-line no-console
-          console.log('[ProjectGallery] Progresso calculado pós-enriquecimento:', finalEnriched.map(p => ({
-            id: p.id,
-            slug: p.slug,
-            progress: (p.metrics as any)?.progressPercentage ?? (p.metrics as any)?.progress_percentage ?? p.progress_percentage ?? 0
-          })));
-        }
-
         setProjects(finalEnriched);
       } catch (e) {
-        console.warn('Falha ao enriquecer projetos com métricas/tracking:', e);
+        // Falha ao enriquecer projetos
       }
       
     } catch (error) {
-      console.error('Erro ao carregar projetos:', error);
+      // Erro ao carregar projetos
       
     } finally {
       setLoading(false);

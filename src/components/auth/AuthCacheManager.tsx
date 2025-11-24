@@ -21,7 +21,6 @@ export const AuthCacheManager = () => {
       const isNewPageLoad = !lastCheck || (now - parseInt(lastCheck)) > 10000;
       
       if (isNewPageLoad && isAuthenticated && user) {
-        console.log('🔄 NOVO CARREGAMENTO DE PÁGINA DETECTADO - Verificando se cache precisa ser limpo...');
         sessionStorage.setItem(pageLoadKey, now.toString());
         
         // Verificar se há mudanças pendentes nas permissões
@@ -29,16 +28,13 @@ export const AuthCacheManager = () => {
         const needsRefresh = !lastPermissionCheck || (now - parseInt(lastPermissionCheck)) > 30000; // 30 segundos
         
         if (needsRefresh) {
-          console.log('🧹 Executando limpeza preventiva de cache...');
-          
           // Executar limpeza de cache de forma silenciosa
           forceRefreshUserPermissions()
             .then(() => {
-              console.log('✅ Cache limpo automaticamente após carregamento da página');
               localStorage.setItem('last_permission_check', now.toString());
             })
             .catch((error) => {
-              console.warn('⚠️ Erro na limpeza automática de cache:', error);
+              // Erro na limpeza automática de cache
             });
         }
       }
@@ -57,15 +53,14 @@ export const AuthCacheManager = () => {
         
         // Se passou mais de 5 minutos sem foco, verificar permissões
         if (!lastFocusCheck || (now - parseInt(lastFocusCheck)) > 300000) {
-          console.log('🔍 Foco retornou após longo período - Verificando permissões...');
           sessionStorage.setItem('last_focus_check', now.toString());
           
           forceRefreshUserPermissions()
             .then(() => {
-              console.log('✅ Permissões atualizadas após retorno do foco');
+              // Permissões atualizadas
             })
             .catch((error) => {
-              console.warn('⚠️ Erro na atualização de foco:', error);
+              // Erro na atualização de foco
             });
         }
       }

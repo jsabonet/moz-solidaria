@@ -152,7 +152,6 @@ const SEOHead: React.FC<SEOHeadProps> = ({
     } else if (post?.meta_keywords && post.meta_keywords.trim()) {
       // 1. PRIORIDADE: usar meta_keywords específicas do post (do formulário)
       keywordsToUse = post.meta_keywords.trim();
-      console.log('🏷️ SEOHead - Usando keywords específicas do formulário:', keywordsToUse);
     } else if (post?.focus_keyword) {
       // 2. FALLBACK: gerar automaticamente se não há keywords específicas
       const keywords = [post.focus_keyword];
@@ -173,8 +172,6 @@ const SEOHead: React.FC<SEOHeadProps> = ({
     
     if (keywordsToUse) {
       updateMetaTag('keywords', keywordsToUse);
-    } else {
-      console.log('🏷️ SEOHead - Nenhuma palavra-chave encontrada para este post');
     }
     
     // Open Graph tags

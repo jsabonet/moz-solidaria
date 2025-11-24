@@ -113,7 +113,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const isPageReload = !lastReloadTime || (currentTime - parseInt(lastReloadTime)) > 5000; // 5 segundos
     
     if (isPageReload) {
-      console.log('🔄 PÁGINA RECARREGADA - Forçando limpeza de cache para atualizar permissões...');
       localStorage.setItem(pageReloadKey, currentTime.toString());
       
       // Limpar cache relacionado a permissões
@@ -227,11 +226,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (username: string, password: string) => {
     setError(null);
     setLoading(true);
-    console.log('🔐 Iniciando processo de login para:', username);
     
     try {
       const response = await jwtLogin(username, password);
-      console.log('✅ Login bem-sucedido:', response);
       
       // Salvar tokens
       localStorage.setItem('authToken', response.token);
@@ -440,18 +437,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const freshUserData = await userResponse.json();
       
-      console.log('🎯 DADOS ULTRA-FRESCOS (cache limpo):', {
-        id: freshUserData.id,
-        username: freshUserData.username,
-        is_staff: freshUserData.is_staff,
-        is_superuser: freshUserData.is_superuser,
-        groups: freshUserData.groups,
-        permissions: freshUserData.permissions,
-        fresh_data: freshUserData.fresh_data,
-        cache_busted: freshUserData.cache_busted,
-        timestamp: new Date().toISOString()
-      });
-
       // 4. Atualizar estado imediatamente
       setUser(freshUserData);
 
@@ -468,12 +453,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       localStorage.setItem('userData', JSON.stringify(timestampedData));
 
-      console.log('🎉 PERMISSÕES ATUALIZADAS COM CACHE LIMPO - DEVE FUNCIONAR AGORA!');
-      
       return freshUserData;
       
     } catch (error) {
-      console.error('❌ Erro na atualização forçada:', error);
       throw error;
     }
   };
@@ -503,20 +485,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   
-  if (import.meta.env.DEV) {
-    console.log('🔍 useAuth chamado:', { 
-      contextExists: !!context, 
-      contextType: typeof context,
-      user: context?.user ? {
-        id: context.user.id,
-        username: context.user.username,
-        is_staff: context.user.is_staff
-      } : null
-    });
-  }
-  
   if (context === undefined) {
-    console.error('❌ useAuth: AuthContext não encontrado na árvore de componentes');
     throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
   

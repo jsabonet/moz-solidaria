@@ -53,7 +53,6 @@ const AuthPage = () => {
 
   // Redirecionamento após login bem-sucedido
   useEffect(() => {
-    console.log('🔍 AuthPage - Estado auth:', { isAuthenticated, user });
     if (isAuthenticated && user) {
       // Verificar se há uma página de redirecionamento nos parâmetros da URL
       const redirectPath = searchParams.get('redirect');
@@ -70,7 +69,6 @@ const AuthPage = () => {
         }
       }
       
-      console.log('🚀 AuthPage - Redirecionando para:', targetPath);
       navigate(targetPath, { replace: true });
     }
   }, [isAuthenticated, user, navigate, location.state, searchParams]);
