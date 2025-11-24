@@ -154,7 +154,6 @@ export async function fetchCategories() {
   
   if (!res.ok) {
     const errorData = await res.text();
-    console.error('Erro ao buscar categorias:', res.status, errorData);
     throw new Error(`Erro ao buscar categorias: ${res.status} - ${errorData}`);
   }
   
@@ -197,7 +196,6 @@ export async function fetchProjectCategories() {
         }
       } catch (e) {
         // Continua tentando próximos endpoints
-        console.warn('fetchProjectCategories endpoint falhou:', url, e);
       }
     }
     return null;
@@ -219,7 +217,7 @@ export async function fetchProjectCategories() {
     const arr = Array.from(map.values());
     if (arr.length > 0) return arr;
   } catch (e) {
-    console.warn('fetchProjectCategories fallback via projetos falhou:', e);
+    // Fallback falhou
   }
 
   // 3) Sem categorias disponíveis
@@ -234,8 +232,6 @@ export async function fetchTags() {
 
 // Funções de autenticação
 export async function login(username: string, password: string) {
-  console.log('🔑 API Login - Tentando autenticação JWT para:', username);
-  
   const res = await fetch(`${API_BASE}/auth/token/`, {
     method: 'POST',
     headers: {
@@ -357,7 +353,6 @@ async function authFetch(url: string, options: RequestInit = {}, allowRefresh: b
         localStorage.removeItem('refreshToken');
       }
     } catch (e) {
-      console.warn('Falha ao renovar token:', e);
       localStorage.removeItem('authToken');
       localStorage.removeItem('refreshToken');
     }
@@ -365,7 +360,7 @@ async function authFetch(url: string, options: RequestInit = {}, allowRefresh: b
 
   // Se ainda 401 após tentativa de refresh, redirecionar para login (fluxo dashboard)
   if (response.status === 401) {
-    console.warn('Usuário não autorizado (401) para', url);
+    // Não autorizado
   }
 
   return response;
@@ -414,7 +409,6 @@ export async function createPost(postData: any) {
 
   if (!res.ok) {
     const errorData = await res.text();
-    console.error('API Error Response:', errorData);
     throw new Error(`Erro ao criar post: ${res.status} - ${errorData}`);
   }
 
@@ -430,7 +424,6 @@ export async function updatePost(slug: string, postData: any) {
   
   if (!res.ok) {
     const errorData = await res.text();
-    console.error('API Error Response:', errorData);
     throw new Error(`Erro ao atualizar post: ${res.status} - ${errorData}`);
   }
   
@@ -505,7 +498,6 @@ export async function fetchProjects() {
     }
   } catch (error) {
     // Se API admin falhar, tentar API pública como fallback
-    console.warn('API admin falhou, tentando API pública:', error);
     return await fetchPublicProjects();
   }
 }
@@ -576,7 +568,7 @@ export async function ensureProjectCategoryForBlogCategory(programId: number, bl
     });
     if (found) return found.id;
   } catch (e) {
-    console.warn('Falha ao listar categorias de projeto admin:', e);
+    // Falha ao listar categorias
   }
 
   // 3) Criar nova categoria de projeto para este programa
@@ -584,7 +576,6 @@ export async function ensureProjectCategoryForBlogCategory(programId: number, bl
     const created = await createProjectCategory({ name: targetName, program_id: programId, description: blogCat?.description || '' });
     return created?.id || null;
   } catch (e) {
-    console.warn('Falha ao criar ProjectCategory a partir de categoria do blog:', e);
     return null;
   }
 }
@@ -592,8 +583,6 @@ export async function ensureProjectCategoryForBlogCategory(programId: number, bl
 // Buscar detalhes de um projeto por slug
 export async function fetchProjectDetail(slug: string) {
   try {
-    console.log('🔍 API - Buscando projeto com slug:', slug);
-    
     // Estratégia 1: Tentar buscar via API pública por slug
     try {
       const res = await fetch(`${API_BASE}/projects/public/projects/?slug=${slug}`);
@@ -602,12 +591,11 @@ export async function fetchProjectDetail(slug: string) {
         const results = data.results || data;
         
         if (Array.isArray(results) && results.length > 0) {
-          console.log('✅ API - Projeto encontrado via busca por slug:', results[0]);
           return results[0];
         }
       }
     } catch (error) {
-      console.warn('⚠️ API - Falha na busca por slug:', error);
+      // Falha na busca por slug
     }
 
     // Estratégia 2: Tentar buscar diretamente por slug como endpoint
@@ -615,11 +603,10 @@ export async function fetchProjectDetail(slug: string) {
       const res = await fetch(`${API_BASE}/projects/public/projects/${slug}/`);
       if (res.ok) {
         const projectData = await res.json();
-        console.log('✅ API - Projeto encontrado via endpoint direto:', projectData);
         return projectData;
       }
     } catch (error) {
-      console.warn('⚠️ API - Falha no endpoint direto:', error);
+      // Falha no endpoint direto
     }
 
     // Estratégia 3: Buscar em todos os projetos e filtrar por slug
@@ -627,11 +614,10 @@ export async function fetchProjectDetail(slug: string) {
       const allProjects = await fetchPublicProjects();
       const project = allProjects.find((p: any) => p.slug === slug);
       if (project) {
-        console.log('✅ API - Projeto encontrado na lista completa:', project);
         return project;
       }
     } catch (error) {
-      console.warn('⚠️ API - Falha ao buscar na lista completa:', error);
+      // Falha ao buscar na lista completa
     }
 
     // Estratégia 4: Tentar sistema de tracking como fallback
@@ -642,18 +628,15 @@ export async function fetchProjectDetail(slug: string) {
         if (trackingData.results && trackingData.results.length > 0) {
           const project = trackingData.results.find((p: any) => p.slug === slug);
           if (project) {
-            console.log('✅ API - Projeto encontrado no sistema de tracking:', project);
             return project;
           }
         }
       }
     } catch (trackingError) {
-      console.warn('⚠️ API - Falha no sistema de tracking:', trackingError);
+      // Falha no sistema de tracking
     }
 
     // Se chegou até aqui, não encontrou o projeto
-    console.error('❌ API - Projeto não encontrado em nenhuma fonte:', slug);
-    
     // Retornar dados mock como último recurso se for um slug conhecido
     const knownSlugs = [
       'reconstrucao-escola-nangade',
@@ -665,14 +648,12 @@ export async function fetchProjectDetail(slug: string) {
     ];
 
     if (knownSlugs.includes(slug)) {
-      console.log('🔄 API - Retornando dados mock para slug conhecido:', slug);
       return generateMockProject(slug);
     }
 
     throw new Error(`Projeto com slug "${slug}" não encontrado`);
     
   } catch (error) {
-    console.error('❌ API - Erro geral ao buscar projeto:', error);
     throw error;
   }
 }
@@ -761,16 +742,6 @@ function generateMockProject(slug: string) {
 export async function createProject(postData: any) {
   const isFormData = postData instanceof FormData;
   
-  // Debug log detalhado
-  if (isFormData) {
-    console.log('📤 Enviando FormData para API:');
-    for (let [key, value] of postData.entries()) {
-      console.log(`  ${key}:`, value);
-    }
-  } else {
-    console.log('📤 Enviando JSON para API:', postData);
-  }
-  
   const res = await fetch(`${API_BASE}/projects/admin/projects/`, {
     method: 'POST',
     headers: {
@@ -782,11 +753,6 @@ export async function createProject(postData: any) {
   
   if (!res.ok) {
     const errorData = await res.text();
-    console.error('❌ Erro da API:', {
-      status: res.status,
-      statusText: res.statusText,
-      error: errorData
-    });
     throw new Error(`Erro ao criar projeto: ${res.status} - ${errorData}`);
   }
   
@@ -830,14 +796,10 @@ export async function deleteProject(id: number) {
 // Buscar programas disponíveis
 export async function fetchPrograms() {
   try {
-    console.log('🔍 fetchPrograms: Tentando buscar programas...');
-    
     // Tentar buscar via endpoint específico de programas
-    console.log('🎯 fetchPrograms: Tentando endpoint /api/v1/core/programs/');
     const res = await fetch(`${API_BASE}/core/programs/`);
     if (res.ok) {
       const data = await res.json();
-      console.log('✅ fetchPrograms: Endpoint funcionou!', data);
       
       // Se é uma resposta paginada, usar results
       if (data.results && Array.isArray(data.results)) {
@@ -849,7 +811,6 @@ export async function fetchPrograms() {
           color: item.color || '#3498db',
           icon: item.icon || 'folder'
         }));
-        console.log(`✅ fetchPrograms: ${programs.length} programas encontrados`);
         return programs;
       }
       // Se é um array direto
@@ -862,19 +823,17 @@ export async function fetchPrograms() {
           color: item.color || '#3498db',
           icon: item.icon || 'folder'
         }));
-        console.log(`✅ fetchPrograms: ${programs.length} programas encontrados`);
         return programs;
       }
       // Fallback para formato antigo
       return data.results || data;
     }
   } catch (error) {
-    console.warn('⚠️ fetchPrograms: Endpoint de programas não disponível, tentando extrair dos projetos:', error);
+    // Endpoint de programas não disponível
   }
 
   try {
     // Fallback: Extrair programas dos projetos públicos
-    console.log('🔄 fetchPrograms: Tentando fallback via projetos públicos');
     const projects = await fetchPublicProjects();
     const programsMap = new Map();
     projects.forEach(p => {
@@ -885,15 +844,13 @@ export async function fetchPrograms() {
     const extractedPrograms = Array.from(programsMap.values());
     
     if (extractedPrograms.length > 0) {
-      console.log(`✅ fetchPrograms: ${extractedPrograms.length} programas extraídos de projetos`);
       return extractedPrograms;
     }
   } catch (error) {
-    console.warn('❌ fetchPrograms: Erro ao extrair programas dos projetos:', error);
+    // Erro ao extrair programas dos projetos
   }
 
   // Dados mock atualizados - baseados nos programas reais criados
-  console.log('📦 fetchPrograms: Usando dados de fallback realísticos');
   return [
     { 
       id: 1, 
@@ -1185,27 +1142,18 @@ export default api;
 // Buscar atualizações do projeto (via endpoint público se disponível)
 export async function fetchProjectUpdates(projectId: string | number) {
   try {
-    console.log('🔍 fetchProjectUpdates - Buscando atualizações para projeto:', projectId);
-    
-    // Buscar atualizações do projeto pelo endpoint de tracking
     const url = `${API_BASE}/tracking/project-updates/?project=${projectId}`;
-    console.log('📡 fetchProjectUpdates - URL:', url);
     
     const res = await fetch(url);
     if (!res.ok) {
-      console.warn(`❌ fetchProjectUpdates - Updates endpoint falhou para projeto ${projectId}:`, res.status);
       return [];
     }
     
     const data = await res.json();
-    console.log('✅ fetchProjectUpdates - Dados recebidos:', data);
-    
     const updates = data.results || data; // Retorna o array de resultados
-    console.log('📋 fetchProjectUpdates - Atualizações processadas:', updates.length, 'itens');
     
     return updates;
   } catch (error) {
-    console.error('❌ fetchProjectUpdates - Erro ao buscar atualizações:', error);
     return [];
   }
 }
@@ -1245,7 +1193,6 @@ export async function fetchProjectGallery(projectId: string | number) {
     }
     return await res.json();
   } catch (error) {
-    console.warn('Erro ao buscar galeria do projeto:', error);
     return [];
   }
 }
@@ -1260,12 +1207,10 @@ export async function fetchProjectMilestones(projectId: string | number) {
       res = await fetch(`${API_BASE}/projects/admin/projects/${projectId}/milestones/`);
     }
     if (!res.ok) {
-      console.warn(`Milestones endpoint not found for project ${projectId}`);
       return [];
     }
     return await res.json();
   } catch (error) {
-    console.warn('Erro ao buscar marcos do projeto:', error);
     return [];
   }
 }
@@ -1280,7 +1225,6 @@ export async function fetchProjectMetrics(projectId: string | number) {
       res = await fetch(`${API_BASE}/projects/admin/projects/${projectId}/metrics/`);
     }
     if (!res.ok) {
-      console.warn(`Metrics endpoint not found for project ${projectId}`);
       return {
         peopleImpacted: 0,
         budgetUsed: 0,
@@ -1293,7 +1237,6 @@ export async function fetchProjectMetrics(projectId: string | number) {
     }
     return await res.json();
   } catch (error) {
-    console.warn('Erro ao buscar métricas do projeto:', error);
     return {
       peopleImpacted: 0,
       budgetUsed: 0,
@@ -1320,13 +1263,11 @@ export async function fetchTrackingMilestonesBySlug(slug: string) {
         const miles = (data && (data.milestones || data.project_milestones)) || [];
         return Array.isArray(miles) ? miles : [];
       }
-      console.warn(`Tracking milestones not found for slug ${slug}`);
       return [];
     }
     const json = await res.json();
     return json?.results || json || [];
   } catch (e) {
-    console.warn('Erro ao buscar milestones (tracking) por slug:', e);
     return [];
   }
 }
@@ -1387,28 +1328,16 @@ export async function fetchTrackingMetricsBySlug(slug: string) {
 // Buscar dados completos do projeto para exibição pública
 export async function fetchCompleteProjectData(slug: string) {
   try {
-    console.log('🔍 Buscando dados completos do projeto:', slug);
-    
     // Tentar buscar dados do sistema de tracking primeiro (dados mais completos e atualizados)
     let trackingData = null;
     try {
-      console.log('� Tentando buscar dados de tracking...');
       const trackingResponse = await fetch(`${API_BASE}/tracking/project-tracking/${slug}/`);
       if (trackingResponse.ok) {
         trackingData = await trackingResponse.json();
-        console.log('✅ Dados de tracking carregados:', trackingData);
         
         // Log específico das métricas
         if (trackingData?.metrics) {
-          console.log('🔢 Métricas do tracking encontradas:', {
-            people_impacted: trackingData.metrics.people_impacted,
-            progress_percentage: trackingData.metrics.progress_percentage,
-            completed_milestones: trackingData.metrics.completed_milestones,
-            total_milestones: trackingData.metrics.total_milestones
-          });
-          
           // Buscar dados básicos para completar campos que podem estar faltando no tracking
-          console.log('📋 Buscando dados básicos para complementar...');
           const basicProject = await fetchProjectDetail(slug);
 
           // Base: mesclar dados básicos e de tracking (tracking pode sobrepor onde fizer sentido)
@@ -1482,17 +1411,6 @@ export async function fetchCompleteProjectData(slug: string) {
           completeData.current_beneficiaries = completeData.metrics.peopleImpacted;
           completeData.progress_percentage = completeData.metrics.progressPercentage;
           
-          console.log('✅ Dados completos processados do tracking:', {
-            project: completeData.name,
-            target_beneficiaries: completeData.target_beneficiaries,
-            featured_image: completeData.featured_image,
-            gallery_images_count: completeData.gallery_images?.length || 0,
-            peopleImpacted: completeData.metrics.peopleImpacted,
-            progressPercentage: completeData.metrics.progressPercentage,
-            completedMilestones: completeData.metrics.completedMilestones,
-            totalMilestones: completeData.metrics.totalMilestones
-          });
-          
           // Se ainda não houver milestones, tentar tracking por slug e depois endpoints por ID
           if (!completeData.milestones || completeData.milestones.length === 0) {
             try {
@@ -1501,7 +1419,7 @@ export async function fetchCompleteProjectData(slug: string) {
                 completeData.milestones = trackingMilestones;
               }
             } catch (e) {
-              console.warn('⚠️ Falha ao buscar milestones via tracking:', e);
+              // Falha ao buscar milestones via tracking
             }
 
             if ((!completeData.milestones || completeData.milestones.length === 0) && basicProject?.id) {
@@ -1511,7 +1429,7 @@ export async function fetchCompleteProjectData(slug: string) {
                   completeData.milestones = fallbackMilestones;
                 }
               } catch (e) {
-                console.warn('⚠️ Falha ao buscar milestones fallback (ID):', e);
+                // Falha ao buscar milestones fallback
               }
             }
 
@@ -1524,17 +1442,16 @@ export async function fetchCompleteProjectData(slug: string) {
 
           return completeData;
         } else {
-          console.warn('⚠️ TrackingData existe mas sem métricas:', Object.keys(trackingData || {}));
+          // TrackingData existe mas sem métricas
         }
       } else {
-        console.warn('⚠️ Resposta de tracking não ok:', trackingResponse.status);
+        // Resposta de tracking não ok
       }
     } catch (error) {
-      console.warn('⚠️ Dados de tracking não disponíveis:', error);
+      // Dados de tracking não disponíveis
     }
 
     // Fallback: Buscar dados básicos do projeto se tracking falhou
-    console.log('📋 Fallback: Buscando dados básicos do projeto...');
     const project = await fetchProjectDetail(slug);
     
     if (!project) {
@@ -1571,17 +1488,9 @@ export async function fetchCompleteProjectData(slug: string) {
       }
     };
 
-    console.log('📊 Dados básicos processados (fallback):', {
-      project: completeData.name,
-      peopleImpacted: completeData.metrics.peopleImpacted,
-      progressPercentage: completeData.metrics.progressPercentage,
-      source: 'project_basic'
-    });
-
     return completeData;
     
   } catch (error) {
-    console.error('❌ Erro ao buscar dados completos:', error);
     throw error;
   }
 }
@@ -1590,7 +1499,6 @@ export async function fetchCompleteProjectData(slug: string) {
 export async function fetchProjectDetailForEdit(slug: string) {
   const authToken = localStorage.getItem('authToken');
   try {
-    console.log('🔍 API - Buscando projeto para edição com slug:', slug);
     const token = localStorage.getItem('authToken');
     
     if (!token) {

@@ -104,15 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAuthenticated = !!user && (typeof user.id === 'number' ? user.id >= 0 : !!user.username);
   const isStaff = !!user && (user.is_staff || user.is_superuser);
 
-  console.log('🔍 Auth State:', { 
-    user: user ? { id: user.id, username: user.username, is_staff: user.is_staff } : null, 
-    isAuthenticated, 
-    isStaff, 
-    loading 
-  });
-
   const checkAuthStatus = async () => {
-    console.log('🔍 Verificando status de autenticação...');
     
     // 🔄 DETECÇÃO DE RELOAD DA PÁGINA
     const pageReloadKey = 'auth_page_reload_timestamp';
@@ -137,7 +129,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const storedUserData = localStorage.getItem('userData');
     
     if (!token) {
-      console.log('❌ Nenhum token encontrado');
       setUser(null);
       setLoading(false);
       return;
@@ -148,18 +139,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!isPageReload && storedUserData) {
       try {
         const userData = JSON.parse(storedUserData);
-        console.log('✅ Dados do usuário recuperados do localStorage:', userData);
         setUser(userData);
         setLoading(false);
         return;
       } catch (error) {
-        console.warn('⚠️ Erro ao parsear userData do localStorage:', error);
+        // Erro ao parsear userData
       }
     }
 
     try {
       // Para reloads, forçar busca de dados completamente frescos
-      console.log('🚀 Buscando dados frescos do usuário...');
       const API_BASE = getApiBase();
       
       const headers: Record<string, string> = {
@@ -174,7 +163,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         headers['Expires'] = '0';
         headers['X-Force-Fresh'] = 'true';
         headers['X-Page-Reload'] = 'true';
-        console.log('📡 Headers anti-cache adicionados para reload da página');
       }
       
       const response = await fetch(`${API_BASE}/auth/user/`, {
@@ -185,21 +173,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (response.ok) {
         const userData = await response.json();
-        console.log('✅ Token válido, dados do usuário obtidos:', userData);
-        
-        if (isPageReload) {
-          console.log('🎯 DADOS FRESCOS obtidos após reload da página:', {
-            is_staff: userData.is_staff,
-            is_superuser: userData.is_superuser,
-            groups: userData.groups,
-            permissions_count: userData.permissions?.length || 0,
-            fresh_data: userData.fresh_data,
-            cache_busted: userData.cache_busted
-          });
-        }
         
         setUser(userData);
-        
+        // Armazenar dados do usuário no localStorage
         // Salvar com timestamp de reload se aplicável
         const dataToStore = {
           ...userData,
@@ -209,7 +185,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         localStorage.setItem('userData', JSON.stringify(dataToStore));
       } else {
-        console.log('⚠️ Token inválido, tentando refresh...');
         if (refreshToken) {
           try {
             const refreshResponse = await jwtRefresh(refreshToken);
@@ -228,22 +203,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               const userData = await userResponse.json();
               setUser(userData);
               localStorage.setItem('userData', JSON.stringify(userData));
-              console.log('✅ Token refreshed e dados atualizados');
             } else {
-              console.error('Erro ao carregar perfil após refresh');
               logout();
             }
           } catch (refreshError) {
-            console.error('❌ Refresh falhou:', refreshError);
             logout();
           }
         } else {
-          console.log('❌ Sem refresh token, fazendo logout');
           logout();
         }
       }
     } catch (error) {
-      console.error('Erro ao verificar autenticação:', error);
       logout();
     } finally {
       setLoading(false);
@@ -269,9 +239,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('userData', JSON.stringify(response.user));
       
       setUser(response.user);
-      console.log('🎉 Login concluído com sucesso!');
     } catch (error) {
-      console.error('❌ Erro no login:', error);
       setError('Credenciais inválidas. Verifique seu usuário e senha.');
       throw error;
     } finally {
@@ -280,14 +248,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    console.log('🚪 Fazendo logout...');
     localStorage.removeItem('authToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('userData');
     // Limpar qualquer token antigo
     localStorage.removeItem('access_token');
     setUser(null);
-    console.log('✅ Logout concluído');
   };
 
   // Métodos de permissão
@@ -361,18 +327,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [permissionsCache, setPermissionsCache] = useState<Map<string, boolean>>(new Map());
 
   const invalidatePermissionsCache = () => {
-    console.log('🗑️ Invalidando cache de permissões...');
     setPermissionsCache(new Map());
   };
 
   const refreshUserData = async (): Promise<void> => {
     try {
-      console.log('🔄 Iniciando atualização COMPLETA dos dados do usuário...');
       setLoading(true);
       
       const token = localStorage.getItem('authToken');
       if (!token) {
-        console.error('❌ Token não encontrado, fazendo logout');
         logout();
         throw new Error('No token found');
       }
@@ -380,8 +343,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const API_BASE = getApiBase();
       
       // 🚀 NOVA ABORDAGEM: Buscar dados frescos direto do banco
-      console.log('📡 Consultando banco de dados para dados atualizados...');
-      
       const response = await fetch(`${API_BASE}/auth/user/`, {
         method: 'GET',
         headers: {
@@ -398,7 +359,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (!response.ok) {
         if (response.status === 401) {
-          console.error('❌ Token inválido, fazendo logout');
           logout();
           return;
         }
@@ -406,15 +366,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const userData = await response.json();
-      console.log('✅ Dados FRESCOS do banco de dados recebidos:', {
-        id: userData.id,
-        username: userData.username,
-        is_staff: userData.is_staff,
-        is_superuser: userData.is_superuser,
-        groups: userData.groups,
-        permissions_count: userData.permissions?.length || 0,
-        timestamp: new Date().toISOString()
-      });
 
       // 🔄 Atualizar estado local com dados frescos
       setUser(userData);
@@ -426,10 +377,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       };
       localStorage.setItem('userData', JSON.stringify(userDataWithTimestamp));
       
-      console.log('🎉 Dados do usuário atualizados com sucesso no estado local!');
-      
     } catch (error) {
-      console.error('❌ Erro ao atualizar dados do usuário:', error);
       setError(error instanceof Error ? error.message : 'Erro ao atualizar dados do usuário');
     } finally {
       setLoading(false);
@@ -439,11 +387,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // 🆕 NOVA FUNÇÃO: Forçar atualização completa das permissões direto do banco
   const forceRefreshUserPermissions = async (): Promise<User | null> => {
     try {
-      console.log('🧹 FORÇA-TAREFA: Limpando cache completo + atualizando permissões...');
-      
       const token = localStorage.getItem('authToken');
       if (!token) {
-        console.error('❌ Token não encontrado');
         return null;
       }
 
@@ -466,12 +411,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (cacheResponse.ok) {
           const cacheResult = await cacheResponse.json();
-          console.log('✅ Cache do Django limpo:', cacheResult);
         } else {
-          console.warn('⚠️ Falha na limpeza de cache, continuando...');
+          // Falha na limpeza de cache
         }
       } catch (cacheError) {
-        console.warn('⚠️ Erro na limpeza de cache, continuando:', cacheError);
+        // Erro na limpeza de cache
       }
 
       // 3. Buscar dados completamente frescos do banco (com cache já limpo)
