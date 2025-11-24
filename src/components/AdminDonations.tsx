@@ -159,7 +159,7 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
       const response = await api.get(`/donations/?${params.toString()}`);
       setDonations(response.data.results || response.data);
     } catch (error: any) {
-      console.error('Erro ao carregar doações:', error);
+      // Error handled silently
     } finally {
       setLoading(false);
     }
@@ -179,7 +179,6 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
       while (nextUrl) {
         page++;
         if (page > safetyPageLimit) {
-          console.warn('Limite de páginas atingido na agregação de doações.');
           break;
         }
         const { data } = await api.get(nextUrl);
@@ -202,7 +201,7 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
 
       setAggregateStats({ totalDonations, approvedCount, pendingCount, approvedAmount });
     } catch (error) {
-      console.error('Erro ao agregar estatísticas completas de doações:', error);
+      // Error handled silently
     }
   };
 
@@ -211,7 +210,7 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
       const response = await api.get('/donations/statistics/');
       setStats(response.data);
     } catch (error: any) {
-      console.error('Erro ao carregar estatísticas:', error);
+      // Error handled silently
     }
   };
 
@@ -231,7 +230,6 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
       
       alert('Doação rejeitada com sucesso!');
     } catch (error: any) {
-      console.error('Erro ao rejeitar doação:', error);
       
       if (error.response?.data?.detail) {
         alert(`Erro: ${error.response.data.detail}`);
@@ -262,13 +260,6 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
         admin_comment: actionComment || defaultComment
       };
       
-      console.log('🔍 Enviando PATCH request:', {
-        url: `/donations/${donationId}/`,
-        action: newAction,
-        mappedStatus: newStatus,
-        data: requestData
-      });
-      
       await api.patch(`/donations/${donationId}/`, requestData);
   fetchDonations();
   fetchStats();
@@ -277,10 +268,6 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
       
       alert(`Doação ${statusInfo?.label.toLowerCase() || 'atualizada'} com sucesso!`);
     } catch (error: any) {
-      console.error('Erro ao atualizar status:', error);
-      console.error('Response data:', error.response?.data);
-      console.error('Response status:', error.response?.status);
-      console.error('Response headers:', error.response?.headers);
       
       // Mostrar erro específico para o usuário
       if (error.response?.data?.rejection_reason) {
@@ -332,7 +319,6 @@ const AdminDonations: React.FC<AdminDonationsProps> = ({ onViewDetails }) => {
   fetchStats();
   fetchAllDonationsAggregate();
     } catch (error: any) {
-      console.error('Erro na ação em massa:', error);
       
       // Mostrar erro específico para o usuário
       if (error.response?.data?.rejection_reason) {
