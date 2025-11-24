@@ -29,7 +29,6 @@ export const UpdateChecker: React.FC<UpdateCheckerProps> = ({
   const scheduleReload = (newId: string) => {
     if (reloadScheduled) return;
     setReloadScheduled(true);
-    if (log) console.info('[UpdateChecker] Nova versão detectada', { newId });
     // Limpeza leve de caches antes do reload
     if ('caches' in window) {
       caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))).catch(() => {}));
@@ -70,10 +69,9 @@ export const UpdateChecker: React.FC<UpdateCheckerProps> = ({
           
           // Armazenar no localStorage para comparação
           localStorage.setItem('app-build-id', buildInfo.buildId);
-          if (log) console.info('[UpdateChecker] Build inicial', buildInfo.buildId);
         }
       } catch (error) {
-        console.log('Could not fetch build info:', error);
+        // Error handled silently
       }
     };
 
@@ -104,7 +102,7 @@ export const UpdateChecker: React.FC<UpdateCheckerProps> = ({
           }
         }
       } catch (error) {
-        console.log('Error checking for updates:', error);
+        // Error handled silently
       }
     };
 
@@ -136,7 +134,7 @@ export const UpdateChecker: React.FC<UpdateCheckerProps> = ({
               }
             }
           } catch (error) {
-            console.log('Error checking for updates on visibility change:', error);
+            // Error handled silently
           }
         }, 1000);
       }
@@ -171,7 +169,7 @@ export const useUpdateChecker = () => {
           }
         }
       } catch (error) {
-        console.log('Could not check build info:', error);
+        // Error handled silently
       }
     };
 

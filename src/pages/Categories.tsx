@@ -27,7 +27,6 @@ const Categories: React.FC = () => {
       const data = await fetchCategories();
       setCategories(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Erro ao carregar categorias:', error);
       toast.error('Erro ao carregar categorias.');
     } finally {
       setLoading(false);
@@ -50,7 +49,6 @@ const Categories: React.FC = () => {
       setNewCategoryDescription('');
       toast.success('Categoria criada com sucesso!');
     } catch (error) {
-      console.error('Erro ao criar categoria:', error);
       toast.error('Erro ao criar categoria.');
     }
   };
@@ -74,7 +72,6 @@ const Categories: React.FC = () => {
       setEditingCategory(null);
       toast.success('Categoria atualizada com sucesso!');
     } catch (error) {
-      console.error('Erro ao atualizar categoria:', error);
       toast.error('Erro ao atualizar categoria.');
     }
   };
@@ -85,7 +82,6 @@ const Categories: React.FC = () => {
       setCategories(categories.filter((category) => category.id !== id));
       toast.success('Categoria deletada com sucesso!');
     } catch (error) {
-      console.error('Erro ao deletar categoria:', error);
       toast.error('Erro ao deletar categoria.');
     }
   };

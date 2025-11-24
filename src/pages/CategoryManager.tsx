@@ -47,10 +47,8 @@ const CategoryManager: React.FC = () => {
     try {
       setLoading(true);
       const data = await fetchCategories();
-      console.log('Categorias carregadas:', data); // Debug log
       setCategories(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Erro ao carregar categorias:', error);
       toast.error('Erro ao carregar categorias');
     } finally {
       setLoading(false);
@@ -102,7 +100,6 @@ const CategoryManager: React.FC = () => {
       // Força o recarregamento das categorias com contagem atualizada
       await loadCategories();
     } catch (error: any) {
-      console.error('Erro ao salvar categoria:', error);
       toast.error(error.message || 'Erro ao salvar categoria');
     } finally {
       setSaving(false);
@@ -116,8 +113,6 @@ const CategoryManager: React.FC = () => {
       // Força o recarregamento das categorias
       await loadCategories();
     } catch (error: any) {
-      console.error('Erro ao excluir categoria:', error);
-      
       // Verificar se é um erro de categoria com posts associados
       if (error.message.includes('400') || error.message.includes('possui') || error.message.includes('associado')) {
         toast.error('Não é possível excluir esta categoria pois ela possui posts associados. Remova ou altere a categoria dos posts primeiro.');

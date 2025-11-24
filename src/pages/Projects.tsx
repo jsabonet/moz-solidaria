@@ -55,7 +55,7 @@ const Projects = () => {
         }));
         setProjects(normalized);
       } catch (e) {
-        console.error('Erro ao carregar projetos públicos', e);
+        // Error handled silently
       } finally {
         setLoading(false);
       }
