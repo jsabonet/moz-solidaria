@@ -118,7 +118,6 @@ const DonationDetails: React.FC<DonationDetailsProps> = ({ donationId, onBack })
       setDonation(response.data);
     } catch (error: any) {
       setError('Erro ao carregar detalhes da doação');
-      console.error('Erro ao carregar doação:', error);
     } finally {
       setLoading(false);
     }
@@ -126,9 +125,7 @@ const DonationDetails: React.FC<DonationDetailsProps> = ({ donationId, onBack })
 
   const fetchComments = async () => {
     try {
-      console.log('Fetching comments for donation:', donationId);
       const response = await api.get(`/donations/${donationId}/comments/`);
-      console.log('Comments response:', response);
       
       // Handle direct array response (comments API returns array directly)
       let comments = [];
@@ -140,10 +137,9 @@ const DonationDetails: React.FC<DonationDetailsProps> = ({ donationId, onBack })
         comments = [response.data];
       }
       
-      console.log('Processed comments:', comments);
       setComments(comments);
     } catch (error: any) {
-      console.error('Erro ao carregar comentários:', error);
+      // Error handled silently
     }
   };
 
@@ -158,7 +154,7 @@ const DonationDetails: React.FC<DonationDetailsProps> = ({ donationId, onBack })
       setNewComment('');
       fetchComments(); // Recarregar comentários
     } catch (error: any) {
-      console.error('Erro ao adicionar comentário:', error);
+      // Error handled silently
     } finally {
       setSubmittingComment(false);
     }

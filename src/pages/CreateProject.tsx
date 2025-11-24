@@ -275,7 +275,6 @@ const CreateProject: React.FC = () => {
   console.log('🏷️ Categorias do blog carregadas para usar nos projetos:', mappedCategories);
         
       } catch (error) {
-        console.error('Erro ao carregar dados iniciais:', error);
         toast.error('Erro ao carregar dados. Usando valores padrão.');
         
         // Fallback para dados mock - programas baseados no sistema real
@@ -314,9 +313,7 @@ const CreateProject: React.FC = () => {
       const loadProjectData = async () => {
         try {
           setLoadingData(true);
-          console.log('🔄 Carregando dados do projeto para edição:', slug);
           const projectData = await fetchProjectDetailForEdit(slug);
-          console.log('📊 Dados do projeto recebidos:', projectData);
           
           setProjectId(projectData.id);
           
@@ -343,12 +340,10 @@ const CreateProject: React.FC = () => {
             meta_keywords: projectData.meta_keywords || ''
           };
           
-          console.log('📝 Dados do formulário que serão definidos:', formDataToSet);
           setFormData(formDataToSet);
           
           toast.success('Dados do projeto carregados com sucesso!');
         } catch (error) {
-          console.error('Erro ao carregar dados do projeto:', error);
           toast.error('Erro ao carregar dados do projeto');
           navigate('/dashboard?tab=projects');
         } finally {
@@ -431,7 +426,7 @@ const CreateProject: React.FC = () => {
               const projCatId = await ensureProjectCategoryForBlogCategory(programId, blogCatId);
               if (projCatId) categoryToSend = projCatId;
             } catch (e) {
-              console.warn('Falha ao garantir categoria de projeto para categoria do blog:', e);
+              // Silently handle category mapping failure
             }
           }
         }
@@ -490,8 +485,6 @@ const CreateProject: React.FC = () => {
       navigate('/dashboard?tab=projects');
 
     } catch (error: any) {
-      console.error('Erro ao processar projeto:', error);
-      
       if (error.response?.data?.errors) {
         const serverErrors: ValidationErrors = {};
         Object.entries(error.response.data.errors).forEach(([key, messages]) => {

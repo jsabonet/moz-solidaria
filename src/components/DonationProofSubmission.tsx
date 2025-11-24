@@ -71,9 +71,7 @@ const DonationProofSubmission: React.FC<DonationProofSubmissionProps> = ({
 
   const fetchDonationMethods = async () => {
     try {
-      console.log('🔄 Carregando métodos de doação...');
       const response = await api.get('/donations/methods/');
-      console.log('📊 Resposta métodos de doação:', response.data);
       
       let methods = [];
       if (response.data && response.data.results && Array.isArray(response.data.results)) {
@@ -83,10 +81,8 @@ const DonationProofSubmission: React.FC<DonationProofSubmissionProps> = ({
       }
       
       const activeMethods = methods.filter((method: DonationMethod) => method.is_active);
-      console.log('🔧 Métodos ativos processados:', activeMethods);
       setDonationMethods(activeMethods);
     } catch (error) {
-      console.error('❌ Erro ao carregar métodos de doação:', error);
       setDonationMethods([]);
     }
   };
@@ -197,13 +193,6 @@ const DonationProofSubmission: React.FC<DonationProofSubmissionProps> = ({
 
       const endpoint = mode === 'guest' ? '/donations/guest/' : '/donations/';
       
-      // Debug: log dos dados sendo enviados
-      console.log('🔍 Enviando dados:', {
-        endpoint,
-        mode,
-        formData: Object.fromEntries(formDataToSend.entries())
-      });
-      
       const response = await api.post(endpoint, formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -232,7 +221,6 @@ const DonationProofSubmission: React.FC<DonationProofSubmissionProps> = ({
       }
 
     } catch (error: any) {
-      console.error('Erro ao enviar comprovante:', error);
       if (error.response?.data?.detail) {
         setError(error.response.data.detail);
       } else if (error.response?.data?.amount) {

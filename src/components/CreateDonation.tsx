@@ -39,8 +39,6 @@ const CreateDonation: React.FC = () => {
   const [error, setError] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  console.log('🔍 CreateDonation - donationMethods:', donationMethods, 'count:', donationMethods.length);
-
   useEffect(() => {
     fetchDonationMethods();
   }, []);
@@ -48,7 +46,6 @@ const CreateDonation: React.FC = () => {
   const fetchDonationMethods = async () => {
     try {
       const response = await api.get('/donations/methods/');
-      console.log('Métodos de doação response:', response);
       
       // Handle paginated response
       let methods = [];
@@ -63,10 +60,8 @@ const CreateDonation: React.FC = () => {
         methods = response;
       }
       
-      console.log('Métodos processados:', methods);
       setDonationMethods(methods.filter((method: DonationMethod) => method.is_active));
     } catch (error) {
-      console.error('Erro ao carregar métodos de doação:', error);
       setDonationMethods([]); // Set empty array on error
     }
   };
@@ -107,8 +102,6 @@ const CreateDonation: React.FC = () => {
         return;
       }
 
-      console.log('Arquivo selecionado:', { name: file.name, type: file.type, size: file.size });
-      
       setFormData(prev => ({
         ...prev,
         payment_proof: file
@@ -154,13 +147,6 @@ const CreateDonation: React.FC = () => {
         submitData.append('payment_proof', formData.payment_proof);
       }
 
-      console.log('Enviando dados da doação:', {
-        amount: formData.amount,
-        donation_method: formData.donation_method,
-        donor_message: formData.description,
-        payment_proof: formData.payment_proof ? 'arquivo anexado' : 'sem arquivo'
-      });
-
       const response = await api.post('/donations/', submitData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -174,8 +160,7 @@ const CreateDonation: React.FC = () => {
         action: {
           label: 'Ver Doações',
           onClick: () => {
-            // Implementar navegação para lista de doações
-            console.log('Navegar para minhas doações');
+            // Implement navigation to donations list
           }
         }
       });
@@ -193,8 +178,6 @@ const CreateDonation: React.FC = () => {
       }
 
     } catch (error: any) {
-      console.error('Erro ao criar doação:', error);
-      
       let errorMessage = 'Erro ao processar doação';
       let errorDescription = 'Ocorreu um erro inesperado. Tente novamente.';
       
