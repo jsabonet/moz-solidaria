@@ -227,7 +227,6 @@ const BeneficiaryManagement: React.FC = () => {
         loadRequests()
       ]);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar dados do sistema de beneficiários');
     } finally {
       setLoading(false);
@@ -240,7 +239,7 @@ const BeneficiaryManagement: React.FC = () => {
   const response = await api.get('/beneficiaries/admin/stats/');
       setStats(response.data);
     } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error);
+      // Error handled silently
     }
   };
 
@@ -249,7 +248,7 @@ const BeneficiaryManagement: React.FC = () => {
   const response = await api.get('/beneficiaries/admin/beneficiaries/');
       setBeneficiaries(response.data.results || response.data);
     } catch (error) {
-      console.error('Erro ao carregar beneficiários:', error);
+      // Error handled silently
     }
   };
 
@@ -258,7 +257,7 @@ const BeneficiaryManagement: React.FC = () => {
   const response = await api.get('/beneficiaries/admin/support-requests/');
       setRequests(response.data.results || response.data);
     } catch (error) {
-      console.error('Erro ao carregar solicitações:', error);
+      // Error handled silently
     }
   };
 
@@ -269,7 +268,6 @@ const BeneficiaryManagement: React.FC = () => {
       loadBeneficiaries();
       loadStats();
     } catch (error) {
-      console.error('Erro ao verificar beneficiário:', error);
       toast.error('Erro ao verificar beneficiário');
     }
   };
@@ -289,8 +287,6 @@ const BeneficiaryManagement: React.FC = () => {
         setRejectNotes('');
       }
     } catch (error: any) {
-      console.error(`Erro ao ${action === 'approve' ? 'aprovar' : 'rejeitar'} solicitação:`, error);
-      
       // Mostrar erro mais específico
       let errorMessage = `Erro ao ${action === 'approve' ? 'aprovar' : 'rejeitar'} solicitação`;
       if (error.response?.data?.detail) {

@@ -116,7 +116,6 @@ const ProjectTracker: React.FC<ProjectTrackerProps> = ({
         // Tentar carregar pelos diferentes IDs disponíveis
         await fetchProjectData(projectTitle || projectId || '');
       } catch (error) {
-        console.error('Erro ao carregar dados do projeto:', error);
         toast.error('Erro ao carregar dados do projeto');
       } finally {
         setLocalLoading(false);
@@ -179,7 +178,6 @@ const ProjectTracker: React.FC<ProjectTrackerProps> = ({
         onMetricsUpdate(projectData.metrics);
       }
     } catch (error) {
-      console.error('Erro ao atualizar métricas:', error);
       toast.error('Erro ao atualizar métricas');
     }
   };
@@ -296,7 +294,6 @@ const ProjectTracker: React.FC<ProjectTrackerProps> = ({
       setShowUpdateDialog(false);
       toast.success(editingUpdate ? 'Atualização editada com sucesso!' : 'Atualização adicionada com sucesso!');
     } catch (error) {
-      console.error('Erro ao processar atualização:', error);
       toast.error('Erro ao processar atualização');
     }
   };
@@ -341,7 +338,6 @@ const ProjectTracker: React.FC<ProjectTrackerProps> = ({
       setShowMilestoneDialog(false);
       toast.success(editingMilestone ? 'Marco editado com sucesso!' : 'Marco adicionado com sucesso!');
     } catch (error) {
-      console.error('Erro ao processar marco:', error);
       toast.error('Erro ao processar marco');
     }
   };
@@ -385,7 +381,6 @@ const ProjectTracker: React.FC<ProjectTrackerProps> = ({
       setShowEvidenceDialog(false);
       toast.success(`${evidenceForm.files.length} evidência(s) adicionada(s) com sucesso!`);
     } catch (error) {
-      console.error('Erro ao adicionar evidências:', error);
       toast.error('Erro ao adicionar evidências');
     }
   };
@@ -400,7 +395,6 @@ const ProjectTracker: React.FC<ProjectTrackerProps> = ({
           toast.error('Erro ao excluir evidência');
         }
       } catch (error) {
-        console.error('Erro ao excluir evidência:', error);
         if (error instanceof Error && error.message.includes('404')) {
           toast.warning('Evidência já foi excluída anteriormente');
         } else {

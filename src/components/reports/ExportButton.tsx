@@ -174,7 +174,6 @@ const ExportButton: React.FC<ExportButtonProps> = ({
   const exportData = async (exportOptions: ExportOptions) => {
     try {
       setIsExporting(true);
-      console.log('🚀 Iniciando exportação:', { type, options: exportOptions });
 
       // Preparar dados para exportação com estrutura completa
       const exportPayload: ExportRequest = {
@@ -195,36 +194,21 @@ const ExportButton: React.FC<ExportButtonProps> = ({
 
       try {
         // Sempre tentar usar a API real primeiro
-        console.log('🚀 Enviando dados para backend:');
-        console.log('   - URL da API:', `${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'}/api/v1/reports/exports/generate/`);
-        console.log('   - Payload:', exportPayload);
-        console.log('   - Dados reais:', data.length > 0 ? `${data.length} registros` : 'Dados serão buscados no backend');
-        
         if (exportOptions.emailRecipients.length > 0) {
           // Envio por email via API
           await reportsApi.exportData(exportPayload);
           toast.success('✅ Exportação enviada por email!');
-          console.log('✅ Exportação por email realizada via API');
         } else {
           // Download direto via API
           const blob = await reportsApi.exportData(exportPayload);
           downloadFile(blob, filename, exportOptions.format);
           toast.success(`✅ Download ${exportOptions.format.toUpperCase()} iniciado via backend!`);
-          console.log('✅ Download via API backend realizado');
         }
       } catch (apiError) {
-        console.error('❌ Erro detalhado na API do backend:', {
-          message: apiError.message,
-          stack: apiError.stack,
-          exportPayload
-        });
-        
         // Só usar fallback em caso de erro crítico
         if (apiError.message?.includes('Failed to fetch') || 
             apiError.message?.includes('NetworkError') || 
             apiError.message?.includes('ERR_CONNECTION_REFUSED')) {
-          console.warn('⚠️ Problema de rede detectado, usando fallback local');
-          
           const simulatedData = generateSimulatedExportData(type, exportOptions);
           const blob = new Blob([simulatedData], {
             type: getContentTypeForFormat(exportOptions.format)
@@ -247,7 +231,6 @@ const ExportButton: React.FC<ExportButtonProps> = ({
         }
       }
     } catch (error) {
-      console.error('❌ Erro na exportação:', error);
       toast.error('Erro ao exportar dados');
     } finally {
       setIsExporting(false);

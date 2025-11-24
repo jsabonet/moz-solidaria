@@ -154,7 +154,6 @@ const ProjectCategoryManagement = () => {
 
       setCategories(mockCategories);
     } catch (error) {
-      console.error('Erro ao carregar categorias:', error);
       toast.error('Erro ao carregar categorias');
     } finally {
       setLoading(false);
@@ -173,7 +172,7 @@ const ProjectCategoryManagement = () => {
 
       setPrograms(mockPrograms);
     } catch (error) {
-      console.error('Erro ao carregar programas:', error);
+      // Error handled silently
     }
   };
 
@@ -221,7 +220,6 @@ const ProjectCategoryManagement = () => {
 
       handleCloseModal();
     } catch (error) {
-      console.error('Erro ao salvar categoria:', error);
       toast.error('Erro ao salvar categoria');
     }
   };
@@ -250,7 +248,6 @@ const ProjectCategoryManagement = () => {
       setCategories(prev => prev.filter(cat => cat.id !== id));
       toast.success('Categoria excluída com sucesso!');
     } catch (error) {
-      console.error('Erro ao excluir categoria:', error);
       toast.error('Erro ao excluir categoria');
     }
   };
@@ -262,7 +259,6 @@ const ProjectCategoryManagement = () => {
       ));
       toast.success('Status atualizado com sucesso!');
     } catch (error) {
-      console.error('Erro ao atualizar status:', error);
       toast.error('Erro ao atualizar status');
     }
   };
