@@ -1,0 +1,13 @@
+{
+  "name": "MOZ Solidária",
+  "short_name": "MozSolidária",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#dc2626",
+  "scope": "/",
+  "icons": [
+    { "src": "/favicon-96x96.png", "sizes": "96x96", "type": "image/png" },
+    { "src": "/logo-moz-solidaria-v2.png", "sizes": "192x192", "type": "image/png" }
+  ]
+}
